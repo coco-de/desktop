@@ -1,0 +1,309 @@
+# 🍎 co-mac
+
+> 새로 받은 맥북 한 대를 명령어 한 줄로 co:code 팀 전체와 똑같은 개발환경으로 만들어주는 스크립트입니다.
+
+[![Platform](https://img.shields.io/badge/platform-macOS-000000?logo=apple&logoColor=white)](https://www.apple.com/macos/)
+[![Script](https://img.shields.io/badge/script-Bash-4EAA25?logo=gnubash&logoColor=white)](./mac-setup.sh)
+[![Package Manager](https://img.shields.io/badge/package_manager-Homebrew-FBB040?logo=homebrew&logoColor=white)](https://brew.sh)
+
+이 저장소에는 딱 두 개의 파일만 있습니다.
+
+- [`mac-setup.sh`](./mac-setup.sh) — 개발환경을 자동으로 설치해주는 스크립트
+- `README.md` — 지금 보고 계신 이 문서
+
+## 목차
+
+- [🙋 이런 분들을 위한 레포입니다](#who-is-this-for)
+- [🚀 빠른 시작](#quickstart)
+- [📦 무엇이 설치되나요](#whats-installed)
+- [✅ 설치 후 확인할 것](#after-install)
+- [🔒 안전한가요](#is-it-safe)
+- [🐛 문제가 생겼나요](#troubleshooting)
+- [💬 도움이 필요하신가요](#get-help)
+
+<br>
+
+<a id="who-is-this-for"></a>
+
+## 🙋 이런 분들을 위한 레포입니다
+
+co:code는 엔지니어뿐 아니라 디자이너, PM도 하나의 엔지니어링 조직 아래에서 함께 일합니다. 그래서 **직군과 상관없이, 새로 합류한 모든 팀원이 이 스크립트 하나로 노트북을 세팅**합니다.
+
+"나는 개발자가 아닌데 왜 개발환경 스크립트를 실행하지?" 라는 생각이 드신다면, 이렇게 이해해주시면 됩니다.
+
+- 이 스크립트는 사실 여러 개의 앱과 도구를 하나씩 손으로 내려받아 설치하는 번거로운 과정을, 터미널(글자로 명령을 내리는 화면)에서 대신 자동으로 처리해주는 프로그램일 뿐입니다.
+- Slack, Figma, Chrome처럼 직군에 관계없이 매일 쓰는 앱들도 이 스크립트가 함께 설치해 드립니다.
+- 팀 전체의 노트북 환경이 같으면, 누가 무엇을 도와줄 때 "제 컴퓨터에서는 되는데요?" 같은 상황 없이 서로 빠르게 도와줄 수 있습니다.
+- 프로그래밍을 잘 모르셔도 괜찮습니다. 아래 [빠른 시작](#quickstart)만 따라 하시면 됩니다. 실행 중에는 지금 무엇을 하고 있는지 화면에 계속 안내 문구가 표시됩니다.
+- 스크립트 코드는 이 저장소의 [`mac-setup.sh`](./mac-setup.sh) 하나뿐이고, 전체가 공개되어 있어 누구나 열어서 무슨 일을 하는지 읽어볼 수 있습니다.
+
+<br>
+
+<a id="quickstart"></a>
+
+## 🚀 빠른 시작
+
+### 준비물
+
+- macOS가 설치된 맥북
+- Homebrew 설치 완료 — 없다면 [brew.sh](https://brew.sh) 안내를 따라 먼저 설치해주세요
+- Xcode 설치 완료 (App Store에서 설치)
+
+> 💡 **Homebrew가 뭔가요?** macOS에서 개발 도구들을 설치·관리해주는 프로그램입니다. 이 스크립트가 설치하는 대부분의 도구는 Homebrew를 통해 내려받아집니다. `mac-setup.sh`는 Homebrew가 없으면 바로 종료되고 안내 메시지를 보여주니, 먼저 설치해주세요.
+
+### 실행
+
+```bash
+git clone https://github.com/coco-de/co-mac.git
+cd co-mac
+chmod +x mac-setup.sh && ./mac-setup.sh
+```
+
+이게 전부입니다. 이후로는 화면에 뜨는 진행 상황(`▶ 단계 이름`)을 지켜보시면 됩니다. 도구별로 이미 설치되어 있으면 `✓`, 새로 설치하면 진행 로그, 일부가 실패해도 `⚠` 표시와 함께 건너뛰고 계속 진행됩니다.
+
+<details>
+<summary>예전에 쓰던 맥이 있다면 (선택 사항)</summary>
+
+<br>
+
+예전 맥의 터미널 테마·설정을 그대로 옮겨오고 싶다면, 그 맥에서 `~/.zshrc`, `~/.p10k.zsh` 두 파일을 **이 스크립트와 같은 폴더**에 복사해 둔 뒤 실행하세요. 스크립트가 이 파일들을 감지하면 그대로 복사해서 씁니다.
+
+이 두 파일은 저장소에 들어있지 않습니다. 각자의 개인 설정 파일이라 필요한 분만 직접 준비하시면 됩니다. 파일이 없으면 스크립트가 기본 설정을 새로 만들어 줍니다.
+
+⚠️ 예전 `.zshrc`를 가져오실 경우 [보안 안내](#is-it-safe)를 꼭 확인해주세요.
+
+</details>
+
+<br>
+
+<a id="whats-installed"></a>
+
+## 📦 무엇이 설치되나요
+
+| 분류 | 항목 |
+|---|---|
+| 🖥 GUI 앱 | Android Studio, Slack, Figma, Superset, Claude Desktop, Cursor, Zed, Google Chrome, 1Password |
+| 🤖 AI 코딩 도구 | Claude Code (터미널에서 쓰는 Claude CLI) |
+| 🛠 CLI 도구 | go, pyenv, nvm, git, gh, cocoapods, fastlane, awscli, colima, docker, docker-compose, zsh-syntax-highlighting, direnv, openjdk@17 |
+| 🐦 Flutter | fvm(버전 관리자)으로 Flutter stable 채널 글로벌 설정, DCM(Dart 코드 품질 검사 도구) |
+| 🎯 Dart 글로벌 패키지 | serverpod_cli 4.0.0-beta.0, marionette_mcp |
+| ☁️ 클라우드 | Google Cloud CLI (gcloud) |
+| 🐍 언어 런타임 | Python 최신 3.x (pyenv), Node.js LTS + npm (nvm) |
+| 💻 터미널 환경 | oh-my-zsh, powerlevel10k 테마, zsh-autosuggestions, zsh-syntax-highlighting, MesloLGS NF 폰트 |
+
+모든 항목은 이미 설치되어 있으면 건너뛰도록 되어 있어, 스크립트를 여러 번 실행해도 안전합니다.
+
+<details>
+<summary>도구별 상세 설명 펼쳐보기 (하나하나 뭔지 궁금하신 분만)</summary>
+
+<br>
+
+**GUI 앱 (Homebrew Cask)**
+
+| 도구 | 용도 |
+|---|---|
+| Android Studio | 안드로이드 앱 개발 IDE (Flutter 개발에도 사용) |
+| Slack | 팀 커뮤니케이션 |
+| Figma | 디자인 툴 |
+| Superset | 데이터 대시보드 / BI 툴 |
+| Claude Desktop | Claude AI 어시스턴트 데스크톱 앱 |
+| Cursor | AI 기반 코드 에디터 |
+| Zed | 코드 에디터 |
+| Google Chrome | 웹 브라우저 |
+| 1Password | 비밀번호 관리자 |
+
+이미 `/Applications`에 앱이 설치되어 있으면 건너뜁니다.
+
+**AI 코딩 도구**
+
+| 도구 | 용도 |
+|---|---|
+| Claude Code | 터미널에서 대화하듯 코드를 작성·수정하는 Claude CLI |
+
+**CLI 도구 (Homebrew Formula)**
+
+| 도구 | 용도 |
+|---|---|
+| go | Go 프로그래밍 언어 |
+| pyenv | 여러 Python 버전을 관리하는 도구 |
+| nvm | 여러 Node.js 버전을 관리하는 도구 |
+| git | 버전 관리 시스템 |
+| gh | GitHub를 터미널에서 다루는 도구 |
+| cocoapods | iOS 라이브러리 의존성 관리자 |
+| fastlane | 앱 빌드·배포 자동화 도구 |
+| awscli | AWS(아마존 클라우드)를 터미널에서 다루는 도구 |
+| colima | Docker Desktop 없이 가볍게 컨테이너를 실행하는 도구 |
+| docker / docker-compose | 컨테이너 실행 및 관리 CLI (colima와 함께 사용) |
+| zsh-syntax-highlighting | 터미널 명령어에 색을 입혀 오타를 줄여주는 플러그인 |
+| direnv | 폴더별로 필요한 환경 변수를 자동으로 불러와 주는 도구 |
+| openjdk@17 | 자바 17 (Android 빌드에 필요) |
+
+**Flutter / Dart**
+
+| 도구 | 용도 |
+|---|---|
+| fvm | Flutter 버전 관리자. `fvm global stable`로 stable 채널을 글로벌 설정 |
+| DCM (Dart Code Metrics) | Dart 코드 품질 검사 도구 |
+| serverpod_cli 4.0.0-beta.0 | Serverpod 백엔드 프레임워크 CLI (`dart pub global activate`로 설치) |
+| marionette_mcp | Dart 글로벌 패키지 (`dart pub global activate`로 설치) |
+
+**클라우드 / 언어 런타임**
+
+| 도구 | 용도 |
+|---|---|
+| gcloud (Google Cloud CLI) | Google Cloud를 터미널에서 다루는 도구. `gcloud-cli` 설치 실패 시 `google-cloud-sdk`로 대체 시도 |
+| Python 최신 3.x | pyenv로 설치되는 최신 안정 버전, `pyenv global`로 기본 지정 |
+| Node.js LTS + npm | nvm으로 설치, `nvm alias default`로 기본 지정 |
+
+**터미널 환경**
+
+| 도구 | 용도 |
+|---|---|
+| oh-my-zsh | zsh 설정을 편하게 관리해주는 프레임워크 |
+| powerlevel10k | 터미널 테마 (예쁘고 정보가 많은 프롬프트) |
+| zsh-autosuggestions | 이전에 입력한 명령어를 자동으로 제안해주는 플러그인 |
+| zsh-syntax-highlighting | oh-my-zsh 커스텀 플러그인으로도 추가 설치 |
+| MesloLGS NF (font-meslo-lg-nerd-font) | powerlevel10k가 아이콘을 제대로 표시하는 데 필요한 폰트 |
+
+</details>
+
+<br>
+
+<a id="after-install"></a>
+
+## ✅ 설치 후 확인할 것
+
+스크립트 맨 마지막에 아래 항목들의 버전을 자동으로 출력해서, 잘 설치됐는지 바로 확인할 수 있게 해줍니다.
+
+```
+fvm     : ...
+flutter : ...
+go      : ...
+python  : ...
+node    : ...
+npm     : ...
+claude  : ...
+```
+
+> `claude` 항목은 같은 터미널 세션에서 바로 버전이 안 잡힐 수 있어 `설치됨 (새 터미널에서 확인)`으로 표시될 수 있습니다. 정상입니다 — 새 터미널을 열면 확인됩니다.
+
+그 다음, 화면에 안내되는 대로 아래 순서를 진행해주세요.
+
+1. 새 터미널을 열거나 `source ~/.zshrc` 실행
+2. 터미널 앱(iTerm2/터미널) 환경설정에서 폰트를 **MesloLGS NF**로 변경 — 폰트 자체는 자동 설치되지만, 실제로 사용하도록 선택하는 건 직접 해주셔야 powerlevel10k 아이콘이 깨지지 않습니다
+3. `p10k configure` 실행 — 아직 p10k 테마 설정을 해본 적이 없다면
+4. Android Studio를 처음 실행해 SDK 설치 후 `flutter doctor` 실행
+5. `claude` 실행 후 Claude Code 로그인
+
+<br>
+
+<a id="is-it-safe"></a>
+
+## 🔒 안전한가요
+
+네, 안전하게 다시 실행할 수 있도록 설계되어 있습니다.
+
+- **이미 설치된 건 다시 건드리지 않습니다.** 앱/도구별로 설치 여부를 먼저 확인하고, 이미 있으면 `✓ 이미 설치됨`을 출력하고 건너뜁니다. 스크립트를 여러 번 실행해도 문제없습니다.
+- **일부가 실패해도 전체가 멈추지 않습니다.** 개별 항목 설치가 실패하면 `⚠` 표시와 함께 건너뛰고 나머지를 계속 진행합니다.
+- **설치 중 y/n 질문에 자동으로 답합니다.** (`NONINTERACTIVE=1`, `CI=true` 설정) 터미널 앞에서 계속 기다리지 않아도 되도록 하기 위함입니다.
+- **기존 `~/.zshrc`는 자동으로 백업됩니다.** 새 설정을 쓰기 전에 `~/.zshrc.backup.년월일시분초` 형식으로 복사해 둡니다. 마음에 안 들면 이 백업 파일로 언제든 되돌릴 수 있습니다.
+- **코드가 전부 공개돼 있습니다.** 이 저장소의 [`mac-setup.sh`](./mac-setup.sh) 파일이 스크립트의 전부이며, 실행 전에 직접 열어서 읽어보실 수 있습니다.
+
+<details>
+<summary>기존 .zshrc를 가져올 때 자동으로 적용되는 호환성 패치</summary>
+
+<br>
+
+예전 맥의 `.zshrc`를 그대로 가져오는 경우, 새 맥에서도 문제없이 동작하도록 아래 패치가 자동으로 적용됩니다.
+
+- `JAVA_HOME` 경로가 특정 버전으로 하드코딩되어 있으면, `brew --prefix openjdk@17` 기반 경로로 교체
+- `~/.local/bin/env`를 무조건 불러오던 줄 → 파일이 있을 때만 실행되도록 가드 추가
+- `direnv hook zsh`를 무조건 실행하던 줄 → direnv가 설치돼 있을 때만 실행되도록 가드 추가
+- 기존 `.zshrc`가 `~/powerlevel10k` 경로를 직접 참조하는 경우를 위해, 같은 위치에도 powerlevel10k를 추가로 내려받아 둠
+
+</details>
+
+<details open>
+<summary>⚠️ 보안 주의사항 (반드시 확인해주세요)</summary>
+
+<br>
+
+> **예전 맥의 `.zshrc`에 API 키(Anthropic, Figma, ZenHub, Gemini)가 평문으로 포함되어 있을 수 있습니다.**
+
+이 스크립트는 여러분이 같은 폴더에 넣어둔 `.zshrc`를 그대로 복사해서 사용합니다. 그 파일 안에 개인 API 키가 평문으로 적혀 있다면, 새 맥에도 그대로 옮겨집니다. 아래를 권장합니다.
+
+- 가능하다면 옮기기 전에 **키를 재발급**하세요.
+- API 키는 `~/.zshrc` 안에 직접 두지 말고, `~/.zshrc.local` 같은 별도 파일로 분리하는 것을 권장합니다.
+- 본인의 `.zshrc`/`.p10k.zsh`를 이 스크립트와 같은 폴더에 넣어두셨다면, **그 폴더를 통째로 압축해서 Slack이나 메일 등으로 외부에 공유하지 마세요.**
+
+</details>
+
+<br>
+
+<a id="troubleshooting"></a>
+
+## 🐛 문제가 생겼나요
+
+<details>
+<summary>터미널이 뭔가요? 처음이라 잘 모르겠어요</summary>
+
+<br>
+
+macOS에 기본으로 들어있는 앱입니다. `Cmd + Space`를 눌러 Spotlight 검색을 연 뒤 `터미널` 또는 `Terminal`을 입력하면 찾을 수 있습니다. 마우스로 클릭하는 대신 글자로 명령을 입력해서 컴퓨터에 일을 시키는 화면이라고 생각하시면 됩니다. 이 문서의 회색 박스 안 내용을 그대로 붙여넣고 Enter를 누르면 됩니다.
+
+</details>
+
+<details>
+<summary><code>brew: command not found</code> 라고 떠요</summary>
+
+<br>
+
+Homebrew가 설치되어 있지 않거나, 설치는 됐지만 터미널이 아직 경로를 인식하지 못하는 상태입니다.
+
+1. [brew.sh](https://brew.sh)에서 안내하는 방법으로 Homebrew를 설치하세요.
+2. 설치가 끝나면 안내 메시지에 나온 대로 터미널을 완전히 껐다가 다시 켜세요.
+3. `mac-setup.sh`를 다시 실행하세요.
+
+스크립트도 Homebrew가 없으면 `❌ Homebrew가 없습니다. 먼저 설치하세요: https://brew.sh` 라는 메시지를 보여주고 스스로 멈추도록 되어 있습니다.
+
+</details>
+
+<details>
+<summary>권한 오류(Permission denied)가 떠요</summary>
+
+<br>
+
+스크립트 파일에 실행 권한이 없어서 그렇습니다. 아래 명령어로 실행 권한을 준 뒤 다시 실행해보세요.
+
+```bash
+chmod +x mac-setup.sh
+./mac-setup.sh
+```
+
+</details>
+
+<details>
+<summary>중간에 <code>⚠</code> 표시가 뜨고 넘어갔어요. 괜찮은 건가요?</summary>
+
+<br>
+
+네, 괜찮습니다. 해당 항목 하나가 설치에 실패했다는 뜻이며, 스크립트는 멈추지 않고 나머지 항목을 계속 설치합니다. 스크립트를 다시 한번 실행하면 실패했던 항목만 다시 시도됩니다(이미 성공한 항목은 건너뜁니다). 재실행 후에도 계속 실패한다면 [도움이 필요하신가요](#get-help)를 확인해주세요.
+
+</details>
+
+<details>
+<summary>이미 설치되어 있는데 다시 설치되나요?</summary>
+
+<br>
+
+아니요. 스크립트는 각 항목마다 설치 여부를 먼저 확인하고, 이미 있으면 `✓ 이미 설치됨`을 표시하며 건너뜁니다. 그래서 몇 번을 다시 실행해도 안전합니다.
+
+</details>
+
+<br>
+
+<a id="get-help"></a>
+
+## 💬 도움이 필요하신가요
+
+혼자 해결하려 애쓰지 않으셔도 됩니다. 스크립트를 실행한 화면(어떤 메시지가 떴는지)을 그대로 캡처해서, 가장 가까운 엔지니어 동료나 온보딩 담당자에게 편하게 물어봐 주세요.
