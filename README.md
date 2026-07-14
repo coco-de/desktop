@@ -15,6 +15,7 @@
 
 - [🙋 이런 분들을 위한 레포입니다](#who-is-this-for)
 - [🚀 빠른 시작](#quickstart)
+- [🧰 우리 팀의 기술 스택](#tech-stack)
 - [📦 무엇이 설치되나요](#whats-installed)
 - [✅ 설치 후 확인할 것](#after-install)
 - [🔒 안전한가요](#is-it-safe)
@@ -76,6 +77,109 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 
 <br>
 
+<a id="tech-stack"></a>
+
+## 🧰 우리 팀의 기술 스택
+
+`mac-setup.sh` 하나로 co:code 팀 전체 노트북에 실제로 세팅되는 앱·CLI·언어 런타임을 한눈에 모았습니다. 아이콘은 [Simple Icons](https://simpleicons.org)에서 받아 이 저장소의 [`assets/icons/`](./assets/icons)에 함께 보관하고 있습니다. 공식 브랜드 아이콘이 아직 없는 도구는 이름만 표기했습니다.
+
+<br>
+
+**🖥 GUI 앱**
+
+<table>
+<tr>
+<td align="center" width="100"><img src="assets/icons/androidstudio.svg" width="36" height="36" alt="Android Studio"><br><sub><b>Android Studio</b></sub></td>
+<td align="center" width="100"><sub><b>Slack</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/figma.svg" width="36" height="36" alt="Figma"><br><sub><b>Figma</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/superset.svg" width="36" height="36" alt="Superset"><br><sub><b>Superset</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/claude.svg" width="36" height="36" alt="Claude Desktop"><br><sub><b>Claude Desktop</b></sub></td>
+</tr>
+<tr>
+<td align="center" width="100"><img src="assets/icons/cursor.svg" width="36" height="36" alt="Cursor"><br><sub><b>Cursor</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/zed.svg" width="36" height="36" alt="Zed"><br><sub><b>Zed</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/chrome.svg" width="36" height="36" alt="Google Chrome"><br><sub><b>Google Chrome</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/1password.svg" width="36" height="36" alt="1Password"><br><sub><b>1Password</b></sub></td>
+<td align="center" width="100"></td>
+</tr>
+</table>
+
+**🤖 AI 코딩 도구**
+
+<table>
+<tr>
+<td align="center" width="100"><img src="assets/icons/claude.svg" width="36" height="36" alt="Claude Code"><br><sub><b>Claude Code</b></sub></td>
+</tr>
+</table>
+
+**🛠 CLI 도구**
+
+<table>
+<tr>
+<td align="center" width="100"><img src="assets/icons/go.svg" width="36" height="36" alt="Go"><br><sub><b>go</b></sub></td>
+<td align="center" width="100"><sub><b>pyenv</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/nvm.svg" width="36" height="36" alt="nvm"><br><sub><b>nvm</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/git.svg" width="36" height="36" alt="git"><br><sub><b>git</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/github.svg" width="36" height="36" alt="GitHub CLI"><br><sub><b>gh</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/cocoapods.svg" width="36" height="36" alt="CocoaPods"><br><sub><b>cocoapods</b></sub></td>
+</tr>
+<tr>
+<td align="center" width="100"><img src="assets/icons/fastlane.svg" width="36" height="36" alt="fastlane"><br><sub><b>fastlane</b></sub></td>
+<td align="center" width="100"><sub><b>awscli</b></sub></td>
+<td align="center" width="100"><sub><b>colima</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/docker.svg" width="36" height="36" alt="docker"><br><sub><b>docker</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/docker.svg" width="36" height="36" alt="docker-compose"><br><sub><b>docker-compose</b></sub></td>
+<td align="center" width="100"><sub><b>direnv</b></sub></td>
+</tr>
+<tr>
+<td align="center" width="100"><img src="assets/icons/zsh.svg" width="36" height="36" alt="zsh-syntax-highlighting"><br><sub><b>zsh-syntax-<br>highlighting</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/openjdk.svg" width="36" height="36" alt="openjdk@17"><br><sub><b>openjdk@17</b></sub></td>
+<td align="center" width="100"></td>
+<td align="center" width="100"></td>
+<td align="center" width="100"></td>
+<td align="center" width="100"></td>
+</tr>
+</table>
+
+**🐦 Flutter / Dart**
+
+<table>
+<tr>
+<td align="center" width="100"><img src="assets/icons/flutter.svg" width="36" height="36" alt="fvm"><br><sub><b>fvm</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/dart.svg" width="36" height="36" alt="DCM"><br><sub><b>DCM</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/dart.svg" width="36" height="36" alt="serverpod_cli"><br><sub><b>serverpod_cli</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/dart.svg" width="36" height="36" alt="marionette_mcp"><br><sub><b>marionette_mcp</b></sub></td>
+</tr>
+</table>
+
+**☁️ 클라우드 / 🐍 언어 런타임**
+
+<table>
+<tr>
+<td align="center" width="100"><img src="assets/icons/gcloud.svg" width="36" height="36" alt="Google Cloud CLI"><br><sub><b>gcloud</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/python.svg" width="36" height="36" alt="Python"><br><sub><b>Python</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/nodejs.svg" width="36" height="36" alt="Node.js"><br><sub><b>Node.js</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/npm.svg" width="36" height="36" alt="npm"><br><sub><b>npm</b></sub></td>
+</tr>
+</table>
+
+**💻 터미널 환경**
+
+<table>
+<tr>
+<td align="center" width="100"><sub><b>oh-my-zsh</b></sub></td>
+<td align="center" width="100"><sub><b>powerlevel10k</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/zsh.svg" width="36" height="36" alt="zsh-autosuggestions"><br><sub><b>zsh-auto-<br>suggestions</b></sub></td>
+<td align="center" width="100"><sub><b>MesloLGS NF</b><br>(폰트)</sub></td>
+</tr>
+</table>
+
+<br>
+
+<sub>※ Slack, awscli, pyenv, colima, direnv, oh-my-zsh, powerlevel10k, MesloLGS NF는 Simple Icons에 등록된 공식 브랜드 아이콘이 없어 텍스트로만 표기했습니다. DCM · serverpod_cli · marionette_mcp는 Dart 생태계 도구라 Dart 아이콘으로 대신 표기했습니다.</sub>
+
+<br>
+
 <a id="whats-installed"></a>
 
 ## 📦 무엇이 설치되나요
@@ -101,25 +205,25 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 
 **GUI 앱 (Homebrew Cask)**
 
-| 도구 | 용도 |
-|---|---|
-| Android Studio | 안드로이드 앱 개발 IDE (Flutter 개발에도 사용) |
-| Slack | 팀 커뮤니케이션 |
-| Figma | 디자인 툴 |
-| Superset | 데이터 대시보드 / BI 툴 |
-| Claude Desktop | Claude AI 어시스턴트 데스크톱 앱 |
-| Cursor | AI 기반 코드 에디터 |
-| Zed | 코드 에디터 |
-| Google Chrome | 웹 브라우저 |
-| 1Password | 비밀번호 관리자 |
+| | 도구 | 용도 |
+|---|---|---|
+| <img src="assets/icons/androidstudio.svg" width="20" height="20"> | Android Studio | 안드로이드 앱 개발 IDE (Flutter 개발에도 사용) |
+| | Slack | 팀 커뮤니케이션 |
+| <img src="assets/icons/figma.svg" width="20" height="20"> | Figma | 디자인 툴 |
+| <img src="assets/icons/superset.svg" width="20" height="20"> | Superset | 데이터 대시보드 / BI 툴 |
+| <img src="assets/icons/claude.svg" width="20" height="20"> | Claude Desktop | Claude AI 어시스턴트 데스크톱 앱 |
+| <img src="assets/icons/cursor.svg" width="20" height="20"> | Cursor | AI 기반 코드 에디터 |
+| <img src="assets/icons/zed.svg" width="20" height="20"> | Zed | 코드 에디터 |
+| <img src="assets/icons/chrome.svg" width="20" height="20"> | Google Chrome | 웹 브라우저 |
+| <img src="assets/icons/1password.svg" width="20" height="20"> | 1Password | 비밀번호 관리자 |
 
 이미 `/Applications`에 앱이 설치되어 있으면 건너뜁니다.
 
 **AI 코딩 도구**
 
-| 도구 | 용도 |
-|---|---|
-| Claude Code | 터미널에서 대화하듯 코드를 작성·수정하는 Claude CLI |
+| | 도구 | 용도 |
+|---|---|---|
+| <img src="assets/icons/claude.svg" width="20" height="20"> | Claude Code | 터미널에서 대화하듯 코드를 작성·수정하는 Claude CLI |
 
 **Android SDK (자동 설치·구성)**
 
@@ -139,48 +243,48 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 
 **CLI 도구 (Homebrew Formula)**
 
-| 도구 | 용도 |
-|---|---|
-| go | Go 프로그래밍 언어 |
-| pyenv | 여러 Python 버전을 관리하는 도구 |
-| nvm | 여러 Node.js 버전을 관리하는 도구 |
-| git | 버전 관리 시스템 |
-| gh | GitHub를 터미널에서 다루는 도구 |
-| cocoapods | iOS 라이브러리 의존성 관리자 |
-| fastlane | 앱 빌드·배포 자동화 도구 |
-| awscli | AWS(아마존 클라우드)를 터미널에서 다루는 도구 |
-| colima | Docker Desktop 없이 가볍게 컨테이너를 실행하는 도구 |
-| docker / docker-compose | 컨테이너 실행 및 관리 CLI (colima와 함께 사용) |
-| zsh-syntax-highlighting | 터미널 명령어에 색을 입혀 오타를 줄여주는 플러그인 |
-| direnv | 폴더별로 필요한 환경 변수를 자동으로 불러와 주는 도구 |
-| openjdk@17 | 자바 17 (Android 빌드에 필요) |
+| | 도구 | 용도 |
+|---|---|---|
+| <img src="assets/icons/go.svg" width="20" height="20"> | go | Go 프로그래밍 언어 |
+| | pyenv | 여러 Python 버전을 관리하는 도구 |
+| <img src="assets/icons/nvm.svg" width="20" height="20"> | nvm | 여러 Node.js 버전을 관리하는 도구 |
+| <img src="assets/icons/git.svg" width="20" height="20"> | git | 버전 관리 시스템 |
+| <img src="assets/icons/github.svg" width="20" height="20"> | gh | GitHub를 터미널에서 다루는 도구 |
+| <img src="assets/icons/cocoapods.svg" width="20" height="20"> | cocoapods | iOS 라이브러리 의존성 관리자 |
+| <img src="assets/icons/fastlane.svg" width="20" height="20"> | fastlane | 앱 빌드·배포 자동화 도구 |
+| | awscli | AWS(아마존 클라우드)를 터미널에서 다루는 도구 |
+| | colima | Docker Desktop 없이 가볍게 컨테이너를 실행하는 도구 |
+| <img src="assets/icons/docker.svg" width="20" height="20"> | docker / docker-compose | 컨테이너 실행 및 관리 CLI (colima와 함께 사용) |
+| <img src="assets/icons/zsh.svg" width="20" height="20"> | zsh-syntax-highlighting | 터미널 명령어에 색을 입혀 오타를 줄여주는 플러그인 |
+| | direnv | 폴더별로 필요한 환경 변수를 자동으로 불러와 주는 도구 |
+| <img src="assets/icons/openjdk.svg" width="20" height="20"> | openjdk@17 | 자바 17 (Android 빌드에 필요) |
 
 **Flutter / Dart**
 
-| 도구 | 용도 |
-|---|---|
-| fvm | Flutter 버전 관리자. `fvm global stable`로 stable 채널을 글로벌 설정 |
-| DCM (Dart Code Metrics) | Dart 코드 품질 검사 도구 |
-| serverpod_cli 4.0.0-beta.0 | Serverpod 백엔드 프레임워크 CLI (`dart pub global activate`로 설치) |
-| marionette_mcp | Dart 글로벌 패키지 (`dart pub global activate`로 설치) |
+| | 도구 | 용도 |
+|---|---|---|
+| <img src="assets/icons/flutter.svg" width="20" height="20"> | fvm | Flutter 버전 관리자. `fvm global stable`로 stable 채널을 글로벌 설정 |
+| <img src="assets/icons/dart.svg" width="20" height="20"> | DCM (Dart Code Metrics) | Dart 코드 품질 검사 도구 |
+| <img src="assets/icons/dart.svg" width="20" height="20"> | serverpod_cli 4.0.0-beta.0 | Serverpod 백엔드 프레임워크 CLI (`dart pub global activate`로 설치) |
+| <img src="assets/icons/dart.svg" width="20" height="20"> | marionette_mcp | Dart 글로벌 패키지 (`dart pub global activate`로 설치) |
 
 **클라우드 / 언어 런타임**
 
-| 도구 | 용도 |
-|---|---|
-| gcloud (Google Cloud CLI) | Google Cloud를 터미널에서 다루는 도구. `gcloud-cli` 설치 실패 시 `google-cloud-sdk`로 대체 시도 |
-| Python 최신 3.x | pyenv로 설치되는 최신 안정 버전, `pyenv global`로 기본 지정 |
-| Node.js LTS + npm | nvm으로 설치, `nvm alias default`로 기본 지정 |
+| | 도구 | 용도 |
+|---|---|---|
+| <img src="assets/icons/gcloud.svg" width="20" height="20"> | gcloud (Google Cloud CLI) | Google Cloud를 터미널에서 다루는 도구. `gcloud-cli` 설치 실패 시 `google-cloud-sdk`로 대체 시도 |
+| <img src="assets/icons/python.svg" width="20" height="20"> | Python 최신 3.x | pyenv로 설치되는 최신 안정 버전, `pyenv global`로 기본 지정 |
+| <img src="assets/icons/nodejs.svg" width="20" height="20"> | Node.js LTS + npm | nvm으로 설치, `nvm alias default`로 기본 지정 |
 
 **터미널 환경**
 
-| 도구 | 용도 |
-|---|---|
-| oh-my-zsh | zsh 설정을 편하게 관리해주는 프레임워크 |
-| powerlevel10k | 터미널 테마 (예쁘고 정보가 많은 프롬프트) |
-| zsh-autosuggestions | 이전에 입력한 명령어를 자동으로 제안해주는 플러그인 |
-| zsh-syntax-highlighting | oh-my-zsh 커스텀 플러그인으로도 추가 설치 |
-| MesloLGS NF (font-meslo-lg-nerd-font) | powerlevel10k가 아이콘을 제대로 표시하는 데 필요한 폰트 |
+| | 도구 | 용도 |
+|---|---|---|
+| | oh-my-zsh | zsh 설정을 편하게 관리해주는 프레임워크 |
+| | powerlevel10k | 터미널 테마 (예쁘고 정보가 많은 프롬프트) |
+| <img src="assets/icons/zsh.svg" width="20" height="20"> | zsh-autosuggestions | 이전에 입력한 명령어를 자동으로 제안해주는 플러그인 |
+| <img src="assets/icons/zsh.svg" width="20" height="20"> | zsh-syntax-highlighting | oh-my-zsh 커스텀 플러그인으로도 추가 설치 |
+| | MesloLGS NF (font-meslo-lg-nerd-font) | powerlevel10k가 아이콘을 제대로 표시하는 데 필요한 폰트 |
 
 </details>
 
