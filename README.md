@@ -81,7 +81,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 
 ## 🧰 우리 팀의 기술 스택
 
-`mac-setup.sh` 하나로 co:code 팀 전체 노트북에 실제로 세팅되는 앱·CLI·언어 런타임을 한눈에 모았습니다. 아이콘은 [Simple Icons](https://simpleicons.org)에서 받아 이 저장소의 [`assets/icons/`](./assets/icons)에 함께 보관하고 있습니다. 공식 브랜드 아이콘이 아직 없는 도구는 이름만 표기했습니다.
+`mac-setup.sh` 하나로 co:code 팀 전체 노트북에 실제로 세팅되는 앱·CLI·언어 런타임을 한눈에 모았습니다. 아이콘은 대부분 [Simple Icons](https://simpleicons.org)에서 받아 이 저장소의 [`assets/icons/`](./assets/icons)에 함께 보관하고 있습니다(Superset은 [superset.sh](https://superset.sh) 공식 아이콘 사용). 공식 브랜드 아이콘이 아직 없는 도구는 이름만 표기했습니다.
 
 <br>
 
@@ -92,15 +92,15 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 <td align="center" width="100"><img src="assets/icons/androidstudio.svg" width="36" height="36" alt="Android Studio"><br><sub><b>Android Studio</b></sub></td>
 <td align="center" width="100"><sub><b>Slack</b></sub></td>
 <td align="center" width="100"><img src="assets/icons/figma.svg" width="36" height="36" alt="Figma"><br><sub><b>Figma</b></sub></td>
-<td align="center" width="100"><img src="assets/icons/superset.svg" width="36" height="36" alt="Superset"><br><sub><b>Superset</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/superset.png" width="36" height="36" alt="Superset"><br><sub><b>Superset</b></sub></td>
 <td align="center" width="100"><img src="assets/icons/claude.svg" width="36" height="36" alt="Claude Desktop"><br><sub><b>Claude Desktop</b></sub></td>
 </tr>
 <tr>
-<td align="center" width="100"><img src="assets/icons/cursor.svg" width="36" height="36" alt="Cursor"><br><sub><b>Cursor</b></sub></td>
-<td align="center" width="100"><img src="assets/icons/zed.svg" width="36" height="36" alt="Zed"><br><sub><b>Zed</b></sub></td>
 <td align="center" width="100"><img src="assets/icons/chrome.svg" width="36" height="36" alt="Google Chrome"><br><sub><b>Google Chrome</b></sub></td>
 <td align="center" width="100"><img src="assets/icons/1password.svg" width="36" height="36" alt="1Password"><br><sub><b>1Password</b></sub></td>
 <td align="center" width="100"><sub><b>Dia</b></sub></td>
+<td align="center" width="100"></td>
+<td align="center" width="100"></td>
 </tr>
 </table>
 
@@ -186,7 +186,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 
 | 분류 | 항목 |
 |---|---|
-| 🖥 GUI 앱 | Android Studio, Slack, Figma, Superset, Claude Desktop, Cursor, Zed, Google Chrome, Dia, 1Password |
+| 🖥 GUI 앱 | Android Studio, Slack, Figma, Superset, Claude Desktop, Google Chrome, Dia, 1Password |
 | 🤖 AI 코딩 도구 | Claude Code (터미널에서 쓰는 Claude CLI) |
 | 📱 Android SDK | cmdline-tools, platform-tools, build-tools, platforms, NDK, 에뮬레이터 시스템 이미지, AVD까지 전부 자동 설치·구성 (Android Studio 첫 실행 마법사 불필요) |
 | 🛠 CLI 도구 | go, pyenv, nvm, git, gh, cocoapods, fastlane, awscli, colima, docker, docker-compose, zsh-syntax-highlighting, direnv, openjdk@17 |
@@ -210,10 +210,8 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 | <img src="assets/icons/androidstudio.svg" width="20" height="20"> | Android Studio | 안드로이드 앱 개발 IDE (Flutter 개발에도 사용) |
 | | Slack | 팀 커뮤니케이션 |
 | <img src="assets/icons/figma.svg" width="20" height="20"> | Figma | 디자인 툴 |
-| <img src="assets/icons/superset.svg" width="20" height="20"> | Superset | 데이터 대시보드 / BI 툴 |
+| <img src="assets/icons/superset.png" width="20" height="20"> | Superset | AI 코딩 에이전트 오케스트레이션 플랫폼 ([superset.sh](https://superset.sh)) |
 | <img src="assets/icons/claude.svg" width="20" height="20"> | Claude Desktop | Claude AI 어시스턴트 데스크톱 앱 |
-| <img src="assets/icons/cursor.svg" width="20" height="20"> | Cursor | AI 기반 코드 에디터 |
-| <img src="assets/icons/zed.svg" width="20" height="20"> | Zed | 코드 에디터 |
 | <img src="assets/icons/chrome.svg" width="20" height="20"> | Google Chrome | 웹 브라우저 |
 | | Dia | AI 기반 웹 브라우저 |
 | <img src="assets/icons/1password.svg" width="20" height="20"> | 1Password | 비밀번호 관리자 |
