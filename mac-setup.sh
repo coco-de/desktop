@@ -106,6 +106,71 @@ log "DCM 설치"
 brew tap CQLabs/dcm 2>/dev/null || true
 brew list dcm >/dev/null 2>&1 && echo "  ✓ dcm 이미 설치됨" || yes | brew install dcm || echo "  ⚠ dcm 설치 실패 → 건너뜀"
 
+# Android SDK 구성요소 (cmdline-tools, platform-tools, build-tools, platforms, NDK, 에뮬레이터, AVD)
+# Android Studio(GUI)를 직접 실행해 SDK 설치 마법사를 거치지 않아도 되도록,
+# brew의 cmdline-tools만으로 표준 SDK 위치($ANDROID_HOME)에 필요한 구성요소를 전부 설치한다.
+log "Android SDK 구성요소 설치 (cmdline-tools, platform-tools, build-tools, platforms, NDK, AVD)"
+
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+export ANDROID_SDK_ROOT="$ANDROID_HOME"
+mkdir -p "$ANDROID_HOME"
+
+# sdkmanager 실행에는 JDK가 필요 (openjdk@17은 위 3단계에서 설치됨)
+JAVA_HOME="$(brew --prefix openjdk@17)/libexec/openjdk.jdk/Contents/Home"
+export JAVA_HOME
+export PATH="$JAVA_HOME/bin:$PATH"
+
+brew list --cask android-commandlinetools >/dev/null 2>&1 && echo "  ✓ android-commandlinetools 이미 설치됨" || \
+  brew install --cask android-commandlinetools || echo "  ⚠ android-commandlinetools 설치 실패 → 건너뜀"
+
+# Android Studio/터미널이 표준 위치($ANDROID_HOME/cmdline-tools/latest)에서도 찾을 수 있도록 심볼릭 링크 연결
+BREW_CMDLINE_TOOLS="$(brew --prefix)/share/android-commandlinetools/cmdline-tools/latest"
+if [[ -d "$BREW_CMDLINE_TOOLS" ]]; then
+  mkdir -p "$ANDROID_HOME/cmdline-tools"
+  [[ -e "$ANDROID_HOME/cmdline-tools/latest" ]] || ln -s "$BREW_CMDLINE_TOOLS" "$ANDROID_HOME/cmdline-tools/latest"
+fi
+
+SDKMANAGER="$(brew --prefix)/share/android-commandlinetools/cmdline-tools/latest/bin/sdkmanager"
+AVDMANAGER="$(brew --prefix)/share/android-commandlinetools/cmdline-tools/latest/bin/avdmanager"
+
+if [[ -x "$SDKMANAGER" ]]; then
+  yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --licenses >/dev/null 2>&1 || true
+
+  # 최신 안정 버전 자동 탐지 (프리뷰 채널 제외) — pyenv 최신 버전 탐지와 동일한 방식
+  SDK_LIST="$("$SDKMANAGER" --sdk_root="$ANDROID_HOME" --list 2>/dev/null)" || true
+  LATEST_PLATFORM=$(echo "$SDK_LIST" | grep -oE '^[[:space:]]*platforms;android-[0-9]+' | tr -d ' ' | sort -t'-' -k2 -n | tail -1)
+  LATEST_BUILD_TOOLS=$(echo "$SDK_LIST" | grep -oE '^[[:space:]]*build-tools;[0-9]+\.[0-9]+\.[0-9]+' | tr -d ' ' | sort -t';' -k2 -V | tail -1)
+  LATEST_NDK=$(echo "$SDK_LIST" | grep -oE '^[[:space:]]*ndk;[0-9]+\.[0-9]+\.[0-9]+' | tr -d ' ' | sort -t';' -k2 -V | tail -1)
+
+  ARCH_ABI="arm64-v8a"
+  [[ "$(uname -m)" == "x86_64" ]] && ARCH_ABI="x86_64"
+  SYSTEM_IMAGE="system-images;${LATEST_PLATFORM#platforms;};google_apis;${ARCH_ABI}"
+
+  PACKAGES=("platform-tools" "emulator")
+  [[ -n "$LATEST_BUILD_TOOLS" ]] && PACKAGES+=("$LATEST_BUILD_TOOLS")
+  [[ -n "$LATEST_PLATFORM" ]] && PACKAGES+=("$LATEST_PLATFORM" "$SYSTEM_IMAGE")
+  [[ -n "$LATEST_NDK" ]] && PACKAGES+=("$LATEST_NDK")
+
+  echo "  설치할 패키지: ${PACKAGES[*]}"
+  yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" "${PACKAGES[@]}" \
+    || echo "  ⚠ Android SDK 구성요소 일부 설치 실패 → 건너뜀"
+
+  [[ -n "$LATEST_NDK" ]] && export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/${LATEST_NDK#ndk;}"
+
+  # AVD 생성 (이미 있으면 건너뜀)
+  if [[ -x "$AVDMANAGER" && -n "$LATEST_PLATFORM" ]]; then
+    AVD_NAME="Pixel_6_API_${LATEST_PLATFORM#platforms;android-}"
+    if "$AVDMANAGER" list avd 2>/dev/null | grep -q "$AVD_NAME"; then
+      echo "  ✓ AVD($AVD_NAME) 이미 존재"
+    else
+      echo "no" | "$AVDMANAGER" create avd -n "$AVD_NAME" -k "$SYSTEM_IMAGE" -d pixel_6 \
+        || echo "  ⚠ AVD 생성 실패 → 건너뜀 (Android Studio Device Manager에서 수동 생성 가능)"
+    fi
+  fi
+else
+  echo "  ⚠ sdkmanager를 찾을 수 없어 Android SDK 구성요소 설치를 건너뜁니다"
+fi
+
 # ------------------------------------------------------------
 # 5. Python (pyenv로 최신 3.x)
 # ------------------------------------------------------------
@@ -216,7 +281,8 @@ export NVM_DIR="$HOME/.nvm"
 
 # ===== Android =====
 export ANDROID_HOME="$HOME/Library/Android/sdk"
-export PATH="$ANDROID_HOME/platform-tools:$PATH"
+export ANDROID_SDK_ROOT="$ANDROID_HOME"
+export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH"
 
 # ===== powerlevel10k config =====
 [[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
@@ -235,10 +301,13 @@ echo "  python  : $(pyenv exec python --version 2>/dev/null || echo '❌')"
 echo "  node    : $(node --version 2>/dev/null || echo '❌')"
 echo "  npm     : $(npm --version 2>/dev/null || echo '❌')"
 echo "  claude  : $(claude --version 2>/dev/null || echo '설치됨 (새 터미널에서 확인)')"
+echo "  android : $([[ -x "$ANDROID_HOME/platform-tools/adb" ]] && echo "✓ $ANDROID_HOME" || echo '❌')"
+echo "  ndk     : $([[ -n "${ANDROID_NDK_HOME:-}" && -d "${ANDROID_NDK_HOME:-}" ]] && echo "✓ $ANDROID_NDK_HOME" || echo '❌')"
+echo "  avd     : $([[ -n "${AVD_NAME:-}" ]] && "$AVDMANAGER" list avd 2>/dev/null | grep -q "$AVD_NAME" && echo "✓ $AVD_NAME" || echo '❌')"
 
 echo ""
 echo "✅ 완료! 다음 단계:"
 echo "  1. 새 터미널을 열거나: source ~/.zshrc"
 echo "  2. p10k 테마 설정이 없다면: p10k configure"
-echo "  3. Android Studio 첫 실행 후 SDK 설치, 그리고: flutter doctor"
+echo "  3. Android Studio 실행 후 flutter doctor (SDK/NDK/AVD는 이미 자동 설치·구성됨)"
 echo "  4. Claude Code 로그인: claude"
