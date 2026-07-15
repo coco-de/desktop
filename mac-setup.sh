@@ -412,13 +412,15 @@ fi
 # 8.5. ZENHUB_API_TOKEN 주입 (팀 공용 토큰 — 1Password에서 자동 주입)
 #   토큰 값은 git에 커밋하지 않는다. 팀 공용 1Password 항목에서 op CLI로 읽어
 #   ~/.zshrc의 ZENHUB_API_TOKEN에 기록한다. (section 8에서 .zshrc가 확정된 뒤 실행)
-#   ⚠️ 팀 환경에 맞게 아래 ZENHUB_TOKEN_OP_REF(op:// 경로)만 실제 공용 항목으로 설정하세요.
-#   전제: op(1password-cli) 설치됨 + 1Password 앱 CLI 통합 활성화 또는 `op signin` 완료
+#   전제: op(1password-cli) 설치됨 + 1Password 앱 CLI 통합 활성화(팀 team-cocodeinc 계정 로그인)
+#   ※ 팀 공용 1Password 항목: "API Token" 볼트 > "ZenHub API Token" > credential 필드
+#     (계정이 여러 개인 사용자도 동작하도록 --account로 팀 계정을 명시)
 # ------------------------------------------------------------
-ZENHUB_TOKEN_OP_REF="op://Engineering/ZenHub API Token/credential"   # ← 팀 공용 1Password 항목 경로 (수정 필요)
+ZENHUB_TOKEN_OP_ACCOUNT="team-cocodeinc.1password.com"                # 팀 1Password 계정 (비밀 아님)
+ZENHUB_TOKEN_OP_REF="op://API Token/ZenHub API Token/credential"      # 팀 공용 항목 경로 (값은 1Password에만 존재)
 log "ZENHUB_API_TOKEN 주입 (1Password 공용 토큰)"
 if have op; then
-  if zh_token="$(op read "$ZENHUB_TOKEN_OP_REF" 2>/dev/null)" && [[ -n "$zh_token" ]]; then
+  if zh_token="$(op read --account "$ZENHUB_TOKEN_OP_ACCOUNT" "$ZENHUB_TOKEN_OP_REF" 2>/dev/null)" && [[ -n "$zh_token" ]]; then
     touch "$HOME/.zshrc"
     # 기존 ZENHUB_API_TOKEN 라인 제거 후 재기록 (sed 치환 시 토큰 특수문자 문제 회피)
     { grep -v '^export ZENHUB_API_TOKEN=' "$HOME/.zshrc" || true; } > "$HOME/.zshrc.tmp"
@@ -426,8 +428,8 @@ if have op; then
     printf 'export ZENHUB_API_TOKEN=%q\n' "$zh_token" >> "$HOME/.zshrc"
     echo "  ✓ ZENHUB_API_TOKEN 주입 완료 (~/.zshrc, 토큰 값은 커밋되지 않음)"
   else
-    echo "  ⚠ op read 실패 → '1Password 앱 > 설정 > 개발자 > CLI 통합' 활성화 또는 'op signin' 후 재실행"
-    echo "     (op 경로 확인: $ZENHUB_TOKEN_OP_REF)"
+    echo "  ⚠ op read 실패 → '1Password 앱 > 설정 > 개발자 > 1Password CLI와 통합' 활성화 + 팀($ZENHUB_TOKEN_OP_ACCOUNT) 계정 로그인 후 재실행"
+    echo "     (op 항목: $ZENHUB_TOKEN_OP_REF)"
   fi
 else
   echo "  ⚠ op(1password-cli) 미설치 → ZENHUB_API_TOKEN 수동 설정 필요"
