@@ -55,6 +55,7 @@ install_cask claude                 "Claude.app"
 install_cask google-chrome          "Google Chrome.app"
 install_cask thebrowsercompany-dia  "Dia.app"
 install_cask 1password              "1Password.app"
+install_cask 1password-cli          ""                          # op CLI (ZENHUB_API_TOKEN 공용 토큰 주입에 사용)
 install_cask tailscale              "Tailscale.app"
 install_cask orca                   "Orca.app"                 stablyai/orca/orca
 install_cask lumide                 "Lumide.app"
@@ -105,7 +106,7 @@ if have claude; then
       npx -y mcp-remote https://api.zenhub.com/mcp \
       --header 'Authorization:${ZENHUB_API_TOKEN}' \
       --header 'X-zh-workspace:69ae742925c359000f5acf14' >/dev/null 2>&1 \
-      && echo "  ✓ zenhub MCP 등록 (~/.zshrc의 ZENHUB_API_TOKEN 설정 필요)" \
+      && echo "  ✓ zenhub MCP 등록 (토큰은 8.5단계에서 1Password 공용 항목으로 주입)" \
       || echo "  ⚠ zenhub MCP 등록 실패 → 건너뜀"
   fi
 else
@@ -381,6 +382,31 @@ ZSHRC
 fi
 
 # ------------------------------------------------------------
+# 8.5. ZENHUB_API_TOKEN 주입 (팀 공용 토큰 — 1Password에서 자동 주입)
+#   토큰 값은 git에 커밋하지 않는다. 팀 공용 1Password 항목에서 op CLI로 읽어
+#   ~/.zshrc의 ZENHUB_API_TOKEN에 기록한다. (section 8에서 .zshrc가 확정된 뒤 실행)
+#   ⚠️ 팀 환경에 맞게 아래 ZENHUB_TOKEN_OP_REF(op:// 경로)만 실제 공용 항목으로 설정하세요.
+#   전제: op(1password-cli) 설치됨 + 1Password 앱 CLI 통합 활성화 또는 `op signin` 완료
+# ------------------------------------------------------------
+ZENHUB_TOKEN_OP_REF="op://Engineering/ZenHub API Token/credential"   # ← 팀 공용 1Password 항목 경로 (수정 필요)
+log "ZENHUB_API_TOKEN 주입 (1Password 공용 토큰)"
+if have op; then
+  if zh_token="$(op read "$ZENHUB_TOKEN_OP_REF" 2>/dev/null)" && [[ -n "$zh_token" ]]; then
+    touch "$HOME/.zshrc"
+    # 기존 ZENHUB_API_TOKEN 라인 제거 후 재기록 (sed 치환 시 토큰 특수문자 문제 회피)
+    { grep -v '^export ZENHUB_API_TOKEN=' "$HOME/.zshrc" || true; } > "$HOME/.zshrc.tmp"
+    mv "$HOME/.zshrc.tmp" "$HOME/.zshrc"
+    printf 'export ZENHUB_API_TOKEN=%q\n' "$zh_token" >> "$HOME/.zshrc"
+    echo "  ✓ ZENHUB_API_TOKEN 주입 완료 (~/.zshrc, 토큰 값은 커밋되지 않음)"
+  else
+    echo "  ⚠ op read 실패 → '1Password 앱 > 설정 > 개발자 > CLI 통합' 활성화 또는 'op signin' 후 재실행"
+    echo "     (op 경로 확인: $ZENHUB_TOKEN_OP_REF)"
+  fi
+else
+  echo "  ⚠ op(1password-cli) 미설치 → ZENHUB_API_TOKEN 수동 설정 필요"
+fi
+
+# ------------------------------------------------------------
 # 9. 검증
 # ------------------------------------------------------------
 log "설치 검증"
@@ -393,7 +419,8 @@ echo "  npm     : $(npm --version 2>/dev/null || echo '❌')"
 echo "  claude  : $(claude --version 2>/dev/null || echo '설치됨 (새 터미널에서 확인)')"
 echo "  mcp:jira: $(claude plugin list 2>/dev/null | grep -q 'atlassian@claude-plugins-official' && echo '✓ 설치됨 (/mcp 로그인 필요)' || echo '❌')"
 echo "  mcp:figma: $(claude plugin list 2>/dev/null | grep -q 'figma@claude-plugins-official' && echo '✓ 설치됨 (/mcp 로그인 필요)' || echo '❌')"
-echo "  mcp:zenhub: $(claude mcp list 2>/dev/null | grep -q '^zenhub' && echo "✓ 등록됨$([[ -z \"${ZENHUB_API_TOKEN:-}\" ]] && echo ' (⚠ ZENHUB_API_TOKEN 미설정)')" || echo '❌')"
+ZH_VAL=$(grep '^export ZENHUB_API_TOKEN=' "$HOME/.zshrc" 2>/dev/null | tail -1 | sed 's/^export ZENHUB_API_TOKEN=//; s/^"//; s/"$//')
+echo "  mcp:zenhub: $(claude mcp list 2>/dev/null | grep -q '^zenhub' && echo "✓ 등록됨$([[ -z "$ZH_VAL" ]] && echo ' (⚠ 토큰 미주입 — op signin 후 재실행)')" || echo '❌')"
 echo "  maestro : $(maestro --version 2>/dev/null | head -1 || echo '❌')"
 echo "  marionette: $([[ -x "$PUB_CACHE/bin/marionette_mcp" ]] && echo '✓' || echo '❌')"
 CS_COUNT=$(ls -d "$HOME/.claude/plugins/marketplaces/cocode-skills/plugins"/*/ 2>/dev/null | grep -c .)
@@ -409,5 +436,5 @@ echo "  2. p10k 테마 설정이 없다면: p10k configure"
 echo "  3. Android Studio 실행 후 flutter doctor (SDK/NDK/AVD는 이미 자동 설치·구성됨)"
 echo "  4. Claude Code 로그인: claude"
 echo "  5. Claude Code에서 /mcp 실행 → atlassian(jira), figma 각각 팀 계정으로 OAuth 로그인 (최초 1회)"
-echo "  6. zenhub MCP 사용하려면 ~/.zshrc의 ZENHUB_API_TOKEN 값을 1Password에서 채운 뒤 새 터미널 (marionette·dart MCP는 설정 불필요)"
+echo "  6. zenhub 토큰이 '미주입'이면: 1Password 앱의 CLI 통합 활성화(또는 op signin) 후 스크립트 재실행 → 팀 공용 토큰 자동 주입 (marionette·dart MCP는 설정 불필요)"
 echo "  7. cocode-skills 팀 플러그인이 '❌'이면: gh auth login 후 스크립트 재실행 (사설 레포 접근에 gh 인증 필요)"
