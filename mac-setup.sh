@@ -32,17 +32,18 @@ export CI=true                   # 많은 CLI가 CI 모드에서 프롬프트 �
 # ------------------------------------------------------------
 # 1. GUI 앱 (brew cask)
 # ------------------------------------------------------------
-log "GUI 앱 설치 (Android Studio, Slack, Figma, Superset, Claude Desktop, Chrome, Dia, 1Password, Tailscale)"
+log "GUI 앱 설치 (Android Studio, Slack, Figma, Superset, Claude Desktop, Chrome, Dia, 1Password, Tailscale, Orca)"
 
 # cask 설치 (이미 /Applications 에 수동 설치된 앱은 건너뜀)
 install_cask() {
-  local cask="$1" app="$2"
+  # $1: cask 토큰 (brew list/skip 판별용), $2: 앱 이름, $3: 설치 인자(탭 경로 등, 기본값 $1)
+  local cask="$1" app="$2" install_target="${3:-$1}"
   if brew list --cask "$cask" >/dev/null 2>&1; then
     echo "  ✓ $cask 이미 설치됨 (brew)"
   elif [[ -n "$app" && ( -d "/Applications/$app" || -d "$HOME/Applications/$app" ) ]]; then
     echo "  ✓ $app 이미 존재 → 건너뜀"
   else
-    brew install --cask "$cask" || echo "  ⚠ $cask 설치 실패 → 건너뜀 (수동 확인 필요)"
+    brew install --cask "$install_target" || echo "  ⚠ $cask 설치 실패 → 건너뜀 (수동 확인 필요)"
   fi
 }
 
@@ -55,6 +56,7 @@ install_cask google-chrome          "Google Chrome.app"
 install_cask thebrowsercompany-dia  "Dia.app"
 install_cask 1password              "1Password.app"
 install_cask tailscale              "Tailscale.app"
+install_cask orca                   "Orca.app"                 stablyai/orca/orca
 
 # ------------------------------------------------------------
 # 2. Claude Code CLI
