@@ -71,10 +71,7 @@ alias k="kubectl"
 alias mk="minikube"
 
 ## 자주 사용하는 폴더로 이동 (없으면 무시됨)
-alias gonft="cd ~/Development/gonft"
 alias cocode="cd ~/Development/cocode"
-alias onuii="cd ~/Development/onuii"
-alias triup="cd ~/Development/triup"
 
 ## Claude
 alias claude='claude --dangerously-skip-permissions'
