@@ -229,6 +229,16 @@ log "~/.zshrc 설정"
 if [[ -f "$SCRIPT_DIR/.p10k.zsh" ]]; then
   cp "$SCRIPT_DIR/.p10k.zsh" "$HOME/.p10k.zsh"
   echo "  ✓ 기존 .p10k.zsh 복사 완료"
+elif [[ ! -f "$HOME/.p10k.zsh" ]]; then
+  # 기존 맥에서 .p10k.zsh를 가져오지 않은 새 맥: powerlevel10k 기본 설정을 복사한다.
+  # 이게 없으면 새 셸마다 설정 마법사(p10k configure)가 떠서 "세팅이 정상적이지 않게" 보인다.
+  P10K_DEFAULT="$ZSH_CUSTOM/themes/powerlevel10k/config/p10k-lean.zsh"
+  if [[ -f "$P10K_DEFAULT" ]]; then
+    cp "$P10K_DEFAULT" "$HOME/.p10k.zsh"
+    echo "  ✓ 기본 .p10k.zsh 생성 완료 (p10k-lean, 설정 마법사 생략)"
+  else
+    echo "  ⚠ p10k 기본 설정 템플릿을 찾지 못함 — 새 셸에서 'p10k configure' 직접 실행 필요"
+  fi
 fi
 
 if [[ -f "$SCRIPT_DIR/.zshrc" ]]; then
@@ -258,6 +268,8 @@ fi
 
 # ===== oh-my-zsh =====
 export ZSH="$HOME/.oh-my-zsh"
+# ~/.p10k.zsh 가 없더라도 설정 마법사가 자동으로 뜨지 않게 한다(정상 프롬프트로 시작).
+export POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true
 ZSH_THEME="powerlevel10k/powerlevel10k"
 plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
 source $ZSH/oh-my-zsh.sh
