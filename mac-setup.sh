@@ -235,15 +235,28 @@ export PATH="$JAVA_HOME/bin:$PATH"
 brew list --cask android-commandlinetools >/dev/null 2>&1 && echo "  ✓ android-commandlinetools 이미 설치됨" || \
   brew install --cask android-commandlinetools || echo "  ⚠ android-commandlinetools 설치 실패 → 건너뜀"
 
-# Android Studio/터미널이 표준 위치($ANDROID_HOME/cmdline-tools/latest)에서도 찾을 수 있도록 심볼릭 링크 연결
-BREW_CMDLINE_TOOLS="$(brew --prefix)/share/android-commandlinetools/cmdline-tools/latest"
-if [[ -d "$BREW_CMDLINE_TOOLS" ]]; then
-  mkdir -p "$ANDROID_HOME/cmdline-tools"
-  [[ -e "$ANDROID_HOME/cmdline-tools/latest" ]] || ln -s "$BREW_CMDLINE_TOOLS" "$ANDROID_HOME/cmdline-tools/latest"
+# brew의 cmdline-tools는 구버전인 데다, avdmanager가 심볼릭 링크를 끝까지 따라가 brew 설치
+# 경로를 SDK 루트로 인식하기 때문에 $ANDROID_HOME에 설치한 시스템 이미지를 찾지 못한다
+# (AVD 생성이 "Package path is not valid"로 실패하던 원인).
+# 그래서 brew 것은 부트스트랩으로만 쓰고, 최신 cmdline-tools를 $ANDROID_HOME 안에 정식 설치한다.
+BREW_SDKMANAGER="$(brew --prefix)/share/android-commandlinetools/cmdline-tools/latest/bin/sdkmanager"
+# 이전 버전 스크립트가 만들어 둔 심볼릭 링크가 있으면 정식 설치를 위해 제거
+[[ -L "$ANDROID_HOME/cmdline-tools/latest" ]] && rm "$ANDROID_HOME/cmdline-tools/latest"
+if [[ -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]]; then
+  echo "  ✓ cmdline-tools 이미 설치됨 ($ANDROID_HOME/cmdline-tools/latest)"
+elif [[ -x "$BREW_SDKMANAGER" ]]; then
+  yes | "$BREW_SDKMANAGER" --sdk_root="$ANDROID_HOME" --licenses >/dev/null 2>&1 || true
+  yes | "$BREW_SDKMANAGER" --sdk_root="$ANDROID_HOME" "cmdline-tools;latest" \
+    || echo "  ⚠ cmdline-tools 설치 실패 → 건너뜀"
 fi
 
-SDKMANAGER="$(brew --prefix)/share/android-commandlinetools/cmdline-tools/latest/bin/sdkmanager"
-AVDMANAGER="$(brew --prefix)/share/android-commandlinetools/cmdline-tools/latest/bin/avdmanager"
+SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+AVDMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager"
+# 정식 설치가 실패했다면 brew 버전으로라도 SDK 구성요소 설치는 계속 진행
+if [[ ! -x "$SDKMANAGER" && -x "$BREW_SDKMANAGER" ]]; then
+  SDKMANAGER="$BREW_SDKMANAGER"
+  AVDMANAGER="$(dirname "$BREW_SDKMANAGER")/avdmanager"
+fi
 
 if [[ -x "$SDKMANAGER" ]]; then
   yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --licenses >/dev/null 2>&1 || true
@@ -256,28 +269,40 @@ if [[ -x "$SDKMANAGER" ]]; then
 
   ARCH_ABI="arm64-v8a"
   [[ "$(uname -m)" == "x86_64" ]] && ARCH_ABI="x86_64"
-  SYSTEM_IMAGE="system-images;${LATEST_PLATFORM#platforms;};google_apis;${ARCH_ABI}"
+  # 에뮬레이터 시스템 이미지는 최신 platform보다 늦게 배포되기도 한다(예: android-37 platform은 있지만
+  # 이미지는 미출시). 최신 platform 번호를 그대로 쓰면 없는 이미지를 받으려다 AVD 생성까지 실패하므로,
+  # '실제로 존재하는' google_apis 이미지 중 가장 최신 API 버전을 골라 사용한다.
+  IMAGE_API=$(echo "$SDK_LIST" | grep -oE "system-images;android-[0-9]+;google_apis;${ARCH_ABI}" \
+    | sed -E 's/system-images;android-([0-9]+).*/\1/' | sort -n | tail -1)
+  SYSTEM_IMAGE=""
+  [[ -n "$IMAGE_API" ]] && SYSTEM_IMAGE="system-images;android-${IMAGE_API};google_apis;${ARCH_ABI}"
 
   PACKAGES=("platform-tools" "emulator")
   [[ -n "$LATEST_BUILD_TOOLS" ]] && PACKAGES+=("$LATEST_BUILD_TOOLS")
-  [[ -n "$LATEST_PLATFORM" ]] && PACKAGES+=("$LATEST_PLATFORM" "$SYSTEM_IMAGE")
+  [[ -n "$LATEST_PLATFORM" ]] && PACKAGES+=("$LATEST_PLATFORM")
+  [[ -n "$SYSTEM_IMAGE" ]] && PACKAGES+=("$SYSTEM_IMAGE")
   [[ -n "$LATEST_NDK" ]] && PACKAGES+=("$LATEST_NDK")
 
   echo "  설치할 패키지: ${PACKAGES[*]}"
-  yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" "${PACKAGES[@]}" \
-    || echo "  ⚠ Android SDK 구성요소 일부 설치 실패 → 건너뜀"
+  # 패키지를 하나씩 설치해, 한 패키지가 실패해도 나머지 설치는 계속 진행되게 한다
+  for PKG in "${PACKAGES[@]}"; do
+    yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" "$PKG" \
+      || echo "  ⚠ $PKG 설치 실패 → 건너뜀"
+  done
 
   [[ -n "$LATEST_NDK" ]] && export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/${LATEST_NDK#ndk;}"
 
-  # AVD 생성 (이미 있으면 건너뜀)
-  if [[ -x "$AVDMANAGER" && -n "$LATEST_PLATFORM" ]]; then
-    AVD_NAME="Pixel_6_API_${LATEST_PLATFORM#platforms;android-}"
+  # AVD 생성 (이미 있으면 건너뜀) — 이름은 실제 설치한 시스템 이미지의 API 버전을 따른다
+  if [[ -x "$AVDMANAGER" && -n "$SYSTEM_IMAGE" ]]; then
+    AVD_NAME="Pixel_6_API_${IMAGE_API}"
     if "$AVDMANAGER" list avd 2>/dev/null | grep -q "$AVD_NAME"; then
       echo "  ✓ AVD($AVD_NAME) 이미 존재"
     else
       echo "no" | "$AVDMANAGER" create avd -n "$AVD_NAME" -k "$SYSTEM_IMAGE" -d pixel_6 \
         || echo "  ⚠ AVD 생성 실패 → 건너뜀 (Android Studio Device Manager에서 수동 생성 가능)"
     fi
+  elif [[ -x "$AVDMANAGER" ]]; then
+    echo "  ⚠ ${ARCH_ABI}용 google_apis 시스템 이미지를 찾지 못해 AVD 생성을 건너뜁니다"
   fi
 else
   echo "  ⚠ sdkmanager를 찾을 수 없어 Android SDK 구성요소 설치를 건너뜁니다"

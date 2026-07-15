@@ -242,12 +242,12 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 
 | 도구 | 용도 |
 |---|---|
-| cmdline-tools | Android SDK를 터미널에서 다루는 도구 모음 (`sdkmanager`, `avdmanager`). `$ANDROID_HOME/cmdline-tools/latest`에도 연결해 둡니다 |
+| cmdline-tools | Android SDK를 터미널에서 다루는 도구 모음 (`sdkmanager`, `avdmanager`). Homebrew 버전은 부트스트랩으로만 쓰고, 최신 버전을 표준 위치(`$ANDROID_HOME/cmdline-tools/latest`)에 정식 설치합니다 |
 | platform-tools | `adb` 등 기기·에뮬레이터와 통신하는 도구 |
 | build-tools | 최신 안정 버전을 자동으로 찾아 설치 |
 | platforms | 최신 안정 Android API 플랫폼을 자동으로 찾아 설치 |
 | NDK | 네이티브(C/C++) 코드가 포함된 안드로이드 빌드에 필요, 최신 안정 버전 자동 설치 |
-| 에뮬레이터 + 시스템 이미지 | Mac 칩 종류(Apple Silicon/Intel)에 맞는 이미지를 자동 선택해 설치 |
+| 에뮬레이터 + 시스템 이미지 | Mac 칩 종류(Apple Silicon/Intel)에 맞는 이미지를 자동 선택해 설치. 최신 platform에는 이미지가 아직 없을 수 있어, 실제 배포된 이미지 중 가장 최신 API 버전을 골라 설치합니다 |
 | AVD | 위 시스템 이미지로 `Pixel_6_API_<버전>` 이름의 에뮬레이터를 자동 생성 (이미 있으면 건너뜀) |
 
 > ⚠️ Android 관련 항목은 전용 라이선스 동의(`sdkmanager --licenses`)가 필요한데, 이 스크립트가 자동으로 동의 처리합니다.
