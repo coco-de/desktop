@@ -70,6 +70,59 @@ else
 fi
 
 # ------------------------------------------------------------
+# 2.5. Claude Code MCP 서버 / 플러그인 (jira, figma, zenhub, maestro)
+#   MCP는 3계층으로 설치된다:
+#     ① 플러그인 계층  : claude plugin install (jira=atlassian, figma) — 아래에서 자동
+#     ② 로컬 바이너리   : maestro CLI(아래), marionette_mcp·dart mcp-server(4단계에서 설치)
+#     ③ 인증 계층      : atlassian/figma OAuth는 최초 1회 `/mcp`에서 수동 로그인 (자동화 불가),
+#                        zenhub은 ~/.zshrc의 ZENHUB_API_TOKEN(런타임 확장)로 인증 — 토큰 값은 커밋 금지
+#   ※ marionette·dart·figma(serve) MCP 정의는 사설 cocode-skills 플러그인 번들에서 제공됨
+#     (coco-de/skills의 install.sh로 별도 설치 — 이 스크립트 범위 밖)
+# ------------------------------------------------------------
+log "Claude Code MCP 설치 (jira=atlassian, figma 플러그인 + zenhub 등록 + maestro CLI)"
+
+if have claude; then
+  # 공식 마켓플레이스 등록 (이미 있으면 무시)
+  claude plugin marketplace add anthropics/claude-plugins-official >/dev/null 2>&1 || true
+
+  # 원격 OAuth 플러그인: 설치는 자동, 로그인은 최초 1회 `/mcp`에서 수동
+  for p in atlassian figma; do
+    if claude plugin list 2>/dev/null | grep -q "${p}@claude-plugins-official"; then
+      echo "  ✓ ${p} 플러그인 이미 설치됨"
+    else
+      claude plugin install "${p}@claude-plugins-official" --scope user >/dev/null 2>&1 \
+        && echo "  ✓ ${p} 플러그인 설치 (최초 1회 /mcp 로그인 필요)" \
+        || echo "  ⚠ ${p} 플러그인 설치 실패 → 건너뜀 (claude 로그인 후 재시도)"
+    fi
+  done
+
+  # zenhub MCP (사설 cocode-skills 루트 .mcp.json과 동일 구조 — 원격 서버 + API 토큰)
+  #   토큰은 ~/.zshrc의 ZENHUB_API_TOKEN에서 런타임 확장되므로 단일따옴표로 리터럴 등록 (토큰 값 커밋 금지)
+  if claude mcp list 2>/dev/null | grep -q "^zenhub"; then
+    echo "  ✓ zenhub MCP 이미 등록됨"
+  else
+    claude mcp add zenhub --scope user -- \
+      npx -y mcp-remote https://api.zenhub.com/mcp \
+      --header 'Authorization:${ZENHUB_API_TOKEN}' \
+      --header 'X-zh-workspace:69ae742925c359000f5acf14' >/dev/null 2>&1 \
+      && echo "  ✓ zenhub MCP 등록 (~/.zshrc의 ZENHUB_API_TOKEN 설정 필요)" \
+      || echo "  ⚠ zenhub MCP 등록 실패 → 건너뜀"
+  fi
+else
+  echo "  ⚠ claude CLI가 없어 MCP 플러그인 설치를 건너뜁니다"
+fi
+
+# maestro CLI: pixel-loop의 maestro MCP가 요구 (미설치 시 MCP 연결 실패)
+if have maestro; then
+  echo "  ✓ maestro 이미 설치됨"
+else
+  curl -Ls https://get.maestro.mobile.dev | bash \
+    && echo "  ✓ maestro 설치 완료" \
+    || echo "  ⚠ maestro 설치 실패 → 건너뜀 (https://maestro.mobile.dev 수동 설치)"
+fi
+# marionette_mcp / dart mcp-server 는 4단계(Dart 글로벌 패키지 / FVM)에서 설치됨
+
+# ------------------------------------------------------------
 # 3. CLI 도구 (go, pyenv, nvm, git 등)
 # ------------------------------------------------------------
 log "CLI 도구 설치 (go, pyenv, nvm, git, cocoapods 등)"
@@ -316,6 +369,11 @@ echo "  python  : $(pyenv exec python --version 2>/dev/null || echo '❌')"
 echo "  node    : $(node --version 2>/dev/null || echo '❌')"
 echo "  npm     : $(npm --version 2>/dev/null || echo '❌')"
 echo "  claude  : $(claude --version 2>/dev/null || echo '설치됨 (새 터미널에서 확인)')"
+echo "  mcp:jira: $(claude plugin list 2>/dev/null | grep -q 'atlassian@claude-plugins-official' && echo '✓ 설치됨 (/mcp 로그인 필요)' || echo '❌')"
+echo "  mcp:figma: $(claude plugin list 2>/dev/null | grep -q 'figma@claude-plugins-official' && echo '✓ 설치됨 (/mcp 로그인 필요)' || echo '❌')"
+echo "  mcp:zenhub: $(claude mcp list 2>/dev/null | grep -q '^zenhub' && echo "✓ 등록됨$([[ -z \"${ZENHUB_API_TOKEN:-}\" ]] && echo ' (⚠ ZENHUB_API_TOKEN 미설정)')" || echo '❌')"
+echo "  maestro : $(maestro --version 2>/dev/null | head -1 || echo '❌')"
+echo "  marionette: $([[ -x "$PUB_CACHE/bin/marionette_mcp" ]] && echo '✓' || echo '❌')"
 echo "  android : $([[ -x "$ANDROID_HOME/platform-tools/adb" ]] && echo "✓ $ANDROID_HOME" || echo '❌')"
 echo "  ndk     : $([[ -n "${ANDROID_NDK_HOME:-}" && -d "${ANDROID_NDK_HOME:-}" ]] && echo "✓ $ANDROID_NDK_HOME" || echo '❌')"
 echo "  avd     : $([[ -n "${AVD_NAME:-}" ]] && "$AVDMANAGER" list avd 2>/dev/null | grep -q "$AVD_NAME" && echo "✓ $AVD_NAME" || echo '❌')"
@@ -326,3 +384,5 @@ echo "  1. 새 터미널을 열거나: source ~/.zshrc"
 echo "  2. p10k 테마 설정이 없다면: p10k configure"
 echo "  3. Android Studio 실행 후 flutter doctor (SDK/NDK/AVD는 이미 자동 설치·구성됨)"
 echo "  4. Claude Code 로그인: claude"
+echo "  5. Claude Code에서 /mcp 실행 → atlassian(jira), figma 각각 팀 계정으로 OAuth 로그인 (최초 1회)"
+echo "  6. zenhub MCP 사용하려면 ~/.zshrc의 ZENHUB_API_TOKEN 값을 1Password에서 채운 뒤 새 터미널 (marionette·dart MCP는 설정 불필요)"
