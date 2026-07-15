@@ -186,7 +186,10 @@ fi
 # 4. FVM + Flutter stable 글로벌 설치
 # ------------------------------------------------------------
 log "FVM 설치 및 Flutter stable 글로벌 설정"
+# 최신 Homebrew는 서드파티 tap을 신뢰 등록(brew trust)해야 설치를 허용한다.
+# (brew trust 명령이 없는 구버전 Homebrew에서는 그냥 건너뜀)
 brew tap leoafarias/fvm 2>/dev/null || true
+brew trust leoafarias/fvm 2>/dev/null || true
 brew list fvm >/dev/null 2>&1 && echo "  ✓ fvm 이미 설치됨" || brew install fvm
 yes | fvm install stable
 yes | fvm global stable --force 2>/dev/null || yes | fvm global stable
@@ -210,7 +213,9 @@ fi
 
 # DCM (Dart Code Metrics)
 log "DCM 설치"
+# 서드파티 tap 신뢰 등록 — 없으면 최신 Homebrew가 "untrusted tap" 에러로 설치를 거부한다
 brew tap CQLabs/dcm 2>/dev/null || true
+brew trust CQLabs/dcm 2>/dev/null || true
 brew list dcm >/dev/null 2>&1 && echo "  ✓ dcm 이미 설치됨" || yes | brew install dcm || echo "  ⚠ dcm 설치 실패 → 건너뜀"
 
 # Android SDK 구성요소 (cmdline-tools, platform-tools, build-tools, platforms, NDK, 에뮬레이터, AVD)
