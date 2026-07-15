@@ -99,7 +99,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 <td align="center" width="100"><img src="assets/icons/chrome.svg" width="36" height="36" alt="Google Chrome"><br><sub><b>Google Chrome</b></sub></td>
 <td align="center" width="100"><img src="assets/icons/1password.svg" width="36" height="36" alt="1Password"><br><sub><b>1Password</b></sub></td>
 <td align="center" width="100"><sub><b>Dia</b></sub></td>
-<td align="center" width="100"></td>
+<td align="center" width="100"><img src="assets/icons/tailscale.svg" width="36" height="36" alt="Tailscale"><br><sub><b>Tailscale</b></sub></td>
 <td align="center" width="100"></td>
 </tr>
 </table>
@@ -186,7 +186,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 
 | 분류 | 항목 |
 |---|---|
-| 🖥 GUI 앱 | Android Studio, Slack, Figma, Superset, Claude Desktop, Google Chrome, Dia, 1Password |
+| 🖥 GUI 앱 | Android Studio, Slack, Figma, Superset, Claude Desktop, Google Chrome, Dia, 1Password, Tailscale |
 | 🤖 AI 코딩 도구 | Claude Code (터미널에서 쓰는 Claude CLI) |
 | 📱 Android SDK | cmdline-tools, platform-tools, build-tools, platforms, NDK, 에뮬레이터 시스템 이미지, AVD까지 전부 자동 설치·구성 (Android Studio 첫 실행 마법사 불필요) |
 | 🛠 CLI 도구 | go, pyenv, nvm, git, gh, cocoapods, fastlane, awscli, colima, docker, docker-compose, zsh-syntax-highlighting, direnv, openjdk@17 |
@@ -215,6 +215,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 | <img src="assets/icons/chrome.svg" width="20" height="20"> | Google Chrome | 웹 브라우저 |
 | | Dia | AI 기반 웹 브라우저 |
 | <img src="assets/icons/1password.svg" width="20" height="20"> | 1Password | 비밀번호 관리자 |
+| <img src="assets/icons/tailscale.svg" width="20" height="20"> | Tailscale | 팀 내부망 접속용 VPN 메시 네트워크 (메뉴바 앱 + CLI) |
 
 이미 `/Applications`에 앱이 설치되어 있으면 건너뜁니다.
 
