@@ -191,12 +191,13 @@ yes | fvm install stable
 yes | fvm global stable --force 2>/dev/null || yes | fvm global stable
 export PATH="$HOME/fvm/default/bin:$PATH"
 
-# Dart 글로벌 패키지 (serverpod_cli, marionette_mcp)
+# Dart 글로벌 패키지 (serverpod_cli, marionette_mcp, mcp_server_dart)
 log "Dart 글로벌 패키지 설치"
 export PUB_CACHE="$HOME/.pub-cache"
 export PATH="$PUB_CACHE/bin:$PATH"
 dart pub global activate serverpod_cli 4.0.0-beta.0 || echo "  ⚠ serverpod_cli 설치 실패 → 건너뜀"
 dart pub global activate marionette_mcp || echo "  ⚠ marionette_mcp 설치 실패 → 건너뜀"
+dart pub global activate mcp_server_dart || echo "  ⚠ mcp_server_dart 설치 실패 → 건너뜀"
 
 # Google Cloud CLI (gcloud)
 log "Google Cloud CLI 설치"
@@ -449,6 +450,7 @@ ZH_VAL=$(grep '^export ZENHUB_API_TOKEN=' "$HOME/.zshrc" 2>/dev/null | tail -1 |
 echo "  mcp:zenhub: $(claude mcp list 2>/dev/null | grep -q '^zenhub' && echo "✓ 등록됨$([[ -z "$ZH_VAL" ]] && echo ' (⚠ 토큰 미주입 — op signin 후 재실행)')" || echo '❌')"
 echo "  maestro : $(maestro --version 2>/dev/null | head -1 || echo '❌')"
 echo "  marionette: $([[ -x "$PUB_CACHE/bin/marionette_mcp" ]] && echo '✓' || echo '❌')"
+echo "  mcp_server_dart: $(dart pub global list 2>/dev/null | grep -q '^mcp_server_dart ' && echo '✓' || echo '❌')"
 echo "  mcp:flutter-mcp-toolkit: $(have flutter-mcp-toolkit && echo -n '✓ CLI ' || echo -n '❌ CLI '; claude plugin list 2>/dev/null | grep -q 'flutter-mcp-toolkit@Arenukvern-mcp_flutter' && echo '+ ✓ 플러그인' || echo '+ ❌ 플러그인')"
 CS_COUNT=$(ls -d "$HOME/.claude/plugins/marketplaces/cocode-skills/plugins"/*/ 2>/dev/null | grep -c .)
 echo "  cocode-skills: $([[ "$CS_COUNT" -gt 0 ]] && echo "✓ ${CS_COUNT}개 플러그인" || echo '❌ (gh auth login 후 재실행)')"
