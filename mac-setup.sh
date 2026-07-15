@@ -71,16 +71,17 @@ else
 fi
 
 # ------------------------------------------------------------
-# 2.5. Claude Code MCP 서버 / 플러그인 (jira, figma, zenhub, maestro)
+# 2.5. Claude Code MCP 서버 / 플러그인 (jira, figma, zenhub, maestro, flutter-mcp-toolkit)
 #   MCP는 3계층으로 설치된다:
-#     ① 플러그인 계층  : claude plugin install (jira=atlassian, figma) — 아래에서 자동
-#     ② 로컬 바이너리   : maestro CLI(아래), marionette_mcp·dart mcp-server(4단계에서 설치)
+#     ① 플러그인 계층  : claude plugin install (jira=atlassian, figma, flutter-mcp-toolkit) — 아래에서 자동
+#     ② 로컬 바이너리   : maestro CLI·flutter-mcp-toolkit CLI(아래), marionette_mcp·dart mcp-server(4단계에서 설치)
 #     ③ 인증 계층      : atlassian/figma OAuth는 최초 1회 `/mcp`에서 수동 로그인 (자동화 불가),
-#                        zenhub은 ~/.zshrc의 ZENHUB_API_TOKEN(런타임 확장)로 인증 — 토큰 값은 커밋 금지
+#                        zenhub은 ~/.zshrc의 ZENHUB_API_TOKEN(런타임 확장)로 인증 — 토큰 값은 커밋 금지,
+#                        flutter-mcp-toolkit은 별도 인증 불필요
 #   ※ marionette·dart·figma(serve) MCP 정의는 사설 cocode-skills 플러그인 번들에서 제공됨
 #     (coco-de/skills의 install.sh — 아래 3.5단계에서 설치)
 # ------------------------------------------------------------
-log "Claude Code MCP 설치 (jira=atlassian, figma 플러그인 + zenhub 등록 + maestro CLI)"
+log "Claude Code MCP 설치 (jira=atlassian, figma 플러그인 + zenhub 등록 + maestro CLI + flutter-mcp-toolkit)"
 
 if have claude; then
   # 공식 마켓플레이스 등록 (이미 있으면 무시)
@@ -122,6 +123,31 @@ else
     || echo "  ⚠ maestro 설치 실패 → 건너뜀 (https://maestro.mobile.dev 수동 설치)"
 fi
 # marionette_mcp / dart mcp-server 는 4단계(Dart 글로벌 패키지 / FVM)에서 설치됨
+
+# flutter-mcp-toolkit (mcp_flutter): 실행 중인 Flutter 앱을 AI 에이전트가 검사/조작하는 MCP 서버
+#   ① 로컬 바이너리(CLI): 공식 install.sh
+#   ② Claude Code 플러그인: 마켓플레이스 등록 + 유저 스코프 설치 (jira/figma와 동일 패턴)
+#   ※ 앱별 연동(`flutter-mcp-toolkit codegen-init`으로 mcp_toolkit 패키지 추가)은 각 Flutter 프로젝트에서 별도 진행 (이 스크립트 범위 밖)
+if have flutter-mcp-toolkit; then
+  echo "  ✓ flutter-mcp-toolkit 이미 설치됨"
+else
+  curl -fsSL https://raw.githubusercontent.com/Arenukvern/mcp_flutter/main/install.sh | bash \
+    && echo "  ✓ flutter-mcp-toolkit 설치 완료" \
+    || echo "  ⚠ flutter-mcp-toolkit 설치 실패 → 건너뜀 (https://github.com/Arenukvern/mcp_flutter 수동 설치)"
+fi
+
+if have claude; then
+  claude plugin marketplace add Arenukvern/mcp_flutter >/dev/null 2>&1 || true
+  if claude plugin list 2>/dev/null | grep -q "flutter-mcp-toolkit@Arenukvern-mcp_flutter"; then
+    echo "  ✓ flutter-mcp-toolkit 플러그인 이미 설치됨"
+  else
+    claude plugin install "flutter-mcp-toolkit@Arenukvern-mcp_flutter" --scope user >/dev/null 2>&1 \
+      && echo "  ✓ flutter-mcp-toolkit 플러그인 설치 완료" \
+      || echo "  ⚠ flutter-mcp-toolkit 플러그인 설치 실패 → 건너뜀 (claude 로그인 후 재시도)"
+  fi
+else
+  echo "  ⚠ claude CLI가 없어 flutter-mcp-toolkit 플러그인 설치를 건너뜁니다"
+fi
 
 # ------------------------------------------------------------
 # 3. CLI 도구 (go, pyenv, nvm, git 등)
@@ -423,6 +449,7 @@ ZH_VAL=$(grep '^export ZENHUB_API_TOKEN=' "$HOME/.zshrc" 2>/dev/null | tail -1 |
 echo "  mcp:zenhub: $(claude mcp list 2>/dev/null | grep -q '^zenhub' && echo "✓ 등록됨$([[ -z "$ZH_VAL" ]] && echo ' (⚠ 토큰 미주입 — op signin 후 재실행)')" || echo '❌')"
 echo "  maestro : $(maestro --version 2>/dev/null | head -1 || echo '❌')"
 echo "  marionette: $([[ -x "$PUB_CACHE/bin/marionette_mcp" ]] && echo '✓' || echo '❌')"
+echo "  mcp:flutter-mcp-toolkit: $(have flutter-mcp-toolkit && echo -n '✓ CLI ' || echo -n '❌ CLI '; claude plugin list 2>/dev/null | grep -q 'flutter-mcp-toolkit@Arenukvern-mcp_flutter' && echo '+ ✓ 플러그인' || echo '+ ❌ 플러그인')"
 CS_COUNT=$(ls -d "$HOME/.claude/plugins/marketplaces/cocode-skills/plugins"/*/ 2>/dev/null | grep -c .)
 echo "  cocode-skills: $([[ "$CS_COUNT" -gt 0 ]] && echo "✓ ${CS_COUNT}개 플러그인" || echo '❌ (gh auth login 후 재실행)')"
 echo "  android : $([[ -x "$ANDROID_HOME/platform-tools/adb" ]] && echo "✓ $ANDROID_HOME" || echo '❌')"
@@ -438,3 +465,4 @@ echo "  4. Claude Code 로그인: claude"
 echo "  5. Claude Code에서 /mcp 실행 → atlassian(jira), figma 각각 팀 계정으로 OAuth 로그인 (최초 1회)"
 echo "  6. zenhub 토큰이 '미주입'이면: 1Password 앱의 CLI 통합 활성화(또는 op signin) 후 스크립트 재실행 → 팀 공용 토큰 자동 주입 (marionette·dart MCP는 설정 불필요)"
 echo "  7. cocode-skills 팀 플러그인이 '❌'이면: gh auth login 후 스크립트 재실행 (사설 레포 접근에 gh 인증 필요)"
+echo "  8. flutter-mcp-toolkit을 특정 Flutter 프로젝트에서 쓰려면 해당 프로젝트에서: flutter-mcp-toolkit codegen-init (mcp_toolkit 패키지 추가, 앱별 1회)"
