@@ -100,6 +100,13 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 <td align="center" width="100"><img src="assets/icons/1password.svg" width="36" height="36" alt="1Password"><br><sub><b>1Password</b></sub></td>
 <td align="center" width="100"><sub><b>Dia</b></sub></td>
 <td align="center" width="100"><img src="assets/icons/tailscale.svg" width="36" height="36" alt="Tailscale"><br><sub><b>Tailscale</b></sub></td>
+<td align="center" width="100"><sub><b>Orca</b></sub></td>
+</tr>
+<tr>
+<td align="center" width="100"><sub><b>Lumide</b></sub></td>
+<td align="center" width="100"></td>
+<td align="center" width="100"></td>
+<td align="center" width="100"></td>
 <td align="center" width="100"></td>
 </tr>
 </table>
@@ -176,7 +183,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 
 <br>
 
-<sub>※ Slack, awscli, pyenv, colima, direnv, oh-my-zsh, powerlevel10k, MesloLGS NF는 Simple Icons에 등록된 공식 브랜드 아이콘이 없어 텍스트로만 표기했습니다. DCM · serverpod_cli · marionette_mcp는 Dart 생태계 도구라 Dart 아이콘으로 대신 표기했습니다.</sub>
+<sub>※ Slack, Dia, Orca, Lumide, awscli, pyenv, colima, direnv, oh-my-zsh, powerlevel10k, MesloLGS NF는 Simple Icons에 등록된 공식 브랜드 아이콘이 없어 텍스트로만 표기했습니다. DCM · serverpod_cli · marionette_mcp는 Dart 생태계 도구라 Dart 아이콘으로 대신 표기했습니다.</sub>
 
 <br>
 
@@ -186,7 +193,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 
 | 분류 | 항목 |
 |---|---|
-| 🖥 GUI 앱 | Android Studio, Slack, Figma, Superset, Claude Desktop, Google Chrome, Dia, 1Password, Tailscale |
+| 🖥 GUI 앱 | Android Studio, Slack, Figma, Superset, Claude Desktop, Google Chrome, Dia, 1Password, Tailscale, Orca, Lumide |
 | 🤖 AI 코딩 도구 | Claude Code (터미널에서 쓰는 Claude CLI) |
 | 📱 Android SDK | cmdline-tools, platform-tools, build-tools, platforms, NDK, 에뮬레이터 시스템 이미지, AVD까지 전부 자동 설치·구성 (Android Studio 첫 실행 마법사 불필요) |
 | 🛠 CLI 도구 | go, pyenv, nvm, git, gh, cocoapods, fastlane, awscli, colima, docker, docker-compose, zsh-syntax-highlighting, direnv, openjdk@17 |
@@ -216,6 +223,8 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 | | Dia | AI 기반 웹 브라우저 |
 | <img src="assets/icons/1password.svg" width="20" height="20"> | 1Password | 비밀번호 관리자 |
 | <img src="assets/icons/tailscale.svg" width="20" height="20"> | Tailscale | 팀 내부망 접속용 VPN 메시 네트워크 (메뉴바 앱 + CLI) |
+| | Orca | AI 코딩 에이전트 도구 (stablyai/orca 탭) |
+| | Lumide | 에이전트 네이티브 코드 에디터 IDE ([lumide.dev](https://lumide.dev)) |
 
 이미 `/Applications`에 앱이 설치되어 있으면 건너뜁니다.
 
