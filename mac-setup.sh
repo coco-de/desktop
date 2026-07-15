@@ -415,24 +415,53 @@ fi
 #   전제: op(1password-cli) 설치됨 + 1Password 앱 CLI 통합 활성화(팀 team-cocodeinc 계정 로그인)
 #   ※ 팀 공용 1Password 항목: "API Token" 볼트 > "ZenHub API Token" > credential 필드
 #     (계정이 여러 개인 사용자도 동작하도록 --account로 팀 계정을 명시)
+#   ※ op 준비가 안 됐고 터미널(TTY)이면 여기서 멈춰 안내 → 1Password 설정 완료 후 Enter로 재시도.
+#     파이프 실행(TTY 없음)이면 멈추지 않고 건너뜀(재실행 시 자동 주입).
 # ------------------------------------------------------------
 ZENHUB_TOKEN_OP_ACCOUNT="team-cocodeinc.1password.com"                # 팀 1Password 계정 (비밀 아님)
 ZENHUB_TOKEN_OP_REF="op://API Token/ZenHub API Token/credential"      # 팀 공용 항목 경로 (값은 1Password에만 존재)
+
+# op read → ~/.zshrc의 ZENHUB_API_TOKEN 주입. 성공 시 0, 실패 시 1 반환.
+inject_zenhub_token() {
+  local tok
+  tok="$(op read --account "$ZENHUB_TOKEN_OP_ACCOUNT" "$ZENHUB_TOKEN_OP_REF" 2>/dev/null)" || return 1
+  [[ -n "$tok" ]] || return 1
+  touch "$HOME/.zshrc"
+  # 기존 ZENHUB_API_TOKEN 라인 제거 후 재기록 (sed 치환 시 토큰 특수문자 문제 회피)
+  { grep -v '^export ZENHUB_API_TOKEN=' "$HOME/.zshrc" || true; } > "$HOME/.zshrc.tmp"
+  mv "$HOME/.zshrc.tmp" "$HOME/.zshrc"
+  printf 'export ZENHUB_API_TOKEN=%q\n' "$tok" >> "$HOME/.zshrc"
+}
+
 log "ZENHUB_API_TOKEN 주입 (1Password 공용 토큰)"
-if have op; then
-  if zh_token="$(op read --account "$ZENHUB_TOKEN_OP_ACCOUNT" "$ZENHUB_TOKEN_OP_REF" 2>/dev/null)" && [[ -n "$zh_token" ]]; then
-    touch "$HOME/.zshrc"
-    # 기존 ZENHUB_API_TOKEN 라인 제거 후 재기록 (sed 치환 시 토큰 특수문자 문제 회피)
-    { grep -v '^export ZENHUB_API_TOKEN=' "$HOME/.zshrc" || true; } > "$HOME/.zshrc.tmp"
-    mv "$HOME/.zshrc.tmp" "$HOME/.zshrc"
-    printf 'export ZENHUB_API_TOKEN=%q\n' "$zh_token" >> "$HOME/.zshrc"
-    echo "  ✓ ZENHUB_API_TOKEN 주입 완료 (~/.zshrc, 토큰 값은 커밋되지 않음)"
-  else
-    echo "  ⚠ op read 실패 → '1Password 앱 > 설정 > 개발자 > 1Password CLI와 통합' 활성화 + 팀($ZENHUB_TOKEN_OP_ACCOUNT) 계정 로그인 후 재실행"
-    echo "     (op 항목: $ZENHUB_TOKEN_OP_REF)"
-  fi
-else
+if ! have op; then
   echo "  ⚠ op(1password-cli) 미설치 → ZENHUB_API_TOKEN 수동 설정 필요"
+elif inject_zenhub_token; then
+  echo "  ✓ ZENHUB_API_TOKEN 주입 완료 (~/.zshrc, 토큰 값은 커밋되지 않음)"
+elif [[ -t 0 ]]; then
+  # 대화형: 1Password 로그인 + CLI 통합을 마칠 때까지 멈춰서 안내 → Enter로 재시도
+  while true; do
+    echo ""
+    echo "  ⏸  ZenHub 토큰 주입에 1Password 설정이 필요합니다. 아래를 완료해 주세요:"
+    echo "       1) 1Password 앱을 열고 팀 계정($ZENHUB_TOKEN_OP_ACCOUNT)으로 로그인"
+    echo "       2) 앱 > 설정(⌘,) > 개발자 > '1Password CLI와 통합' 체크"
+    echo "          (이 항목이 안 보이면: 설정 > 보안 > 'Touch ID로 잠금 해제'를 먼저 켜세요)"
+    echo ""
+    printf "     완료했으면 Enter(재시도) · 나중에 하려면 s 입력 후 Enter: "
+    read -r zh_ans || zh_ans="s"
+    if [[ "$zh_ans" == "s" || "$zh_ans" == "S" ]]; then
+      echo "  ⚠ ZENHUB_API_TOKEN 주입 건너뜀 → 나중에 스크립트를 재실행하면 자동 주입됩니다"
+      break
+    fi
+    if inject_zenhub_token; then
+      echo "  ✓ ZENHUB_API_TOKEN 주입 완료 (~/.zshrc, 토큰 값은 커밋되지 않음)"
+      break
+    fi
+    echo "  ✗ 아직 op read 실패 — 1Password 로그인/CLI 통합 상태를 확인한 뒤 다시 Enter를 누르세요."
+  done
+else
+  # 비대화형(TTY 없음): 멈추지 않고 건너뜀
+  echo "  ⚠ op read 실패(비대화형) → 1Password 앱 CLI 통합 후 스크립트 재실행 시 자동 주입"
 fi
 
 # ------------------------------------------------------------
@@ -467,6 +496,6 @@ echo "  2. p10k 테마 설정이 없다면: p10k configure"
 echo "  3. Android Studio 실행 후 flutter doctor (SDK/NDK/AVD는 이미 자동 설치·구성됨)"
 echo "  4. Claude Code 로그인: claude"
 echo "  5. Claude Code에서 /mcp 실행 → atlassian(jira), figma 각각 팀 계정으로 OAuth 로그인 (최초 1회)"
-echo "  6. zenhub 토큰이 '미주입'이면: 1Password 앱의 CLI 통합 활성화(또는 op signin) 후 스크립트 재실행 → 팀 공용 토큰 자동 주입 (marionette·dart MCP는 설정 불필요)"
+echo "  6. zenhub 토큰: 실행 중 8.5단계에서 1Password 설정 안내가 나오면(앱 로그인 + 설정>개발자>'1Password CLI와 통합' 체크) 완료 후 Enter로 자동 주입 (건너뛰었다면 스크립트 재실행 시 주입)"
 echo "  7. cocode-skills 팀 플러그인이 '❌'이면: gh auth login 후 스크립트 재실행 (사설 레포 접근에 gh 인증 필요)"
 echo "  8. flutter-mcp-toolkit을 특정 Flutter 프로젝트에서 쓰려면 해당 프로젝트에서: flutter-mcp-toolkit codegen-init (mcp_toolkit 패키지 추가, 앱별 1회)"
