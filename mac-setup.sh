@@ -77,7 +77,7 @@ fi
 #     ③ 인증 계층      : atlassian/figma OAuth는 최초 1회 `/mcp`에서 수동 로그인 (자동화 불가),
 #                        zenhub은 ~/.zshrc의 ZENHUB_API_TOKEN(런타임 확장)로 인증 — 토큰 값은 커밋 금지
 #   ※ marionette·dart·figma(serve) MCP 정의는 사설 cocode-skills 플러그인 번들에서 제공됨
-#     (coco-de/skills의 install.sh로 별도 설치 — 이 스크립트 범위 밖)
+#     (coco-de/skills의 install.sh — 아래 3.5단계에서 설치)
 # ------------------------------------------------------------
 log "Claude Code MCP 설치 (jira=atlassian, figma 플러그인 + zenhub 등록 + maestro CLI)"
 
@@ -127,10 +127,32 @@ fi
 # ------------------------------------------------------------
 log "CLI 도구 설치 (go, pyenv, nvm, git, cocoapods 등)"
 # zsh-syntax-highlighting, direnv, openjdk@17: 기존 .zshrc에서 참조하는 도구들
-FORMULAE=(go pyenv nvm git gh cocoapods fastlane awscli colima docker docker-compose zsh-syntax-highlighting direnv openjdk@17)
+FORMULAE=(go pyenv nvm git gh jq cocoapods fastlane awscli colima docker docker-compose zsh-syntax-highlighting direnv openjdk@17)
 for f in "${FORMULAE[@]}"; do
   brew list "$f" >/dev/null 2>&1 && echo "  ✓ $f 이미 설치됨" || brew install "$f"
 done
+
+# ------------------------------------------------------------
+# 3.5. cocode-skills 팀 플러그인 설치 (사설 레포 coco-de/skills)
+#   marionette·dart·figma(serve)·maestro·dev-cycle·coui 등 cc-* 플러그인 번들을 설치한다.
+#   private 레포라 `claude plugin marketplace add`가 안 되므로 팀 install.sh로 동기화.
+#   전제: gh 인증(gh auth login) + jq(위 3단계에서 설치). rsync는 macOS 기본 제공.
+# ------------------------------------------------------------
+log "cocode-skills 팀 플러그인 설치 (coco-de/skills install.sh)"
+if have gh && gh auth status >/dev/null 2>&1; then
+  cs_installer="$(mktemp)"
+  if gh api repos/coco-de/skills/contents/install.sh --jq '.content' 2>/dev/null \
+       | base64 -d > "$cs_installer" && [[ -s "$cs_installer" ]]; then
+    bash "$cs_installer" \
+      && echo "  ✓ cocode-skills 팀 플러그인 설치 완료" \
+      || echo "  ⚠ cocode-skills 설치 실패 → 건너뜀 (재시도: bash <(gh api repos/coco-de/skills/contents/install.sh --jq '.content' | base64 -d))"
+  else
+    echo "  ⚠ install.sh를 받지 못했습니다 (coco-de/skills 접근 권한 확인) → 건너뜀"
+  fi
+  rm -f "$cs_installer"
+else
+  echo "  ⚠ gh 인증 필요 → 'gh auth login' 후 재실행하면 cocode-skills 팀 플러그인이 설치됩니다"
+fi
 
 # ------------------------------------------------------------
 # 4. FVM + Flutter stable 글로벌 설치
@@ -374,6 +396,8 @@ echo "  mcp:figma: $(claude plugin list 2>/dev/null | grep -q 'figma@claude-plug
 echo "  mcp:zenhub: $(claude mcp list 2>/dev/null | grep -q '^zenhub' && echo "✓ 등록됨$([[ -z \"${ZENHUB_API_TOKEN:-}\" ]] && echo ' (⚠ ZENHUB_API_TOKEN 미설정)')" || echo '❌')"
 echo "  maestro : $(maestro --version 2>/dev/null | head -1 || echo '❌')"
 echo "  marionette: $([[ -x "$PUB_CACHE/bin/marionette_mcp" ]] && echo '✓' || echo '❌')"
+CS_COUNT=$(ls -d "$HOME/.claude/plugins/marketplaces/cocode-skills/plugins"/*/ 2>/dev/null | grep -c .)
+echo "  cocode-skills: $([[ "$CS_COUNT" -gt 0 ]] && echo "✓ ${CS_COUNT}개 플러그인" || echo '❌ (gh auth login 후 재실행)')"
 echo "  android : $([[ -x "$ANDROID_HOME/platform-tools/adb" ]] && echo "✓ $ANDROID_HOME" || echo '❌')"
 echo "  ndk     : $([[ -n "${ANDROID_NDK_HOME:-}" && -d "${ANDROID_NDK_HOME:-}" ]] && echo "✓ $ANDROID_NDK_HOME" || echo '❌')"
 echo "  avd     : $([[ -n "${AVD_NAME:-}" ]] && "$AVDMANAGER" list avd 2>/dev/null | grep -q "$AVD_NAME" && echo "✓ $AVD_NAME" || echo '❌')"
@@ -386,3 +410,4 @@ echo "  3. Android Studio 실행 후 flutter doctor (SDK/NDK/AVD는 이미 자�
 echo "  4. Claude Code 로그인: claude"
 echo "  5. Claude Code에서 /mcp 실행 → atlassian(jira), figma 각각 팀 계정으로 OAuth 로그인 (최초 1회)"
 echo "  6. zenhub MCP 사용하려면 ~/.zshrc의 ZENHUB_API_TOKEN 값을 1Password에서 채운 뒤 새 터미널 (marionette·dart MCP는 설정 불필요)"
+echo "  7. cocode-skills 팀 플러그인이 '❌'이면: gh auth login 후 스크립트 재실행 (사설 레포 접근에 gh 인증 필요)"

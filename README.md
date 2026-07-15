@@ -196,6 +196,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 | 🖥 GUI 앱 | Android Studio, Slack, Figma, Superset, Claude Desktop, Google Chrome, Dia, 1Password, Tailscale, Orca, Lumide |
 | 🤖 AI 코딩 도구 | Claude Code (터미널에서 쓰는 Claude CLI) |
 | 🔌 Claude MCP | jira(atlassian)·figma 플러그인 자동 설치 + maestro CLI, marionette·dart MCP, zenhub MCP 자동 등록 (⚠️ atlassian·figma는 최초 1회 `/mcp`에서 OAuth 로그인, zenhub은 `~/.zshrc`의 `ZENHUB_API_TOKEN` 설정 필요) |
+| 🧩 cocode-skills 팀 플러그인 | 사설 레포 `coco-de/skills`의 `install.sh`로 cc-* 플러그인 번들(marionette·dart·figma·dev-cycle·coui 등) 자동 동기화 (⚠️ `gh auth login` 인증 필요, 미인증 시 건너뜀) |
 | 📱 Android SDK | cmdline-tools, platform-tools, build-tools, platforms, NDK, 에뮬레이터 시스템 이미지, AVD까지 전부 자동 설치·구성 (Android Studio 첫 실행 마법사 불필요) |
 | 🛠 CLI 도구 | go, pyenv, nvm, git, gh, cocoapods, fastlane, awscli, colima, docker, docker-compose, zsh-syntax-highlighting, direnv, openjdk@17 |
 | 🐦 Flutter | fvm(버전 관리자)으로 Flutter stable 채널 글로벌 설정, DCM(Dart 코드 품질 검사 도구) |
