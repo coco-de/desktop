@@ -265,7 +265,19 @@ if [[ -x "$SDKMANAGER" ]]; then
   SDK_LIST="$("$SDKMANAGER" --sdk_root="$ANDROID_HOME" --list 2>/dev/null)" || true
   LATEST_PLATFORM=$(echo "$SDK_LIST" | grep -oE '^[[:space:]]*platforms;android-[0-9]+' | tr -d ' ' | sort -t'-' -k2 -n | tail -1)
   LATEST_BUILD_TOOLS=$(echo "$SDK_LIST" | grep -oE '^[[:space:]]*build-tools;[0-9]+\.[0-9]+\.[0-9]+' | tr -d ' ' | sort -t';' -k2 -V | tail -1)
-  LATEST_NDK=$(echo "$SDK_LIST" | grep -oE '^[[:space:]]*ndk;[0-9]+\.[0-9]+\.[0-9]+' | tr -d ' ' | sort -t';' -k2 -V | tail -1)
+
+  # NDK는 sdkmanager 목록의 '최신'이 아니라 Flutter가 요구하는 버전으로 고정한다.
+  # (목록 최신값은 r30-beta 같은 프리뷰라 Flutter stable 빌드의 android.ndkVersion과 어긋나
+  #  Gradle NDK 불일치를 유발한다. Flutter SDK에 박힌 핀 값을 그대로 사용한다.)
+  FLUTTER_ROOT="$(cd "$(dirname "$(command -v flutter 2>/dev/null)")/.." 2>/dev/null && pwd)"
+  FLUTTER_NDK="$(grep -oE "ndkVersion = '[0-9.]+'" "$FLUTTER_ROOT/packages/flutter_tools/lib/src/android/gradle_utils.dart" 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)"
+  if [[ -n "$FLUTTER_NDK" ]]; then
+    LATEST_NDK="ndk;$FLUTTER_NDK"
+    echo "  · NDK: Flutter 요구 버전 사용 → $LATEST_NDK"
+  else
+    LATEST_NDK="ndk;28.2.13676358"
+    echo "  ⚠ Flutter NDK 핀을 못 읽어 기본값 사용: $LATEST_NDK"
+  fi
 
   ARCH_ABI="arm64-v8a"
   [[ "$(uname -m)" == "x86_64" ]] && ARCH_ABI="x86_64"
@@ -290,7 +302,14 @@ if [[ -x "$SDKMANAGER" ]]; then
       || echo "  ⚠ $PKG 설치 실패 → 건너뜀"
   done
 
-  [[ -n "$LATEST_NDK" ]] && export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/${LATEST_NDK#ndk;}"
+  # ANDROID_NDK_HOME은 실제 설치된 디스크 경로 기준으로 잡는다 (요구 버전 우선, 없으면 설치된 것 사용)
+  WANT_NDK="${LATEST_NDK#ndk;}"
+  if [[ -d "$ANDROID_HOME/ndk/$WANT_NDK" ]]; then
+    export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/$WANT_NDK"
+  elif ls -d "$ANDROID_HOME"/ndk/*/ >/dev/null 2>&1; then
+    ANDROID_NDK_HOME="$(ls -d "$ANDROID_HOME"/ndk/*/ | sort -V | tail -1)"
+    export ANDROID_NDK_HOME="${ANDROID_NDK_HOME%/}"
+  fi
 
   # AVD 생성 (이미 있으면 건너뜀) — 이름은 실제 설치한 시스템 이미지의 API 버전을 따른다
   if [[ -x "$AVDMANAGER" && -n "$SYSTEM_IMAGE" ]]; then
