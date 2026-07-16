@@ -161,6 +161,35 @@ for f in "${FORMULAE[@]}"; do
 done
 
 # ------------------------------------------------------------
+# 3.2. Git 전역 사용자 이메일 설정 (커밋 작성자 정보)
+#   커밋에 기록될 회사 이메일을 입력받아 git config --global user.email에 저장한다.
+#   이미 설정돼 있으면 그대로 두고 건너뜀(멱등).
+#   파이프 실행(TTY 없음)이면 멈추지 않고 건너뜀(재실행 시 입력 가능).
+# ------------------------------------------------------------
+log "Git 사용자 이메일 설정 (git config --global user.email)"
+GIT_EMAIL_CURRENT="$(git config --global user.email 2>/dev/null || true)"
+if [[ -n "$GIT_EMAIL_CURRENT" ]]; then
+  echo "  ✓ 이미 설정됨 ($GIT_EMAIL_CURRENT)"
+elif [[ -t 0 ]]; then
+  while true; do
+    printf "  ✉️  커밋에 사용할 회사 이메일을 입력하세요 (예: cody@cocode.im) · 건너뛰려면 s 입력 후 Enter: "
+    read -r git_email || git_email="s"
+    if [[ "$git_email" == "s" || "$git_email" == "S" ]]; then
+      echo "  ⚠ Git 이메일 설정 건너뜀 → 나중에 직접 실행: git config --global user.email <이메일>"
+      break
+    fi
+    if [[ "$git_email" == *@* ]]; then
+      git config --global user.email "$git_email"
+      echo "  ✓ user.email 설정 완료 ($git_email)"
+      break
+    fi
+    echo "  ✗ 이메일 형식이 아닙니다(@가 없음) — 다시 입력해 주세요."
+  done
+else
+  echo "  ⚠ 비대화형 실행 → Git 이메일 설정 건너뜀. 직접 실행: git config --global user.email <이메일>"
+fi
+
+# ------------------------------------------------------------
 # 3.5. cocode-skills 팀 플러그인 설치 (사설 레포 coco-de/skills)
 #   marionette·dart·figma(serve)·maestro·dev-cycle·coui 등 cc-* 플러그인 번들을 설치한다.
 #   private 레포라 `claude plugin marketplace add`가 안 되므로 팀 install.sh로 동기화.
@@ -525,6 +554,7 @@ echo "  python  : $(pyenv exec python --version 2>/dev/null || echo '❌')"
 echo "  node    : $(node --version 2>/dev/null || echo '❌')"
 echo "  npm     : $(npm --version 2>/dev/null || echo '❌')"
 echo "  claude  : $(claude --version 2>/dev/null || echo '설치됨 (새 터미널에서 확인)')"
+echo "  git email: $(git config --global user.email 2>/dev/null || echo '❌ (git config --global user.email <이메일> 로 설정)')"
 echo "  mcp:jira: $(claude plugin list 2>/dev/null | grep -q 'atlassian@claude-plugins-official' && echo '✓ 설치됨 (/mcp 로그인 필요)' || echo '❌')"
 echo "  mcp:figma: $(claude plugin list 2>/dev/null | grep -q 'figma@claude-plugins-official' && echo '✓ 설치됨 (/mcp 로그인 필요)' || echo '❌')"
 ZH_VAL=$(grep '^export ZENHUB_API_TOKEN=' "$HOME/.zshrc" 2>/dev/null | tail -1 | sed 's/^export ZENHUB_API_TOKEN=//; s/^"//; s/"$//')
