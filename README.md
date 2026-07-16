@@ -111,14 +111,6 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 </tr>
 </table>
 
-**🤖 AI 코딩 도구**
-
-<table>
-<tr>
-<td align="center" width="100"><img src="assets/icons/claude.svg" width="36" height="36" alt="Claude Code"><br><sub><b>Claude Code</b></sub></td>
-</tr>
-</table>
-
 **🛠 CLI 도구**
 
 <table>
@@ -141,7 +133,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 <tr>
 <td align="center" width="100"><img src="assets/icons/zsh.svg" width="36" height="36" alt="zsh-syntax-highlighting"><br><sub><b>zsh-syntax-<br>highlighting</b></sub></td>
 <td align="center" width="100"><img src="assets/icons/openjdk.svg" width="36" height="36" alt="openjdk@17"><br><sub><b>openjdk@17</b></sub></td>
-<td align="center" width="100"></td>
+<td align="center" width="100"><img src="assets/icons/claude.svg" width="36" height="36" alt="Claude Code"><br><sub><b>Claude Code</b></sub></td>
 <td align="center" width="100"></td>
 <td align="center" width="100"></td>
 <td align="center" width="100"></td>
@@ -194,11 +186,10 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 | 분류 | 항목 |
 |---|---|
 | 🖥 GUI 앱 | Android Studio, Slack, Figma, Superset, Claude Desktop, Google Chrome, Dia, 1Password, Tailscale, Orca, Lumide |
-| 🤖 AI 코딩 도구 | Claude Code (터미널에서 쓰는 Claude CLI) |
 | 🔌 Claude MCP | jira(atlassian)·figma·flutter-mcp-toolkit 플러그인 자동 설치 + maestro CLI, flutter-mcp-toolkit CLI, marionette·dart MCP, zenhub MCP 자동 등록. `ZENHUB_API_TOKEN`(팀 공용 토큰)은 1Password CLI(`op`)로 `~/.zshrc`에 자동 주입 — git에 커밋 안 됨 (⚠️ atlassian·figma는 최초 1회 `/mcp` OAuth 로그인, zenhub 토큰 주입은 1Password 앱 CLI 통합 또는 `op signin` 필요. flutter-mcp-toolkit은 인증 불필요하나, 특정 Flutter 프로젝트에서 쓰려면 해당 프로젝트에서 `flutter-mcp-toolkit codegen-init` 1회 실행 필요) |
 | 🧩 cocode-skills 팀 플러그인 | 사설 레포 `coco-de/skills`의 `install.sh`로 cc-* 플러그인 번들(marionette·dart·figma·dev-cycle·coui 등) 자동 동기화 (⚠️ `gh auth login` 인증 필요, 미인증 시 건너뜀) |
 | 📱 Android SDK | cmdline-tools, platform-tools, build-tools, platforms, NDK, 에뮬레이터 시스템 이미지, AVD까지 전부 자동 설치·구성 (Android Studio 첫 실행 마법사 불필요) |
-| 🛠 CLI 도구 | go, pyenv, nvm, git, gh, cocoapods, fastlane, awscli, colima, docker, docker-compose, zsh-syntax-highlighting, direnv, openjdk@17 |
+| 🛠 CLI 도구 | go, pyenv, nvm, git, gh, cocoapods, fastlane, awscli, colima, docker, docker-compose, zsh-syntax-highlighting, direnv, openjdk@17, Claude Code |
 | 🐦 Flutter | fvm(버전 관리자)으로 Flutter stable 채널 글로벌 설정, DCM(Dart 코드 품질 검사 도구) |
 | 🎯 Dart 글로벌 패키지 | serverpod_cli 4.0.0-beta.0, marionette_mcp |
 | ☁️ 클라우드 | Google Cloud CLI (gcloud) |
@@ -230,12 +221,6 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 
 이미 `/Applications`에 앱이 설치되어 있으면 건너뜁니다.
 
-**AI 코딩 도구**
-
-| | 도구 | 용도 |
-|---|---|---|
-| <img src="assets/icons/claude.svg" width="20" height="20"> | Claude Code | 터미널에서 대화하듯 코드를 작성·수정하는 Claude CLI |
-
 **Android SDK (자동 설치·구성)**
 
 Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한 번 실행해 설치 마법사를 직접 눌러가며 구성 요소를 받아야 합니다. 이 스크립트는 `android-commandlinetools`(Homebrew)로 받은 `sdkmanager`/`avdmanager`를 이용해 아래 항목을 전부 커맨드라인에서 자동으로 설치·구성하므로, 그 과정이 필요 없습니다.
@@ -252,7 +237,7 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 
 > ⚠️ Android 관련 항목은 전용 라이선스 동의(`sdkmanager --licenses`)가 필요한데, 이 스크립트가 자동으로 동의 처리합니다.
 
-**CLI 도구 (Homebrew Formula)**
+**CLI 도구**
 
 | | 도구 | 용도 |
 |---|---|---|
@@ -269,6 +254,7 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 | <img src="assets/icons/zsh.svg" width="20" height="20"> | zsh-syntax-highlighting | 터미널 명령어에 색을 입혀 오타를 줄여주는 플러그인 |
 | | direnv | 폴더별로 필요한 환경 변수를 자동으로 불러와 주는 도구 |
 | <img src="assets/icons/openjdk.svg" width="20" height="20"> | openjdk@17 | 자바 17 (Android 빌드에 필요) |
+| <img src="assets/icons/claude.svg" width="20" height="20"> | Claude Code | 터미널에서 대화하듯 코드를 작성·수정하는 Claude CLI (brew cask로 설치) |
 
 **Flutter / Dart**
 
