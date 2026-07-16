@@ -525,19 +525,62 @@ fi
 ZENHUB_TOKEN_OP_ACCOUNT="team-cocodeinc.1password.com"                # 팀 1Password 계정 (비밀 아님)
 ZENHUB_TOKEN_OP_REF="op://API Token/ZenHub API Token/credential"      # 팀 공용 항목 경로 (값은 1Password에만 존재)
 
-# op read → ~/.zshrc의 ZENHUB_API_TOKEN 주입. 성공 시 0, 실패 시 1 반환.
-inject_zenhub_token() {
-  local tok
-  tok="$(op read --account "$ZENHUB_TOKEN_OP_ACCOUNT" "$ZENHUB_TOKEN_OP_REF" 2>/dev/null)" || return 1
-  [[ -n "$tok" ]] || return 1
+# ~/.zshrc에서 기존 ZENHUB_API_TOKEN 라인을 모두 제거한다.
+#   빈 값(export ZENHUB_API_TOKEN="")이 남아 있으면 zenhub MCP가 인증 없이 뜨면서
+#   `claude mcp list`에는 '✔ Connected'로 보이지만 실제 호출은 "Missing Authorization token"으로
+#   실패한다 — 조용히 잘못된 상태가 되므로 빈 줄도 반드시 걷어낸다.
+strip_zenhub_token_lines() {
   touch "$HOME/.zshrc"
-  # 기존 ZENHUB_API_TOKEN 라인 제거 후 재기록 (sed 치환 시 토큰 특수문자 문제 회피)
+  # sed 치환은 토큰 특수문자에 취약하므로 grep -v로 줄 단위 제거
   { grep -v '^export ZENHUB_API_TOKEN=' "$HOME/.zshrc" || true; } > "$HOME/.zshrc.tmp"
   mv "$HOME/.zshrc.tmp" "$HOME/.zshrc"
+}
+
+# ~/.zshrc의 ZENHUB_API_TOKEN 라인이 '존재하지만 값이 비어 있는' 상태인지 확인. 그렇다면 0.
+#   ""/''/따옴표 없음을 모두 처리해야 해서 정규식 대신 셸 파라미터 확장으로 값을 벗겨낸다
+#   (정규식으로 빈 문자열 대안을 표현하면 grep 구현체에 따라 에러가 난다).
+zenhub_token_line_is_empty() {
+  local line val
+  line="$(grep '^export ZENHUB_API_TOKEN=' "$HOME/.zshrc" 2>/dev/null | tail -1)"
+  [[ -n "$line" ]] || return 1        # 라인 자체가 없으면 정리할 것도 없음
+  val="${line#export ZENHUB_API_TOKEN=}"
+  val="${val#\"}"; val="${val%\"}"    # 큰따옴표 제거
+  val="${val#\'}"; val="${val%\'}"    # 작은따옴표 제거
+  [[ -z "$val" ]]
+}
+
+# op에 쓸 수 있는 계정이 등록돼 있는지 확인. 등록됨 0, 아니면 1.
+#   ⚠ `op account list`는 계정이 하나도 없어도 종료코드 0에 빈 목록('[]')만 출력한다.
+#     따라서 종료코드가 아니라 '출력 내용'으로 판단해야 한다.
+op_has_account() {
+  local accounts
+  accounts="$(op account list --format=json 2>/dev/null </dev/null)" || return 1
+  [[ -n "$accounts" && "$accounts" != "[]" ]]
+}
+
+# op read → ~/.zshrc의 ZENHUB_API_TOKEN 주입. 성공 시 0, 실패 시 1 반환.
+#   ⚠ op 호출에는 반드시 stdin을 </dev/null로 막는다.
+#     계정이 등록되지 않은 상태의 op는 "Do you want to add an account manually now? [Y/n]"
+#     프롬프트를 띄우고 입력을 기다려 스크립트가 그대로 멈춰버린다. 이 프롬프트는 /dev/tty에
+#     직접 출력되기 때문에 2>/dev/null로도 가려지지 않는다. stdin을 막으면 op는 대기 없이
+#     즉시 종료코드 1로 실패하고, 아래 안내 루프가 사람이 읽을 수 있는 설명을 대신 보여준다.
+inject_zenhub_token() {
+  local tok
+  op_has_account || return 1
+  tok="$(op read --account "$ZENHUB_TOKEN_OP_ACCOUNT" "$ZENHUB_TOKEN_OP_REF" 2>/dev/null </dev/null)" || return 1
+  [[ -n "$tok" ]] || return 1
+  strip_zenhub_token_lines
   printf 'export ZENHUB_API_TOKEN=%q\n' "$tok" >> "$HOME/.zshrc"
 }
 
 log "ZENHUB_API_TOKEN 주입 (1Password 공용 토큰)"
+# 값이 빈 기존 라인은 먼저 걷어낸다 — 남겨두면 zenhub MCP가 '연결됨'처럼 보이면서
+# 실제 호출만 조용히 실패한다. 주입에 성공하면 어차피 새 값으로 다시 기록된다.
+if zenhub_token_line_is_empty; then
+  strip_zenhub_token_lines
+  echo "  · 값이 비어 있던 기존 ZENHUB_API_TOKEN 라인을 제거했습니다 (잘못된 인증 상태 방지)"
+fi
+
 if ! have op; then
   echo "  ⚠ op(1password-cli) 미설치 → ZENHUB_API_TOKEN 수동 설정 필요"
 elif inject_zenhub_token; then
@@ -550,6 +593,8 @@ elif [[ -t 0 ]]; then
     echo "       1) 1Password 앱을 열고 팀 계정($ZENHUB_TOKEN_OP_ACCOUNT)으로 로그인"
     echo "       2) 앱 > 설정(⌘,) > 개발자 > '1Password CLI와 통합' 체크"
     echo "          (이 항목이 안 보이면: 설정 > 보안 > 'Touch ID로 잠금 해제'를 먼저 켜세요)"
+    echo ""
+    echo "     ※ 앱 통합을 켜면 op 계정이 자동 등록됩니다 — 'op account add'를 직접 할 필요는 없습니다."
     echo ""
     printf "     완료했으면 Enter(재시도) · 나중에 하려면 s 입력 후 Enter: "
     read -r zh_ans || zh_ans="s"
@@ -583,7 +628,11 @@ echo "  git email: $(git config --global user.email 2>/dev/null || echo '❌ (gi
 echo "  mcp:jira: $(claude plugin list 2>/dev/null | grep -q 'atlassian@claude-plugins-official' && echo '✓ 설치됨 (/mcp 로그인 필요)' || echo '❌')"
 echo "  mcp:figma: $(claude plugin list 2>/dev/null | grep -q 'figma@claude-plugins-official' && echo '✓ 설치됨 (/mcp 로그인 필요)' || echo '❌')"
 ZH_VAL=$(grep '^export ZENHUB_API_TOKEN=' "$HOME/.zshrc" 2>/dev/null | tail -1 | sed 's/^export ZENHUB_API_TOKEN=//; s/^"//; s/"$//')
-echo "  mcp:zenhub: $(claude mcp list 2>/dev/null | grep -q '^zenhub' && echo "✓ 등록됨$([[ -z "$ZH_VAL" ]] && echo ' (⚠ 토큰 미주입 — op signin 후 재실행)')" || echo '❌')"
+# 토큰 유무는 ~/.zshrc 값으로 판단한다. `claude mcp list`의 'Connected'는 서버 연결만 뜻할 뿐
+# 인증 성공을 뜻하지 않는다 — 토큰이 비어도 Connected로 보이고 실제 호출만 실패한다.
+echo "  mcp:zenhub: $(claude mcp list 2>/dev/null | grep -q '^zenhub' \
+  && echo "✓ 등록됨$([[ -n "$ZH_VAL" ]] && echo ' + 토큰 주입됨 (새 터미널에서 적용)' || echo ' (⚠ 토큰 미주입 — 1Password 앱 CLI 통합 후 재실행)')" \
+  || echo '❌')"
 echo "  maestro : $(maestro --version 2>/dev/null | head -1 || echo '❌')"
 echo "  marionette: $([[ -x "$PUB_CACHE/bin/marionette_mcp" ]] && echo '✓' || echo '❌')"
 echo "  mcp_server_dart: $(dart pub global list 2>/dev/null | grep -q '^mcp_server_dart ' && echo '✓' || echo '❌')"
@@ -602,5 +651,8 @@ echo "  3. Android Studio 실행 후 flutter doctor (SDK/NDK/AVD는 이미 자�
 echo "  4. Claude Code 로그인: claude"
 echo "  5. Claude Code에서 /mcp 실행 → atlassian(jira), figma 각각 팀 계정으로 OAuth 로그인 (최초 1회)"
 echo "  6. zenhub 토큰: 실행 중 8.5단계에서 1Password 설정 안내가 나오면(앱 로그인 + 설정>개발자>'1Password CLI와 통합' 체크) 완료 후 Enter로 자동 주입 (건너뛰었다면 스크립트 재실행 시 주입)"
+echo "     ↳ 주입 후에는 반드시 '새 터미널'에서 claude를 실행하세요. zenhub MCP는 claude 실행 시점의"
+echo "       환경변수에서 토큰을 읽으므로, 예전 터미널에서 띄운 claude는 토큰을 못 읽습니다"
+echo "       (이때 /mcp에는 'Connected'로 보이지만 실제 호출은 'Missing Authorization token'으로 실패)"
 echo "  7. cocode-skills 팀 플러그인이 '❌'이면: gh auth login 후 스크립트 재실행 (사설 레포 접근에 gh 인증 필요)"
 echo "  8. flutter-mcp-toolkit을 특정 Flutter 프로젝트에서 쓰려면 해당 프로젝트에서: flutter-mcp-toolkit codegen-init (mcp_toolkit 패키지 추가, 앱별 1회)"
