@@ -63,12 +63,25 @@ install_cask zed                    "Zed.app"
 
 # ------------------------------------------------------------
 # 2. Claude Code CLI
+#   공식 설치 스크립트(https://claude.ai/install.sh)로 설치한다 — brew cask 대신
+#   공식 홈페이지 권장 방식(자동 업데이트 내장). 바이너리가 ~/.local/bin/claude에
+#   설치되므로, 같은 실행 세션의 뒷단계(2.5 MCP 설치)와 멱등 체크가 바로 동작하도록
+#   PATH에 먼저 반영한다. 기존에 brew cask로 설치된 맥은 감지 후 건너뜀(제거하지 않음).
 # ------------------------------------------------------------
-log "Claude Code CLI 설치"
-if brew list --cask claude-code >/dev/null 2>&1 || have claude; then
-  echo "  ✓ claude-code 이미 설치됨"
+log "Claude Code CLI 설치 (공식 설치 스크립트)"
+export PATH="$HOME/.local/bin:$PATH"
+if have claude; then
+  echo "  ✓ claude 이미 설치됨"
 else
-  brew install --cask claude-code || echo "  ⚠ claude-code 설치 실패 → 건너뜀"
+  curl -fsSL https://claude.ai/install.sh | bash || true
+  # 성공 판정은 인스톨러 종료 코드가 아니라 바이너리 존재로 확인한다
+  # (curl 실패 시 bash가 빈 입력으로 0 종료하는 false-success, 인스톨러가
+  #  설치 후 부수 단계에서 비0 종료하는 false-failure 모두 방지)
+  if have claude; then
+    echo "  ✓ claude 설치 완료 (~/.local/bin/claude)"
+  else
+    echo "  ⚠ claude 설치 실패 → 건너뜀 (수동 설치: curl -fsSL https://claude.ai/install.sh | bash)"
+  fi
 fi
 
 # ------------------------------------------------------------
@@ -487,6 +500,19 @@ ZSHRC
   echo "  ✓ 기본 .zshrc 생성 완료 (기존 파일은 백업됨)"
 fi
 
+# Claude Code 공식 인스톨러 경로(~/.local/bin) PATH 보장
+#   위에서 ~/.zshrc를 새로 만들거나 기존 파일로 교체하므로, 공식 인스톨러가 넣어줬을 수
+#   있는 PATH 설정이 사라질 수 있다. 새 터미널에서도 claude가 바로 실행되도록
+#   ~/.zshrc 확정 후 PATH 라인이 없으면 추가한다(이미 있으면 건너뜀 — 멱등).
+if ! grep -qE '^[[:space:]]*export PATH=.*\.local/bin' "$HOME/.zshrc" 2>/dev/null; then
+  {
+    echo ''
+    echo '# ===== Claude Code (공식 인스톨러, ~/.local/bin) ====='
+    echo 'export PATH="$HOME/.local/bin:$PATH"'
+  } >> "$HOME/.zshrc"
+  echo "  ✓ ~/.zshrc에 ~/.local/bin PATH 추가 (Claude Code)"
+fi
+
 # ------------------------------------------------------------
 # 8.5. ZENHUB_API_TOKEN 주입 (팀 공용 토큰 — 1Password에서 자동 주입)
 #   토큰 값은 git에 커밋하지 않는다. 팀 공용 1Password 항목에서 op CLI로 읽어
@@ -553,7 +579,7 @@ echo "  go      : $(go version 2>/dev/null || echo '❌')"
 echo "  python  : $(pyenv exec python --version 2>/dev/null || echo '❌')"
 echo "  node    : $(node --version 2>/dev/null || echo '❌')"
 echo "  npm     : $(npm --version 2>/dev/null || echo '❌')"
-echo "  claude  : $(claude --version 2>/dev/null || echo '설치됨 (새 터미널에서 확인)')"
+echo "  claude  : $(claude --version 2>/dev/null || echo '❌ (수동 설치: curl -fsSL https://claude.ai/install.sh | bash)')"
 echo "  git email: $(git config --global user.email 2>/dev/null || echo '❌ (git config --global user.email <이메일> 로 설정)')"
 echo "  mcp:jira: $(claude plugin list 2>/dev/null | grep -q 'atlassian@claude-plugins-official' && echo '✓ 설치됨 (/mcp 로그인 필요)' || echo '❌')"
 echo "  mcp:figma: $(claude plugin list 2>/dev/null | grep -q 'figma@claude-plugins-official' && echo '✓ 설치됨 (/mcp 로그인 필요)' || echo '❌')"

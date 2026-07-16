@@ -255,7 +255,7 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 | <img src="assets/icons/zsh.svg" width="20" height="20"> | zsh-syntax-highlighting | 터미널 명령어에 색을 입혀 오타를 줄여주는 플러그인 |
 | | direnv | 폴더별로 필요한 환경 변수를 자동으로 불러와 주는 도구 |
 | <img src="assets/icons/openjdk.svg" width="20" height="20"> | openjdk@17 | 자바 17 (Android 빌드에 필요) |
-| <img src="assets/icons/claude.svg" width="20" height="20"> | Claude Code | 터미널에서 대화하듯 코드를 작성·수정하는 Claude CLI (brew cask로 설치) |
+| <img src="assets/icons/claude.svg" width="20" height="20"> | Claude Code | 터미널에서 대화하듯 코드를 작성·수정하는 Claude CLI (공식 설치 스크립트 `claude.ai/install.sh`로 설치, `~/.local/bin`) |
 
 **Flutter / Dart**
 
@@ -308,7 +308,7 @@ ndk     : ...
 avd     : ...
 ```
 
-> `claude` 항목은 같은 터미널 세션에서 바로 버전이 안 잡힐 수 있어 `설치됨 (새 터미널에서 확인)`으로 표시될 수 있습니다. 정상입니다 — 새 터미널을 열면 확인됩니다.
+> `claude`는 공식 설치 스크립트로 `~/.local/bin`에 설치되며, 스크립트가 같은 실행 세션과 `~/.zshrc` 양쪽에 PATH를 반영해 주므로 버전이 바로 표시됩니다. `❌`로 나오면 안내된 수동 설치 명령을 실행해 주세요.
 
 그 다음, 화면에 안내되는 대로 아래 순서를 진행해주세요.
 
