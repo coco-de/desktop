@@ -32,7 +32,7 @@ export CI=true                   # 많은 CLI가 CI 모드에서 프롬프트 �
 # ------------------------------------------------------------
 # 1. GUI 앱 (brew cask)
 # ------------------------------------------------------------
-log "GUI 앱 설치 (Android Studio, Slack, Figma, Superset, Claude Desktop, Chrome, Dia, 1Password, Tailscale, Orca, Lumide, Zed)"
+log "GUI 앱 설치 (Android Studio, Slack, Figma, Claude Desktop, Chrome, Dia, 1Password, Tailscale, Orca, Lumide, Zed)"
 
 # cask 설치 (이미 /Applications 에 수동 설치된 앱은 건너뜀)
 install_cask() {
@@ -50,7 +50,6 @@ install_cask() {
 install_cask android-studio         "Android Studio.app"
 install_cask slack                  "Slack.app"
 install_cask figma                  "Figma.app"
-install_cask superset               "Superset.app"
 install_cask claude                 "Claude.app"
 install_cask google-chrome          "Google Chrome.app"
 install_cask thebrowsercompany-dia  "Dia.app"
