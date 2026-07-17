@@ -32,7 +32,7 @@ export CI=true                   # 많은 CLI가 CI 모드에서 프롬프트 �
 # ------------------------------------------------------------
 # 1. GUI 앱 (brew cask)
 # ------------------------------------------------------------
-log "GUI 앱 설치 (Android Studio, Slack, Figma, Claude Desktop, Chrome, Dia, 1Password, Tailscale, Orca, Lumide, Zed)"
+log "GUI 앱 설치 (Android Studio, Slack, Figma, Claude Desktop, Chrome, Dia, 1Password, Tailscale, Orca, Lumide, Zed) + 1Password CLI(op — 앱이 아닌 터미널 도구)"
 
 # cask 설치 (이미 /Applications 에 수동 설치된 앱은 건너뜀)
 install_cask() {
@@ -54,7 +54,9 @@ install_cask claude                 "Claude.app"
 install_cask google-chrome          "Google Chrome.app"
 install_cask thebrowsercompany-dia  "Dia.app"
 install_cask 1password              "1Password.app"
-install_cask 1password-cli          ""                          # op CLI (ZENHUB_API_TOKEN 공용 토큰 주입에 사용)
+# 1Password CLI: 터미널에서 1Password 금고를 읽는 `op` 명령. 앱이 아니라 CLI라 /Applications에 없다.
+#   이 스크립트에서는 8.5단계에서 팀 공용 ZenHub 토큰을 읽어오는 데 쓴다 (설정 방법은 8.5단계 주석 참고).
+install_cask 1password-cli          ""
 install_cask tailscale              "Tailscale.app"
 install_cask orca                   "Orca.app"                 stablyai/orca/orca
 install_cask lumide                 "Lumide.app"
@@ -514,13 +516,27 @@ fi
 
 # ------------------------------------------------------------
 # 8.5. ZENHUB_API_TOKEN 주입 (팀 공용 토큰 — 1Password에서 자동 주입)
-#   토큰 값은 git에 커밋하지 않는다. 팀 공용 1Password 항목에서 op CLI로 읽어
-#   ~/.zshrc의 ZENHUB_API_TOKEN에 기록한다. (section 8에서 .zshrc가 확정된 뒤 실행)
-#   전제: op(1password-cli) 설치됨 + 1Password 앱 CLI 통합 활성화(팀 team-cocodeinc 계정 로그인)
+#
+#   [이 단계가 하는 일 — 비개발자용 설명]
+#   ZenHub(이슈 보드)를 Claude Code에서 쓰려면 '토큰'이라는 비밀번호 같은 값이 필요하다.
+#   이 값을 사람마다 복사·붙여넣기하지 않도록, 팀 공용 1Password 금고에 넣어 두고
+#   1Password CLI(`op`)로 읽어 ~/.zshrc에 자동으로 적어준다.
+#   (`op` = 1Password를 터미널에서 쓰는 명령. 1Password 앱과 같은 금고를 본다.)
+#   토큰 값은 1Password에만 있고 git에는 절대 커밋되지 않는다.
+#   실행 순서상 section 8에서 .zshrc가 확정된 뒤에 실행한다.
+#
+#   [동작 전제]
+#   1) op(1password-cli) 설치됨 — 1단계에서 cask로 설치
+#   2) 1Password 앱에 팀 계정(team-cocodeinc)으로 로그인
+#   3) 1Password 앱 > 설정(⌘,) > 개발자 > '1Password CLI와 통합' 체크
+#      → 이 통합을 켜야 op가 앱의 로그인 세션을 그대로 빌려 쓴다.
+#        (안 켜면 op는 등록된 계정이 없어 실패한다. 'op account add'를 직접 할 필요는 없다.)
 #   ※ 팀 공용 1Password 항목: "API Token" 볼트 > "ZenHub API Token" > credential 필드
 #     (계정이 여러 개인 사용자도 동작하도록 --account로 팀 계정을 명시)
-#   ※ op 준비가 안 됐고 터미널(TTY)이면 여기서 멈춰 안내 → 1Password 설정 완료 후 Enter로 재시도.
-#     파이프 실행(TTY 없음)이면 멈추지 않고 건너뜀(재실행 시 자동 주입).
+#
+#   [준비가 안 됐을 때]
+#   터미널(TTY)이면 여기서 멈춰 한글 안내를 띄우고, 1Password 설정을 마친 뒤 Enter로 재시도한다.
+#   파이프 실행(TTY 없음)이면 멈추지 않고 건너뜀(설정 후 스크립트 재실행 시 자동 주입).
 # ------------------------------------------------------------
 ZENHUB_TOKEN_OP_ACCOUNT="team-cocodeinc.1password.com"                # 팀 1Password 계정 (비밀 아님)
 ZENHUB_TOKEN_OP_REF="op://API Token/ZenHub API Token/credential"      # 팀 공용 항목 경로 (값은 1Password에만 존재)
@@ -581,36 +597,81 @@ if zenhub_token_line_is_empty; then
   echo "  · 값이 비어 있던 기존 ZENHUB_API_TOKEN 라인을 제거했습니다 (잘못된 인증 상태 방지)"
 fi
 
+# 1Password CLI 설정 방법을 화면에 그대로 안내한다.
+#   이 문구는 '왜 필요한지 → 무엇을 누르면 되는지 → 어떻게 확인하는지' 순서로 읽히도록 유지한다.
+print_1password_cli_guide() {
+  echo ""
+  echo "  ⏸  ZenHub 토큰을 가져오려면 1Password CLI 설정이 필요합니다."
+  echo ""
+  echo "     [무엇을 하는 건가요?]"
+  echo "     ZenHub를 쓰려면 비밀번호 같은 '토큰' 값이 필요합니다. 이 값은 팀 공용 1Password 금고에"
+  echo "     들어 있고, 1Password CLI(op)가 그 금고를 대신 열어 읽어옵니다. 아래 설정은 op에게"
+  echo "     '1Password 앱에 이미 로그인된 상태를 그대로 써도 된다'고 허락해 주는 과정입니다."
+  echo "     (토큰 값은 1Password에만 저장되고, 이 저장소(git)에는 절대 들어가지 않습니다.)"
+  echo ""
+  echo "     [설정 방법 — 1Password 앱에서]"
+  echo "       1) 1Password 앱을 열고 팀 계정($ZENHUB_TOKEN_OP_ACCOUNT)으로 로그인"
+  echo "       2) 앱 메뉴 > 설정(⌘,) > '개발자' 탭 > '1Password CLI와 통합' 체크"
+  echo "          · '개발자' 탭이 안 보이면: 설정 > 보안 > 'Touch ID로 잠금 해제'를 먼저 켜세요"
+  echo "          · 터미널을 이미 열어둔 상태였다면 체크 후 이 창에서 Enter만 누르면 됩니다"
+  echo ""
+  echo "     [잘 됐는지 확인하려면 — 새 터미널 창에서]"
+  echo "       op account list   ← 팀 계정($ZENHUB_TOKEN_OP_ACCOUNT)이 목록에 보이면 성공"
+  echo "                            · 목록이 비어 있거나 '계정을 추가할까요?'라고 물으면"
+  echo "                              위 2번 체크가 아직 안 된 것입니다 (질문에는 n으로 답하세요)"
+  echo "                            · 몇 초~수십 초 멈추면 1Password 앱이 잠금 해제(Touch ID)를"
+  echo "                              기다리는 중입니다 — 1Password 창에서 승인하면 진행됩니다"
+  echo ""
+  echo "     ※ 'op account add'를 직접 입력할 필요는 없습니다 — 앱 통합을 켜면 계정이 자동 등록됩니다."
+  echo "     ※ 계정 목록에는 보이는데 계속 실패한다면, 팀 'API Token' 금고 접근 권한이 없는 경우입니다."
+  echo "        이때는 팀 관리자에게 해당 금고 공유를 요청해 주세요."
+  echo ""
+}
+
+# 9단계 검증 출력에서 재사용할 op 상태. 여기서 한 번만 판정한다 —
+# op 호출은 1Password 앱 승인(Touch ID)을 기다릴 수 있어 검증 단계에서 다시 부르면 또 멈춘다.
+#   missing = op 미설치 · not-ready = 설치됐지만 앱 CLI 통합/권한 미완료 · ready = 토큰까지 읽힘
+OP_STATUS="missing"
+
 if ! have op; then
   echo "  ⚠ op(1password-cli) 미설치 → ZENHUB_API_TOKEN 수동 설정 필요"
+  echo "     (brew install --cask 1password-cli 로 설치한 뒤 스크립트를 재실행하면 자동 주입됩니다)"
 elif inject_zenhub_token; then
+  OP_STATUS="ready"
   echo "  ✓ ZENHUB_API_TOKEN 주입 완료 (~/.zshrc, 토큰 값은 커밋되지 않음)"
 elif [[ -t 0 ]]; then
+  OP_STATUS="not-ready"
   # 대화형: 1Password 로그인 + CLI 통합을 마칠 때까지 멈춰서 안내 → Enter로 재시도
   while true; do
-    echo ""
-    echo "  ⏸  ZenHub 토큰 주입에 1Password 설정이 필요합니다. 아래를 완료해 주세요:"
-    echo "       1) 1Password 앱을 열고 팀 계정($ZENHUB_TOKEN_OP_ACCOUNT)으로 로그인"
-    echo "       2) 앱 > 설정(⌘,) > 개발자 > '1Password CLI와 통합' 체크"
-    echo "          (이 항목이 안 보이면: 설정 > 보안 > 'Touch ID로 잠금 해제'를 먼저 켜세요)"
-    echo ""
-    echo "     ※ 앱 통합을 켜면 op 계정이 자동 등록됩니다 — 'op account add'를 직접 할 필요는 없습니다."
-    echo ""
-    printf "     완료했으면 Enter(재시도) · 나중에 하려면 s 입력 후 Enter: "
+    print_1password_cli_guide
+    printf "     설정을 마쳤으면 Enter(재시도) · 나중에 하려면 s 입력 후 Enter: "
     read -r zh_ans || zh_ans="s"
     if [[ "$zh_ans" == "s" || "$zh_ans" == "S" ]]; then
-      echo "  ⚠ ZENHUB_API_TOKEN 주입 건너뜀 → 나중에 스크립트를 재실행하면 자동 주입됩니다"
+      echo "  ⚠ ZENHUB_API_TOKEN 주입 건너뜀 → 1Password 설정을 마친 뒤 스크립트를 재실행하면 자동 주입됩니다"
       break
     fi
     if inject_zenhub_token; then
+      OP_STATUS="ready"
       echo "  ✓ ZENHUB_API_TOKEN 주입 완료 (~/.zshrc, 토큰 값은 커밋되지 않음)"
       break
     fi
-    echo "  ✗ 아직 op read 실패 — 1Password 로그인/CLI 통합 상태를 확인한 뒤 다시 Enter를 누르세요."
+    # 어느 단계에서 막혔는지 짚어준다 — 계정 자체가 없으면 앱 통합이, 있으면 금고 권한이 원인이다.
+    if op_has_account; then
+      echo "  ✗ 계정은 등록됐지만 토큰을 읽지 못했습니다."
+      echo "     → 팀 계정($ZENHUB_TOKEN_OP_ACCOUNT)으로 로그인된 상태인지, 'API Token' 금고에"
+      echo "       접근 권한이 있는지 확인한 뒤 다시 Enter를 누르세요."
+    else
+      echo "  ✗ 아직 op에 등록된 1Password 계정이 없습니다."
+      echo "     → 위 [설정 방법]의 2번('1Password CLI와 통합' 체크)이 켜졌는지 확인한 뒤 다시 Enter를 누르세요."
+    fi
   done
 else
   # 비대화형(TTY 없음): 멈추지 않고 건너뜀
-  echo "  ⚠ op read 실패(비대화형) → 1Password 앱 CLI 통합 후 스크립트 재실행 시 자동 주입"
+  OP_STATUS="not-ready"
+  echo "  ⚠ op read 실패(비대화형) → 아래 1Password CLI 설정을 마친 뒤 스크립트를 재실행하면 자동 주입됩니다"
+  echo "     1) 1Password 앱에 팀 계정($ZENHUB_TOKEN_OP_ACCOUNT)으로 로그인"
+  echo "     2) 앱 > 설정(⌘,) > 개발자 > '1Password CLI와 통합' 체크"
+  echo "     3) 확인: op account list  (팀 계정이 보이면 성공)"
 fi
 
 # ------------------------------------------------------------
@@ -627,6 +688,19 @@ echo "  claude  : $(claude --version 2>/dev/null || echo '❌ (수동 설치: cu
 echo "  git email: $(git config --global user.email 2>/dev/null || echo '❌ (git config --global user.email <이메일> 로 설정)')"
 echo "  mcp:jira: $(claude plugin list 2>/dev/null | grep -q 'atlassian@claude-plugins-official' && echo '✓ 설치됨 (/mcp 로그인 필요)' || echo '❌')"
 echo "  mcp:figma: $(claude plugin list 2>/dev/null | grep -q 'figma@claude-plugins-official' && echo '✓ 설치됨 (/mcp 로그인 필요)' || echo '❌')"
+# op는 '설치됨'과 '설정됨(1Password 앱 CLI 통합)'이 다르다 — 설치만 되고 통합이 꺼져 있으면 토큰을 못 읽는다.
+# 8.5단계에서 이미 판정한 OP_STATUS를 그대로 쓴다 (여기서 op를 다시 부르면 앱 승인 대기로 멈출 수 있음).
+case "${OP_STATUS:-missing}" in
+  ready)     echo "  op(1Password CLI): ✓ 설치 + 팀 계정 연결됨" ;;
+  # 원인은 두 가지다 — 앱 CLI 통합이 꺼졌거나, 통합은 켰지만 'API Token' 금고 권한이 없거나.
+  # 여기서 op를 다시 불러 구분하면 또 멈출 수 있으므로, 확인 순서만 알려준다.
+  not-ready)
+    echo "  op(1Password CLI): ⚠ 설치됨 (설정 미완료 — 토큰을 읽지 못했습니다)"
+    echo "     ① 1Password 앱 > 설정(⌘,) > 개발자 > '1Password CLI와 통합' 체크 확인 → 스크립트 재실행"
+    echo "     ② 이미 켜져 있다면 팀 'API Token' 금고 접근 권한이 없는 경우입니다 → 팀 관리자에게 공유 요청"
+    ;;
+  *)         echo "  op(1Password CLI): ❌ (brew install --cask 1password-cli 후 재실행)" ;;
+esac
 ZH_VAL=$(grep '^export ZENHUB_API_TOKEN=' "$HOME/.zshrc" 2>/dev/null | tail -1 | sed 's/^export ZENHUB_API_TOKEN=//; s/^"//; s/"$//')
 # 토큰 유무는 ~/.zshrc 값으로 판단한다. `claude mcp list`의 'Connected'는 서버 연결만 뜻할 뿐
 # 인증 성공을 뜻하지 않는다 — 토큰이 비어도 Connected로 보이고 실제 호출만 실패한다.
@@ -650,7 +724,10 @@ echo "  2. p10k 테마 설정이 없다면: p10k configure"
 echo "  3. Android Studio 실행 후 flutter doctor (SDK/NDK/AVD는 이미 자동 설치·구성됨)"
 echo "  4. Claude Code 로그인: claude"
 echo "  5. Claude Code에서 /mcp 실행 → atlassian(jira), figma 각각 팀 계정으로 OAuth 로그인 (최초 1회)"
-echo "  6. zenhub 토큰: 실행 중 8.5단계에서 1Password 설정 안내가 나오면(앱 로그인 + 설정>개발자>'1Password CLI와 통합' 체크) 완료 후 Enter로 자동 주입 (건너뛰었다면 스크립트 재실행 시 주입)"
+echo "  6. zenhub 토큰(1Password CLI): 실행 중 8.5단계에서 설정 안내가 나오면 아래를 마친 뒤 Enter를 누르면 자동 주입됩니다"
+echo "     ↳ 1Password 앱 로그인(team-cocodeinc) → 설정(⌘,) > 개발자 > '1Password CLI와 통합' 체크"
+echo "       ('개발자' 탭이 없으면 설정 > 보안 > 'Touch ID로 잠금 해제'를 먼저 켜세요)"
+echo "       확인: op account list 에 팀 계정이 보이면 성공 · 건너뛰었다면 스크립트 재실행 시 주입됩니다"
 echo "     ↳ 주입 후에는 반드시 '새 터미널'에서 claude를 실행하세요. zenhub MCP는 claude 실행 시점의"
 echo "       환경변수에서 토큰을 읽으므로, 예전 터미널에서 띄운 claude는 토큰을 못 읽습니다"
 echo "       (이때 /mcp에는 'Connected'로 보이지만 실제 호출은 'Missing Authorization token'으로 실패)"
