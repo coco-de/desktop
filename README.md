@@ -322,9 +322,24 @@ avd     : ...
 2. 터미널 앱(iTerm2/터미널) 환경설정에서 폰트를 **MesloLGS NF**로 변경 — 폰트 자체는 자동 설치되지만, 실제로 사용하도록 선택하는 건 직접 해주셔야 powerlevel10k 아이콘이 깨지지 않습니다
 3. `p10k configure` 실행 — 아직 p10k 테마 설정을 해본 적이 없다면
 4. Android Studio 실행 후 `flutter doctor`로 최종 확인 — SDK/NDK/에뮬레이터/AVD는 스크립트가 이미 자동으로 설치·구성해 두었으므로 첫 실행 설치 마법사를 따로 진행할 필요는 없습니다
-5. `claude` 실행 후 Claude Code 로그인
+5. **`colima start` 실행 — Jira(Atlassian) MCP를 쓰려면 꼭 필요합니다** (아래 🐳 안내 참고). Jira MCP는 docker 컨테이너로 뜨는데, colima가 그 docker 데몬입니다. 안 켜져 있으면 `claude`에서 Jira가 연결되지 않습니다
+6. `claude` 실행 후 Claude Code 로그인
 
 > ✉️ **Git 이메일 (실행 중 입력)**: 스크립트 실행 도중 Git 설정 단계(3.2)에서 커밋에 사용할 회사 이메일을 물어봅니다. 입력하면 `git config --global user.email`에 저장되고, 이미 설정된 맥이라면 묻지 않고 건너뜁니다. `s` + Enter로 건너뛸 수도 있으며, 그 경우 나중에 터미널에서 `git config --global user.email <이메일>`을 직접 실행하면 됩니다.
+
+> ## 🐳 Jira를 쓰려면 docker(colima)를 켜 두세요 — 꼭!
+>
+> **Claude Code에서 Jira(Atlassian)를 쓰려면, 그 전에 터미널에서 `colima start`를 실행해 두어야 합니다.**
+>
+> ```bash
+> colima start      # docker 데몬 켜기 (Jira MCP가 뜨는 데 필요)
+> claude            # 그 다음 새 터미널에서 Claude Code 실행
+> ```
+>
+> - **왜?** Jira MCP는 파이썬 서버라서, 팀 전원이 똑같이 동작하도록 **docker 컨테이너**로 실행됩니다. colima가 그 docker 엔진이고, **꺼져 있으면 Jira MCP가 연결되지 않습니다.**
+> - **증상**: `claude` 안에서 `/mcp`를 보면 `mcp-atlassian`이 연결 실패로 뜨거나, Jira를 물어보면 "연결할 수 없다"는 답이 옵니다 → 십중팔구 colima(docker)가 꺼진 상태입니다. `colima start` 후 **새 터미널**에서 `claude`를 다시 켜세요.
+> - **확인**: `docker info` 가 에러 없이 나오면 데몬이 켜진 것입니다. (`colima status`로도 확인 가능)
+> - 참고: ZenHub·figma 등 다른 MCP는 docker가 필요 없습니다. **Jira MCP만** docker로 뜹니다.
 
 > 🔑 **ZenHub·Jira 토큰 · 1Password CLI 설정 (실행 중 안내됨)**
 >
