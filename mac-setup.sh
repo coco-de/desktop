@@ -29,6 +29,27 @@ have() { command -v "$1" >/dev/null 2>&1; }
 export NONINTERACTIVE=1          # Homebrew 비대화 모드
 export CI=true                   # 많은 CLI가 CI 모드에서 프롬프트 생략
 
+# ============================================================
+# 실행 단계 맵 (섹션 번호는 삽입 이력상 비순차 — 아래가 실제 실행 순서)
+#   1.   GUI 앱 (brew cask: 개발툴·브라우저·1Password·op 등)
+#   2.   Claude Code CLI
+#   2.5. Claude MCP (figma 플러그인 + zenhub·atlassian(jira) 토큰 등록 + maestro·flutter-mcp-toolkit)
+#        └ 설정 기록/자체완결 설치라 런타임(node·dart)보다 앞서도 무해.
+#          런타임은 새 세션에서 MCP 서버가 실제 뜰 때만 필요 (그땐 스크립트 완료 후).
+#   3.   CLI 도구 (brew formulae: go·gh·jq·docker 등)
+#   3.2. Git 사용자 이메일 (git config --global user.email, TTY면 입력·s로 건너뜀)
+#   3.5. cocode-skills 팀 플러그인 (사설 레포 install.sh, gh 인증 필요)
+#   4.   Flutter/Dart(FVM) · Dart 글로벌 · gcloud · DCM · Android SDK/AVD
+#   5.   Python (pyenv)
+#   6.   Node.js (nvm)
+#   7.   oh-my-zsh + powerlevel10k
+#   8.   ~/.zshrc / ~/.p10k.zsh 반영
+#   8.5. ZENHUB_API_TOKEN 주입 (1Password op read → .zshrc, TTY면 안내 후 Enter)
+#   8.6. ATLASSIAN_MCP_TOKEN 주입 (1Password op read → Basic 인증값 계산 → .zshrc)
+#   9.   설치 검증 + 다음 단계 안내
+# 공통 규칙: 모든 단계 멱등(이미 설치 시 스킵) · 실패해도 ⚠ 후 계속 · 시크릿 미커밋
+# ============================================================
+
 # ------------------------------------------------------------
 # 1. GUI 앱 (brew cask)
 # ------------------------------------------------------------
@@ -251,8 +272,10 @@ else
 fi
 
 # ------------------------------------------------------------
-# 4. FVM + Flutter stable 글로벌 설치
+# 4. Flutter/Dart 및 SDK 일괄 (하위 단계는 각 log 라인 참고)
+#    4-a FVM+Flutter · 4-b Dart 글로벌 패키지 · 4-c gcloud · 4-d DCM · 4-e Android SDK/AVD
 # ------------------------------------------------------------
+# 4-a. FVM + Flutter stable 글로벌 설치
 log "FVM 설치 및 Flutter stable 글로벌 설정"
 # 최신 Homebrew는 서드파티 tap을 신뢰 등록(brew trust)해야 설치를 허용한다.
 # (brew trust 명령이 없는 구버전 Homebrew에서는 그냥 건너뜀)
@@ -263,7 +286,7 @@ yes | fvm install stable
 yes | fvm global stable --force 2>/dev/null || yes | fvm global stable
 export PATH="$HOME/fvm/default/bin:$PATH"
 
-# Dart 글로벌 패키지 (serverpod_cli, marionette_mcp, mcp_server_dart)
+# 4-b. Dart 글로벌 패키지 (serverpod_cli, marionette_mcp, mcp_server_dart)
 log "Dart 글로벌 패키지 설치"
 export PUB_CACHE="$HOME/.pub-cache"
 export PATH="$PUB_CACHE/bin:$PATH"
@@ -271,7 +294,7 @@ dart pub global activate serverpod_cli 4.0.0-beta.0 || echo "  ⚠ serverpod_cli
 dart pub global activate marionette_mcp || echo "  ⚠ marionette_mcp 설치 실패 → 건너뜀"
 dart pub global activate mcp_server_dart || echo "  ⚠ mcp_server_dart 설치 실패 → 건너뜀"
 
-# Google Cloud CLI (gcloud)
+# 4-c. Google Cloud CLI (gcloud)
 log "Google Cloud CLI 설치"
 if have gcloud; then
   echo "  ✓ gcloud 이미 설치됨"
@@ -279,7 +302,7 @@ else
   brew install --cask gcloud-cli 2>/dev/null || brew install --cask google-cloud-sdk || echo "  ⚠ gcloud 설치 실패 → 건너뜀"
 fi
 
-# DCM (Dart Code Metrics)
+# 4-d. DCM (Dart Code Metrics)
 log "DCM 설치"
 # 서드파티 tap 신뢰 등록 — 없으면 최신 Homebrew가 "untrusted tap" 에러로 설치를 거부한다
 brew tap CQLabs/dcm 2>/dev/null || true
@@ -289,6 +312,7 @@ brew list dcm >/dev/null 2>&1 && echo "  ✓ dcm 이미 설치됨" || yes | brew
 # Android SDK 구성요소 (cmdline-tools, platform-tools, build-tools, platforms, NDK, 에뮬레이터, AVD)
 # Android Studio(GUI)를 직접 실행해 SDK 설치 마법사를 거치지 않아도 되도록,
 # brew의 cmdline-tools만으로 표준 SDK 위치($ANDROID_HOME)에 필요한 구성요소를 전부 설치한다.
+# 4-e. Android SDK 구성요소
 log "Android SDK 구성요소 설치 (cmdline-tools, platform-tools, build-tools, platforms, NDK, AVD)"
 
 export ANDROID_HOME="$HOME/Library/Android/sdk"
