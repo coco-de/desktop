@@ -93,8 +93,8 @@ fi
 #     ③ 인증 계층      : figma OAuth는 최초 1회 `/mcp`에서 수동 로그인 (자동화 불가),
 #                        zenhub·atlassian은 ~/.zshrc의 팀 공용 토큰(런타임 확장)으로 인증 — 토큰 값은 커밋 금지,
 #                        flutter-mcp-toolkit은 별도 인증 불필요
-#   ※ atlassian(jira)은 과거 OAuth 플러그인이었으나, ZenHub처럼 1Password 팀 공용 토큰(서비스 계정 키)으로
-#     통일했다 — 사람이 매번 `/mcp` OAuth 로그인하는 수고를 없애기 위함. (토큰 주입은 8.6단계)
+#   ※ atlassian(jira)은 과거 OAuth 플러그인이었으나, ZenHub처럼 1Password 팀 공용 토큰(개발팀 공용
+#     계정의 Jira 개인 토큰, Basic 인증)으로 통일했다 — 매번 `/mcp` OAuth 로그인하는 수고를 없애기 위함. (토큰 주입은 8.6단계)
 #   ※ marionette·dart·figma(serve) MCP 정의는 사설 cocode-skills 플러그인 번들에서 제공됨
 #     (coco-de/skills의 install.sh — 아래 3.5단계에서 설치)
 # ------------------------------------------------------------
@@ -137,16 +137,16 @@ if have claude; then
       || echo "  ⚠ zenhub MCP 등록 실패 → 건너뜀"
   fi
 
-  # atlassian MCP (공식 원격 MCP + 서비스 계정 키 — zenhub와 동일 패턴)
-  #   엔드포인트 https://mcp.atlassian.com/v1/mcp 에 Authorization: Bearer <서비스 계정 키> 헤더로 인증.
-  #   키는 ~/.zshrc의 ATLASSIAN_MCP_TOKEN에서 런타임 확장되므로 단일따옴표로 리터럴 등록 (키 값 커밋 금지).
-  #   ⚠ 조직 관리자가 'API 토큰 인증'을 활성화하고 서비스 계정 키를 발급해야 실제로 동작한다(8.5단계 안내 참고).
+  # atlassian MCP (공식 원격 MCP + 개발팀 공용 계정 개인 토큰 — zenhub와 동일 패턴)
+  #   엔드포인트 https://mcp.atlassian.com/v1/mcp 에 Authorization: Basic base64(이메일:토큰) 헤더로 인증.
+  #   ATLASSIAN_MCP_TOKEN에는 'Basic <base64>' 전체가 들어가므로(8.6단계 계산), 헤더는 그 값을 그대로 쓴다.
+  #   ~/.zshrc에서 런타임 확장되므로 단일따옴표로 리터럴 등록 (값 커밋 금지).
   if claude mcp list 2>/dev/null | grep -q "^atlassian"; then
     echo "  ✓ atlassian MCP 이미 등록됨"
   else
     claude mcp add atlassian --scope user -- \
       npx -y mcp-remote https://mcp.atlassian.com/v1/mcp \
-      --header 'Authorization:Bearer ${ATLASSIAN_MCP_TOKEN}' >/dev/null 2>&1 \
+      --header 'Authorization:${ATLASSIAN_MCP_TOKEN}' >/dev/null 2>&1 \
       && echo "  ✓ atlassian MCP 등록 (토큰은 8.6단계에서 1Password 공용 항목으로 주입)" \
       || echo "  ⚠ atlassian MCP 등록 실패 → 건너뜀"
   fi
@@ -565,9 +565,12 @@ fi
 # ------------------------------------------------------------
 ZENHUB_TOKEN_OP_ACCOUNT="team-cocodeinc.1password.com"                # 팀 1Password 계정 (비밀 아님)
 ZENHUB_TOKEN_OP_REF="op://API Token/ZenHub API Token/credential"      # 팀 공용 항목 경로 (값은 1Password에만 존재)
-# atlassian(jira) MCP도 같은 팀 계정·같은 볼트의 서비스 계정 키를 쓴다 (아래 8.6단계에서 주입).
-#   값은 raw 서비스 계정 키 — MCP 등록 헤더에서 'Bearer '가 앞에 붙는다(2.5단계 참고).
-ATLASSIAN_TOKEN_OP_REF="op://API Token/Atlassian MCP Token/credential" # 팀 공용 항목 경로 (값은 1Password에만 존재)
+# atlassian(jira) MCP도 같은 팀 계정·같은 볼트의 토큰을 쓴다 (아래 8.6단계에서 주입).
+#   자격증명은 개발팀 공용 계정(dev@cocode.im)의 Jira 개인 API 토큰(ATATT…)이라
+#   인증은 Basic base64(이메일:토큰) 방식이다. 8.6단계에서 이 base64를 계산해 주입한다.
+#   ※ 이메일은 비밀이 아니라 스크립트 상수로 둔다(1Password 항목의 username 필드는 비어 있음).
+ATLASSIAN_TOKEN_OP_REF="op://API Token/JIRA API Token/credential"      # 팀 공용 항목 경로 (토큰 값은 1Password에만 존재)
+ATLASSIAN_MCP_EMAIL="dev@cocode.im"                                    # 개발팀 공용 Jira 계정 이메일 (Basic 인증용, 비밀 아님)
 
 # ~/.zshrc에서 기존 ZENHUB_API_TOKEN 라인을 모두 제거한다.
 #   빈 값(export ZENHUB_API_TOKEN="")이 남아 있으면 zenhub MCP가 인증 없이 뜨면서
@@ -619,8 +622,9 @@ inject_zenhub_token() {
 
 # ── Atlassian(jira) MCP 토큰 헬퍼 — 위 ZenHub 3형제와 동일 패턴 ──────────────
 #   op 계정 준비(앱 CLI 통합)는 ZenHub 단계에서 이미 처리되므로, 여기서는 계정 안내를
-#   반복하지 않고 '주입 시도 + 정확한 경고'만 한다. 인증 방식은 서비스 계정 키(Bearer)라
-#   ATLASSIAN_MCP_TOKEN에는 raw 키만 넣고, 'Bearer '는 MCP 등록 헤더가 붙인다(2.5단계).
+#   반복하지 않고 '주입 시도 + 정확한 경고'만 한다. 인증은 개발팀 공용 계정의 개인 토큰이라
+#   Basic base64(이메일:토큰) 방식 — 이 base64 계산값을 'Basic ' 접두사와 함께
+#   ATLASSIAN_MCP_TOKEN에 통째로 넣고, MCP 등록 헤더는 그 값을 그대로 쓴다(2.5단계).
 strip_atlassian_token_lines() {
   touch "$HOME/.zshrc"
   { grep -v '^export ATLASSIAN_MCP_TOKEN=' "$HOME/.zshrc" || true; } > "$HOME/.zshrc.tmp"
@@ -638,12 +642,14 @@ atlassian_token_line_is_empty() {
 }
 
 inject_atlassian_token() {
-  local tok
+  local tok basic
   op_has_account || return 1
   tok="$(op read --account "$ZENHUB_TOKEN_OP_ACCOUNT" "$ATLASSIAN_TOKEN_OP_REF" 2>/dev/null </dev/null)" || return 1
   [[ -n "$tok" ]] || return 1
+  # 개인 토큰 → Basic base64(이메일:토큰). base64는 76열에서 줄바꿈될 수 있어 tr로 개행 제거.
+  basic="Basic $(printf '%s:%s' "$ATLASSIAN_MCP_EMAIL" "$tok" | base64 | tr -d '\n')"
   strip_atlassian_token_lines
-  printf 'export ATLASSIAN_MCP_TOKEN=%q\n' "$tok" >> "$HOME/.zshrc"
+  printf 'export ATLASSIAN_MCP_TOKEN=%q\n' "$basic" >> "$HOME/.zshrc"
 }
 
 log "ZENHUB_API_TOKEN 주입 (1Password 공용 토큰)"
@@ -732,15 +738,15 @@ else
 fi
 
 # ------------------------------------------------------------
-# 8.6. ATLASSIAN_MCP_TOKEN 주입 (팀 공용 서비스 계정 키 — 1Password에서 자동 주입)
-#   ZenHub와 완전히 동일한 방식. op 계정 설정(앱 CLI 통합)은 위 8.5에서 이미 안내·처리됐으므로
+# 8.6. ATLASSIAN_MCP_TOKEN 주입 (개발팀 공용 계정 Jira 토큰 — 1Password에서 자동 주입)
+#   ZenHub와 동일한 방식. op 계정 설정(앱 CLI 통합)은 위 8.5에서 이미 안내·처리됐으므로
 #   여기서는 그 안내를 반복하지 않고 '주입 시도 + 원인별 경고'만 한다.
-#   ⚠ 전제(관리자 작업): Atlassian 조직 관리자가 ① 'API 토큰 인증'을 활성화하고
-#     ② 서비스 계정 키를 발급해 팀 공용 1Password("API Token" 볼트 > "Atlassian MCP Token")에
-#     넣어야 실제로 주입된다. 그 전까지는 ZenHub가 토큰 생기기 전 그랬듯 '등록됨 + 미주입' 상태(비파괴적).
+#   자격증명은 개발팀 공용 계정(dev@cocode.im)의 Jira 개인 토큰(팀 "API Token" 볼트 > "JIRA API Token")이며,
+#   inject_atlassian_token이 Basic base64(이메일:토큰)를 계산해 ATLASSIAN_MCP_TOKEN에 넣는다.
+#   (2026-07 실측: Jira REST·Atlassian 원격 MCP initialize 모두 200 — 인증 방식·자격증명 검증됨.)
 # ------------------------------------------------------------
-log "ATLASSIAN_MCP_TOKEN 주입 (1Password 공용 서비스 계정 키)"
-#   ATLASSIAN_STATUS: 9단계 검증에서 재사용 — missing(op 미설치) / not-injected(op는 되나 키 못 읽음) / ready
+log "ATLASSIAN_MCP_TOKEN 주입 (1Password 공용 계정 Jira 토큰, Basic 인증)"
+#   ATLASSIAN_STATUS: 9단계 검증에서 재사용 — missing(op 미설치) / not-injected(op는 되나 토큰 못 읽음) / ready
 ATLASSIAN_STATUS="missing"
 
 # 값이 빈 기존 라인은 먼저 걷어낸다 (ZenHub와 동일 — 빈 값이 남으면 MCP가 '연결됨'처럼 보이며 호출만 실패)
@@ -757,13 +763,13 @@ elif inject_atlassian_token; then
   echo "  ✓ ATLASSIAN_MCP_TOKEN 주입 완료 (~/.zshrc, 키 값은 커밋되지 않음)"
 else
   ATLASSIAN_STATUS="not-injected"
-  # op가 준비됐는데도 못 읽었다면 대개 '항목이 아직 없음' = 관리자가 서비스 계정 키를 안 만든 것.
+  # op가 준비됐는데도 못 읽었다면 대개 팀 'API Token' 볼트 접근 권한이 없거나 항목명이 다른 경우.
   if op_has_account; then
-    echo "  ⚠ ATLASSIAN_MCP_TOKEN 미주입 — 1Password에서 'Atlassian MCP Token' 항목을 읽지 못했습니다."
-    echo "     대개 아직 발급 전입니다. 조직 관리자에게 아래를 요청하세요:"
-    echo "       1) Atlassian 관리자 설정에서 'API 토큰 인증(machine-to-machine)' 활성화"
-    echo "       2) 서비스 계정 API 키 발급 → 팀 'API Token' 볼트 > 'Atlassian MCP Token' > credential 에 저장"
-    echo "     준비되면 스크립트를 재실행하면 자동 주입됩니다 (그전까지 atlassian MCP는 미주입 상태)."
+    echo "  ⚠ ATLASSIAN_MCP_TOKEN 미주입 — 1Password에서 'JIRA API Token' 항목을 읽지 못했습니다."
+    echo "     확인하세요:"
+    echo "       1) 팀 'API Token' 볼트 접근 권한이 있는지 (없으면 팀 관리자에게 공유 요청)"
+    echo "       2) 볼트에 'JIRA API Token' 항목 + credential 필드가 있는지"
+    echo "     확인 후 스크립트를 재실행하면 자동 주입됩니다 (그전까지 atlassian MCP는 미주입 상태)."
   else
     echo "  ⚠ ATLASSIAN_MCP_TOKEN 미주입 — op 계정이 아직 준비되지 않았습니다 (위 8.5 ZenHub 안내 참고)."
     echo "     op(1Password CLI) 설정을 마친 뒤 스크립트를 재실행하면 ZenHub·Atlassian 토큰이 함께 주입됩니다."
@@ -805,7 +811,7 @@ echo "  mcp:zenhub: $(claude mcp list 2>/dev/null | grep -q '^zenhub' \
 # atlassian(jira): OAuth 플러그인이 아니라 토큰 방식 — zenhub와 동일 기준으로 등록/주입 상태를 본다.
 AT_VAL=$(grep '^export ATLASSIAN_MCP_TOKEN=' "$HOME/.zshrc" 2>/dev/null | tail -1 | sed 's/^export ATLASSIAN_MCP_TOKEN=//; s/^"//; s/"$//')
 echo "  mcp:atlassian: $(claude mcp list 2>/dev/null | grep -q '^atlassian' \
-  && echo "✓ 등록됨$([[ -n "$AT_VAL" ]] && echo ' + 토큰 주입됨 (새 터미널에서 적용)' || echo ' (⚠ 토큰 미주입 — 관리자 서비스 계정 키 발급 후 재실행)')" \
+  && echo "✓ 등록됨$([[ -n "$AT_VAL" ]] && echo ' + 토큰 주입됨 (새 터미널에서 적용)' || echo ' (⚠ 토큰 미주입 — 1Password 앱 CLI 통합/볼트 권한 확인 후 재실행)')" \
   || echo '❌')"
 echo "  maestro : $(maestro --version 2>/dev/null | head -1 || echo '❌')"
 echo "  marionette: $([[ -x "$PUB_CACHE/bin/marionette_mcp" ]] && echo '✓' || echo '❌')"
@@ -829,8 +835,8 @@ echo "  6. zenhub·atlassian 토큰(1Password CLI): 실행 중 8.5/8.6단계에�
 echo "     ↳ 1Password 앱 로그인(team-cocodeinc) → 설정(⌘,) > 개발자 > '1Password CLI와 통합' 체크"
 echo "       ('개발자' 탭이 없으면 설정 > 보안 > 'Touch ID로 잠금 해제'를 먼저 켜세요)"
 echo "       확인: op account list 에 팀 계정이 보이면 성공 · 건너뛰었다면 스크립트 재실행 시 주입됩니다"
-echo "     ↳ atlassian 토큰은 조직 관리자가 'API 토큰 인증' 활성화 + 서비스 계정 키를 발급해"
-echo "       팀 'API Token' 볼트 > 'Atlassian MCP Token'에 넣어야 주입됩니다 (그전까지 미주입 상태)"
+echo "     ↳ atlassian 토큰은 팀 'API Token' 볼트 > 'JIRA API Token'(개발팀 공용 계정 dev@cocode.im의"
+echo "       Jira 개인 토큰)에서 읽어 Basic 인증으로 주입됩니다 — 이미 발급돼 있어 op 설정만 되면 자동 주입"
 echo "     ↳ 주입 후에는 반드시 '새 터미널'에서 claude를 실행하세요. zenhub·atlassian MCP는 claude 실행 시점의"
 echo "       환경변수에서 토큰을 읽으므로, 예전 터미널에서 띄운 claude는 토큰을 못 읽습니다"
 echo "       (이때 /mcp에는 'Connected'로 보이지만 실제 호출은 'Missing Authorization token'으로 실패)"

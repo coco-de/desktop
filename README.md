@@ -179,7 +179,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 | 분류 | 항목 |
 |---|---|
 | 🖥 GUI 앱 | Android Studio, Slack, Figma, Claude Desktop, Google Chrome, Dia, 1Password, Tailscale, Orca, Lumide |
-| 🔌 Claude MCP | figma·flutter-mcp-toolkit 플러그인 자동 설치 + maestro CLI, flutter-mcp-toolkit CLI, marionette·dart MCP, zenhub·atlassian(jira) MCP 자동 등록. `ZENHUB_API_TOKEN`·`ATLASSIAN_MCP_TOKEN`(팀 공용 토큰)은 1Password CLI(`op`)로 `~/.zshrc`에 자동 주입 — git에 커밋 안 됨 (⚠️ figma는 최초 1회 `/mcp` OAuth 로그인. zenhub·atlassian은 OAuth 대신 1Password 팀 공용 토큰으로 인증 — 1Password 앱의 CLI 통합 필요, atlassian은 조직 관리자의 서비스 계정 키 발급도 필요 — [설정 방법](#after-install). flutter-mcp-toolkit은 인증 불필요하나, 특정 Flutter 프로젝트에서 쓰려면 해당 프로젝트에서 `flutter-mcp-toolkit codegen-init` 1회 실행 필요) |
+| 🔌 Claude MCP | figma·flutter-mcp-toolkit 플러그인 자동 설치 + maestro CLI, flutter-mcp-toolkit CLI, marionette·dart MCP, zenhub·atlassian(jira) MCP 자동 등록. `ZENHUB_API_TOKEN`·`ATLASSIAN_MCP_TOKEN`(팀 공용 토큰)은 1Password CLI(`op`)로 `~/.zshrc`에 자동 주입 — git에 커밋 안 됨 (⚠️ figma는 최초 1회 `/mcp` OAuth 로그인. zenhub·atlassian은 OAuth 대신 1Password 팀 공용 토큰으로 인증 — 1Password 앱의 CLI 통합만 되면 자동 주입(atlassian은 개발팀 공용 계정의 Jira 토큰으로 Basic 인증, 이미 1Password에 준비됨) — [설정 방법](#after-install). flutter-mcp-toolkit은 인증 불필요하나, 특정 Flutter 프로젝트에서 쓰려면 해당 프로젝트에서 `flutter-mcp-toolkit codegen-init` 1회 실행 필요) |
 | 🧩 cocode-skills 팀 플러그인 | 사설 레포 `coco-de/skills`의 `install.sh`로 cc-* 플러그인 번들(marionette·dart·figma·dev-cycle·coui 등) 자동 동기화 (⚠️ `gh auth login` 인증 필요, 미인증 시 건너뜀) |
 | 📱 Android SDK | cmdline-tools, platform-tools, build-tools, platforms, NDK, 에뮬레이터 시스템 이미지, AVD까지 전부 자동 설치·구성 (Android Studio 첫 실행 마법사 불필요) |
 | 🛠 CLI 도구 | go, pyenv, nvm, git, gh, cocoapods, fastlane, awscli, colima, docker, docker-compose, zsh-syntax-highlighting, direnv, openjdk@17, Claude Code, op(1Password CLI) |
@@ -314,7 +314,7 @@ avd     : ...
 
 > `op(1Password CLI)`는 **설치 여부와 설정 여부를 따로** 보여줍니다. `⚠ 설치됨 (설정 미완료 — 토큰을 읽지 못했습니다)`라면 CLI는 깔렸지만 금고에서 토큰을 읽지 못한 상태입니다. 원인은 두 가지이고, 스크립트가 화면에 확인 순서(① 앱 CLI 통합 체크 → ② 금고 접근 권한)를 함께 출력해 줍니다 — 아래 **ZenHub·Atlassian 토큰 · 1Password CLI 설정**을 참고해 주세요.
 
-> `mcp:zenhub`·`mcp:atlassian`이 `✓ 등록됨`인데 뒤에 `(⚠ 토큰 미주입)`이 붙어 있다면, MCP 서버는 등록됐지만 인증 토큰이 없는 상태입니다. 아래 **ZenHub·Atlassian 토큰** 안내대로 1Password를 준비한 뒤 스크립트를 다시 실행해 주세요. (atlassian은 조직 관리자의 서비스 계정 키 발급도 필요 — 아래 참고)
+> `mcp:zenhub`·`mcp:atlassian`이 `✓ 등록됨`인데 뒤에 `(⚠ 토큰 미주입)`이 붙어 있다면, MCP 서버는 등록됐지만 인증 토큰이 없는 상태입니다. 아래 **ZenHub·Atlassian 토큰** 안내대로 1Password(앱 CLI 통합 + 팀 'API Token' 볼트 권한)를 준비한 뒤 스크립트를 다시 실행해 주세요.
 
 그 다음, 화면에 안내되는 대로 아래 순서를 진행해주세요.
 
@@ -356,16 +356,13 @@ avd     : ...
 > | `op: command not found` | CLI가 설치되지 않았습니다 → `brew install --cask 1password-cli` 후 스크립트 재실행 |
 > | 설치 검증에 `op(1Password CLI): ⚠ 설치됨 (설정 미완료 …)` | 토큰을 읽지 못한 상태입니다 → ① 위 2번(앱 CLI 통합)이 켜져 있는지 확인 후 재실행, ② 이미 켜져 있다면 "API Token" 금고 권한 문제이니 관리자에게 공유 요청 |
 > | `op account list`가 한참(수십 초) 멈춰 있음 | 1Password 앱이 승인(Touch ID)을 기다리는 중입니다 → 1Password 창에서 잠금 해제하면 바로 진행됩니다 |
-> | `mcp:atlassian: ✓ 등록됨 (⚠ 토큰 미주입 …)` | op는 되지만 Atlassian 서비스 계정 키가 아직 1Password에 없는 경우입니다 → 아래 **Atlassian 추가 준비** 참고 |
+> | `mcp:atlassian: ✓ 등록됨 (⚠ 토큰 미주입 …)` | op는 되지만 팀 'API Token' 볼트의 'JIRA API Token' 항목을 못 읽는 경우입니다 → 볼트 접근 권한을 팀 관리자에게 요청 후 재실행 |
 >
-> **Atlassian 추가 준비 (조직 관리자 작업, 1회)**
+> **Atlassian은 어떻게 인증하나요**
 >
-> Atlassian은 ZenHub와 달리 **조직 관리자만 발급할 수 있는 서비스 계정 키**로 인증합니다. 관리자가 아래 2개를 마쳐 팀 공용 1Password에 넣어 두면, 그 뒤로는 팀원 누구나 스크립트만 재실행하면 자동 주입됩니다.
+> Atlassian(Jira)은 **개발팀 공용 계정(`dev@cocode.im`)의 Jira 개인 API 토큰**으로 `Basic` 인증합니다. 이 토큰은 팀 공용 1Password **"API Token" 볼트 > "JIRA API Token"** 항목에 **이미 준비돼 있고**, ZenHub와 동일하게 op 설정만 되면 자동 주입됩니다(스크립트가 이메일+토큰을 합쳐 인증값을 만들어 넣습니다). 별도 관리자 발급 절차는 필요 없습니다.
 >
-> 1. Atlassian 관리자 설정에서 **"API 토큰 인증(machine-to-machine)"** 활성화
-> 2. **서비스 계정 API 키** 발급 → 팀 **"API Token" 볼트 > "Atlassian MCP Token" > credential** 필드에 저장
->
-> 이게 갖춰지기 전까지는 `mcp:atlassian`이 "등록됨 + 토큰 미주입" 상태로 남습니다(스크립트는 멈추지 않고 계속 진행 — ZenHub가 토큰 생기기 전과 동일).
+> 그래서 팀원은 위 **1Password CLI 설정(op)만 마치면** ZenHub·Atlassian 토큰이 함께 주입됩니다. (op는 되는데 `mcp:atlassian`이 "미주입"이면 대개 팀 "API Token" 볼트 접근 권한이 없는 경우 → 관리자에게 볼트 공유 요청.)
 >
 > 토큰 값은 1Password에만 저장되고 저장소(git)에는 절대 들어가지 않습니다.
 >
