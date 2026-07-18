@@ -150,46 +150,42 @@ if have claude; then
 
   # zenhub MCP (사설 cocode-skills 루트 .mcp.json과 동일 구조 — 원격 서버 + API 토큰)
   #   토큰은 ~/.zshrc의 ZENHUB_API_TOKEN에서 런타임 확장되므로 단일따옴표로 리터럴 등록 (토큰 값 커밋 금지)
-  if claude mcp list 2>/dev/null | grep -q "^zenhub"; then
-    echo "  ✓ zenhub MCP 이미 등록됨"
-  else
-    claude mcp add zenhub --scope user -- \
-      npx -y mcp-remote https://api.zenhub.com/mcp \
-      --header 'Authorization:${ZENHUB_API_TOKEN}' \
-      --header 'X-zh-workspace:69ae742925c359000f5acf14' >/dev/null 2>&1 \
-      && echo "  ✓ zenhub MCP 등록 (토큰은 8.5단계에서 1Password 공용 항목으로 주입)" \
-      || echo "  ⚠ zenhub MCP 등록 실패 → 건너뜀"
-  fi
+  #   ⚠ '이미 있으면 건너뛰기'가 아니라 항상 remove 후 add 한다 — 그래야 정의가 바뀐 업데이트(헤더/워크스페이스
+  #     등)를 재실행만으로 반영한다. remove는 등록이 없을 때 실패해도 무해(|| true).
+  claude mcp remove zenhub >/dev/null 2>&1 || true
+  claude mcp add zenhub --scope user -- \
+    npx -y mcp-remote https://api.zenhub.com/mcp \
+    --header 'Authorization:${ZENHUB_API_TOKEN}' \
+    --header 'X-zh-workspace:69ae742925c359000f5acf14' >/dev/null 2>&1 \
+    && echo "  ✓ zenhub MCP 등록/갱신 (토큰은 8.5단계에서 1Password 공용 항목으로 주입)" \
+    || echo "  ⚠ zenhub MCP 등록 실패 → 건너뜀"
 
-  # 기존 Rovo 방식 atlassian MCP가 등록돼 있으면 제거(엔타이틀먼트로 막혀 미동작) → 아래 mcp-atlassian으로 대체
-  if claude mcp list 2>/dev/null | grep -q "^atlassian"; then
-    claude mcp remove atlassian >/dev/null 2>&1 && echo "  · 기존 Rovo atlassian MCP 제거 (REST 직결 방식으로 전환)"
-  fi
+  # 기존 Rovo 방식 atlassian MCP가 남아 있으면 제거(엔타이틀먼트로 막혀 미동작) → 아래 mcp-atlassian으로 대체.
+  #   grep 없이 무조건 remove — 없을 때 실패해도 무해(|| true).
+  claude mcp remove atlassian >/dev/null 2>&1 && echo "  · 기존 Rovo atlassian MCP 제거 (REST 직결 방식으로 전환)" || true
 
   # jira MCP = sooperset/mcp-atlassian (Docker) — Jira Cloud REST API에 토큰으로 직접 붙는다(Rovo 우회).
   #   인증: JIRA_URL/JIRA_USERNAME/JIRA_API_TOKEN 환경변수 → 서버가 내부적으로 Basic(email:token) 처리.
   #   토큰만 비밀이라 --env 'JIRA_API_TOKEN=${JIRA_API_TOKEN}'로 리터럴 등록(claude가 런타임에 ~/.zshrc 값으로 확장,
   #   config에는 '${JIRA_API_TOKEN}' 문자열만 저장 — 값 커밋/노출 없음). URL·이메일은 비밀 아님(직접 기입).
   #   먼저 이미지 pull(없으면 최초 claude 실행 때 pull되며 지연). docker 데몬 필요.
-  if claude mcp list 2>/dev/null | grep -q "^mcp-atlassian"; then
-    echo "  ✓ mcp-atlassian(jira) MCP 이미 등록됨"
+  #   ⚠ zenhub와 동일하게 항상 remove 후 add — 정의가 바뀐 업데이트(이미지 태그·env·args 변경)를 재실행만으로 반영.
+  if have docker && docker info >/dev/null 2>&1; then
+    docker pull ghcr.io/sooperset/mcp-atlassian:latest >/dev/null 2>&1 \
+      && echo "  · mcp-atlassian 도커 이미지 준비됨" \
+      || echo "  ⚠ mcp-atlassian 이미지 pull 실패 → 최초 사용 시 자동 pull(지연) 또는 수동 확인"
   else
-    if have docker && docker info >/dev/null 2>&1; then
-      docker pull ghcr.io/sooperset/mcp-atlassian:latest >/dev/null 2>&1 \
-        && echo "  · mcp-atlassian 도커 이미지 준비됨" \
-        || echo "  ⚠ mcp-atlassian 이미지 pull 실패 → 최초 사용 시 자동 pull(지연) 또는 수동 확인"
-    else
-      echo "  ⚠ docker 데몬 미동작 → 이미지 pull 생략 (colima start 후 재실행 권장, 등록은 계속)"
-    fi
-    claude mcp add mcp-atlassian --scope user \
-      --env JIRA_URL=https://laputa.atlassian.net \
-      --env JIRA_USERNAME=dev@cocode.im \
-      --env 'JIRA_API_TOKEN=${JIRA_API_TOKEN}' \
-      -- docker run --rm -i -e JIRA_URL -e JIRA_USERNAME -e JIRA_API_TOKEN \
-         ghcr.io/sooperset/mcp-atlassian:latest --transport stdio >/dev/null 2>&1 \
-      && echo "  ✓ mcp-atlassian(jira) MCP 등록 (토큰은 8.6단계에서 1Password 공용 항목으로 주입)" \
-      || echo "  ⚠ mcp-atlassian 등록 실패 → 건너뜀"
+    echo "  ⚠ docker 데몬 미동작 → 이미지 pull 생략 (colima start 후 재실행 권장, 등록은 계속)"
   fi
+  claude mcp remove mcp-atlassian >/dev/null 2>&1 || true
+  claude mcp add mcp-atlassian --scope user \
+    --env JIRA_URL=https://laputa.atlassian.net \
+    --env JIRA_USERNAME=dev@cocode.im \
+    --env 'JIRA_API_TOKEN=${JIRA_API_TOKEN}' \
+    -- docker run --rm -i -e JIRA_URL -e JIRA_USERNAME -e JIRA_API_TOKEN \
+       ghcr.io/sooperset/mcp-atlassian:latest --transport stdio >/dev/null 2>&1 \
+    && echo "  ✓ mcp-atlassian(jira) MCP 등록/갱신 (토큰은 8.6단계에서 1Password 공용 항목으로 주입)" \
+    || echo "  ⚠ mcp-atlassian 등록 실패 → 건너뜀"
 else
   echo "  ⚠ claude CLI가 없어 MCP 플러그인 설치를 건너뜁니다"
 fi
