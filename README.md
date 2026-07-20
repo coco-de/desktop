@@ -62,6 +62,14 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 
 이게 전부입니다. 이후로는 화면에 뜨는 진행 상황(`▶ 단계 이름`)을 지켜보시면 됩니다. 도구별로 이미 설치되어 있으면 `✓`, 새로 설치하면 진행 로그, 일부가 실패해도 `⚠` 표시와 함께 건너뛰고 계속 진행됩니다. 실행 초반에 **커밋에 사용할 회사 이메일**을 한 번 물어보니 입력해주세요 (이미 설정된 맥이라면 묻지 않습니다).
 
+> 💡 **이미 세팅한 맥에서 토큰(환경변수)만 다시 받고 싶다면**
+>
+> ```bash
+> ./mac-setup.sh --env-only
+> ```
+>
+> 앱·도구 설치는 전부 건너뛰고, 1Password(`op`)에서 팀 공용 토큰(`ZENHUB_API_TOKEN`·`JIRA_API_TOKEN`)만 다시 읽어 `~/.zshrc`에 넣어줍니다. 토큰이 바뀌었거나 설치 때 토큰 주입(8.5·8.6단계)을 건너뛴 경우, 전체 설치를 다시 돌릴 필요 없이 몇 초 만에 끝납니다. 사용법은 `./mac-setup.sh --help`로도 볼 수 있습니다.
+
 <details>
 <summary>예전에 쓰던 맥이 있다면 (선택 사항)</summary>
 
@@ -345,7 +353,7 @@ avd     : ...
 >
 > **이게 무슨 단계인가요?** ZenHub(이슈 보드)와 Jira를 Claude Code에서 쓰려면 비밀번호 같은 **토큰** 값이 필요합니다. 이 값은 사람마다 복사해 붙여넣지 않도록 **팀 공용 1Password 금고**에 넣어 두었고, **1Password CLI(`op`)** 가 그 금고를 대신 열어 읽어옵니다. `op`는 1Password의 터미널 버전이라고 보시면 되고, 아래 설정은 `op`에게 **"1Password 앱에 이미 로그인해 둔 상태를 그대로 써도 된다"** 고 허락해 주는 과정입니다. (Jira는 예전엔 `/mcp` OAuth 로그인을 매번 해야 했지만, ZenHub처럼 팀 공용 토큰 방식으로 통일했습니다.)
 >
-> 스크립트 실행 도중 토큰 주입 단계(ZenHub 8.5 · Jira 8.6)에서 1Password 준비가 안 돼 있으면 **화면이 잠깐 멈추고 같은 내용의 안내**가 뜹니다. 아래를 마친 뒤 **Enter**를 누르면 팀 공용 토큰이 자동으로 `~/.zshrc`에 주입됩니다 (지금 하기 어려우면 `s` + Enter로 건너뛰고, 나중에 스크립트를 재실행하면 주입됩니다). op 설정은 한 번만 하면 ZenHub·Jira 토큰이 함께 주입됩니다.
+> 스크립트 실행 도중 토큰 주입 단계(ZenHub 8.5 · Jira 8.6)에서 1Password 준비가 안 돼 있으면 **화면이 잠깐 멈추고 같은 내용의 안내**가 뜹니다. 아래를 마친 뒤 **Enter**를 누르면 팀 공용 토큰이 자동으로 `~/.zshrc`에 주입됩니다 (지금 하기 어려우면 `s` + Enter로 건너뛰고, 나중에 `./mac-setup.sh --env-only`로 토큰만 다시 주입하면 됩니다 — 전체 설치를 다시 돌릴 필요가 없습니다). op 설정은 한 번만 하면 ZenHub·Jira 토큰이 함께 주입됩니다.
 >
 > **설정 방법 — 1Password 앱에서**
 >
@@ -368,10 +376,10 @@ avd     : ...
 > |---|---|
 > | `op account list`가 비어 있거나 "계정을 추가할까요?"라고 물음 | 앱의 "1Password CLI와 통합"이 꺼져 있습니다 → 질문에는 `n`으로 답하고, 위 2번을 켠 뒤 다시 시도 |
 > | 계정은 보이는데 토큰 주입이 계속 실패 | 팀 **"API Token" 금고** 접근 권한이 없는 경우입니다 → 팀 관리자에게 금고 공유를 요청해 주세요 |
-> | `op: command not found` | CLI가 설치되지 않았습니다 → `brew install --cask 1password-cli` 후 스크립트 재실행 |
-> | 설치 검증에 `op(1Password CLI): ⚠ 설치됨 (설정 미완료 …)` | 토큰을 읽지 못한 상태입니다 → ① 위 2번(앱 CLI 통합)이 켜져 있는지 확인 후 재실행, ② 이미 켜져 있다면 "API Token" 금고 권한 문제이니 관리자에게 공유 요청 |
+> | `op: command not found` | CLI가 설치되지 않았습니다 → `brew install --cask 1password-cli` 후 `./mac-setup.sh --env-only` 실행 |
+> | 설치 검증에 `op(1Password CLI): ⚠ 설치됨 (설정 미완료 …)` | 토큰을 읽지 못한 상태입니다 → ① 위 2번(앱 CLI 통합)이 켜져 있는지 확인 후 `./mac-setup.sh --env-only` 실행, ② 이미 켜져 있다면 "API Token" 금고 권한 문제이니 관리자에게 공유 요청 |
 > | `op account list`가 한참(수십 초) 멈춰 있음 | 1Password 앱이 승인(Touch ID)을 기다리는 중입니다 → 1Password 창에서 잠금 해제하면 바로 진행됩니다 |
-> | `mcp:mcp-atlassian(jira): ✓ 등록됨 (⚠ 토큰 미주입 …)` | op는 되지만 팀 'API Token' 볼트의 'Atlassian API Token > Jira API Token'을 못 읽는 경우입니다 → 볼트 접근 권한을 팀 관리자에게 요청 후 재실행 |
+> | `mcp:mcp-atlassian(jira): ✓ 등록됨 (⚠ 토큰 미주입 …)` | op는 되지만 팀 'API Token' 볼트의 'Atlassian API Token > Jira API Token'을 못 읽는 경우입니다 → 볼트 접근 권한을 팀 관리자에게 요청 후 `./mac-setup.sh --env-only` 실행 |
 > | jira MCP가 연결 안 됨 (docker 관련) | jira MCP는 Docker로 뜹니다 → **colima/docker 데몬을 먼저 켜세요** (`colima start`), 그 뒤 새 터미널에서 `claude` |
 >
 > **Jira는 어떻게 인증하나요 (Rovo 안 거침)**

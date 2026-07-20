@@ -3,6 +3,7 @@
 # 맥 초기 개발환경 세팅 스크립트
 # 전제: Homebrew, Xcode 설치 완료
 # 실행: chmod +x mac-setup.sh && ./mac-setup.sh
+#   └ 이미 세팅한 맥에서 토큰(환경변수)만 다시 주입하려면: ./mac-setup.sh --env-only
 #
 # 기존 맥의 테마/설정을 그대로 가져오려면, 기존 맥에서
 #   ~/.zshrc, ~/.p10k.zsh
@@ -12,11 +13,48 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# ------------------------------------------------------------
+# 실행 옵션 파싱
+#   (옵션 없음) : 전체 설치 (1~9단계)
+#   --env-only  : 1Password(op)에서 팀 공용 토큰만 다시 읽어 ~/.zshrc에 주입 (8.5·8.6단계만)
+#   -h, --help  : 사용법 출력
+#   모르는 옵션은 즉시 에러 종료한다 — 오탈자(예: --env-onyl)가 조용히
+#   수 분짜리 전체 설치로 이어지는 사고를 막기 위함이다.
+# ------------------------------------------------------------
+usage() {
+  cat <<'USAGE'
+사용법: ./mac-setup.sh [옵션]
+
+  (옵션 없음)   co:code 팀 표준 개발환경 전체 설치 (1~9단계)
+  --env-only    1Password(op)에서 팀 공용 토큰(ZENHUB_API_TOKEN·JIRA_API_TOKEN)만
+                다시 읽어 ~/.zshrc에 주입합니다. 앱/도구 설치 단계는 전부 건너뜁니다.
+                (토큰이 바뀌었거나, 설치 때 토큰 주입을 건너뛴 경우에 사용)
+  -h, --help    이 도움말을 표시합니다
+USAGE
+}
+
+ENV_ONLY=0
+for arg in "$@"; do
+  case "$arg" in
+    --env-only) ENV_ONLY=1 ;;
+    -h|--help)  usage; exit 0 ;;
+    *)
+      echo "❌ 알 수 없는 옵션: $arg"
+      echo ""
+      usage
+      exit 1
+      ;;
+  esac
+done
+
 # Homebrew 경로 (Apple Silicon / Intel 자동 감지)
 if [[ -x /opt/homebrew/bin/brew ]]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
 elif [[ -x /usr/local/bin/brew ]]; then
   eval "$(/usr/local/bin/brew shellenv)"
+elif (( ENV_ONLY )); then
+  # --env-only는 아무것도 설치하지 않고 op만 쓰므로 Homebrew가 없어도 계속 진행한다
+  :
 else
   echo "❌ Homebrew가 없습니다. 먼저 설치하세요: https://brew.sh"
   exit 1
@@ -48,7 +86,15 @@ export CI=true                   # 많은 CLI가 CI 모드에서 프롬프트 �
 #   8.6. JIRA_API_TOKEN 주입 (1Password op read → .zshrc, mcp-atlassian Docker MCP용)
 #   9.   설치 검증 + 다음 단계 안내
 # 공통 규칙: 모든 단계 멱등(이미 설치 시 스킵) · 실패해도 ⚠ 후 계속 · 시크릿 미커밋
+# 실행 옵션: 옵션 없음=전체 실행 · --env-only=8.5·8.6(토큰 주입)만 재실행 · -h/--help=사용법
 # ============================================================
+
+# ============================================================
+# 설치 단계 시작 (1~8단계) — --env-only 실행 시 이 블록 전체를 건너뛴다
+#   기존 코드를 옮기지 않고 그대로 감싸기만 했으므로, 블록 안쪽 본문은
+#   들여쓰기 없이 유지된다 (짝이 되는 fi는 8.5단계 직전에 있다)
+# ============================================================
+if (( ! ENV_ONLY )); then
 
 # ------------------------------------------------------------
 # 1. GUI 앱 (brew cask)
@@ -578,6 +624,18 @@ if ! grep -qE '^[[:space:]]*export PATH=.*\.local/bin' "$HOME/.zshrc" 2>/dev/nul
   echo "  ✓ ~/.zshrc에 ~/.local/bin PATH 추가 (Claude Code)"
 fi
 
+fi  # ══ 설치 단계(1~8) 끝 — 여기부터(8.5·8.6 토큰 주입)는 --env-only 실행 시에도 수행된다 ══
+
+# --env-only 가드: 아직 전체 세팅을 한 번도 하지 않은 맥이면 토큰을 붙일 ~/.zshrc 골격이
+#   없다. 빈 .zshrc를 새로 만들어 토큰만 꽂으면 PATH·테마 등이 빠진 반쪽짜리 설정이 되므로,
+#   전체 설치를 먼저 하도록 안내하고 종료한다.
+if (( ENV_ONLY )) && [[ ! -f "$HOME/.zshrc" ]]; then
+  echo ""
+  echo "❌ ~/.zshrc 가 없습니다 — 아직 전체 세팅을 한 번도 하지 않은 맥으로 보입니다."
+  echo "   먼저 옵션 없이 전체 설치를 실행해 주세요: ./mac-setup.sh"
+  exit 1
+fi
+
 # ------------------------------------------------------------
 # 8.5. ZENHUB_API_TOKEN 주입 (팀 공용 토큰 — 1Password에서 자동 주입)
 #
@@ -733,7 +791,7 @@ OP_STATUS="missing"
 
 if ! have op; then
   echo "  ⚠ op(1password-cli) 미설치 → ZENHUB_API_TOKEN 수동 설정 필요"
-  echo "     (brew install --cask 1password-cli 로 설치한 뒤 스크립트를 재실행하면 자동 주입됩니다)"
+  echo "     (brew install --cask 1password-cli 로 설치한 뒤 './mac-setup.sh --env-only' 를 실행하면 토큰만 다시 주입됩니다)"
 elif inject_zenhub_token; then
   OP_STATUS="ready"
   echo "  ✓ ZENHUB_API_TOKEN 주입 완료 (~/.zshrc, 토큰 값은 커밋되지 않음)"
@@ -745,7 +803,7 @@ elif [[ -t 0 ]]; then
     printf "     설정을 마쳤으면 Enter(재시도) · 나중에 하려면 s 입력 후 Enter: "
     read -r zh_ans || zh_ans="s"
     if [[ "$zh_ans" == "s" || "$zh_ans" == "S" ]]; then
-      echo "  ⚠ ZENHUB_API_TOKEN 주입 건너뜀 → 1Password 설정을 마친 뒤 스크립트를 재실행하면 자동 주입됩니다"
+      echo "  ⚠ ZENHUB_API_TOKEN 주입 건너뜀 → 1Password 설정을 마친 뒤 './mac-setup.sh --env-only' 로 토큰만 다시 주입할 수 있습니다"
       break
     fi
     if inject_zenhub_token; then
@@ -766,7 +824,7 @@ elif [[ -t 0 ]]; then
 else
   # 비대화형(TTY 없음): 멈추지 않고 건너뜀
   OP_STATUS="not-ready"
-  echo "  ⚠ op read 실패(비대화형) → 아래 1Password CLI 설정을 마친 뒤 스크립트를 재실행하면 자동 주입됩니다"
+  echo "  ⚠ op read 실패(비대화형) → 아래 1Password CLI 설정을 마친 뒤 './mac-setup.sh --env-only' 를 실행하면 토큰만 자동 주입됩니다"
   echo "     1) 1Password 앱에 팀 계정($ZENHUB_TOKEN_OP_ACCOUNT)으로 로그인"
   echo "     2) 앱 > 설정(⌘,) > 개발자 > '1Password CLI와 통합' 체크"
   echo "     3) 확인: op account list  (팀 계정이 보이면 성공)"
@@ -790,7 +848,7 @@ if jira_token_line_is_empty; then
 fi
 
 if ! have op; then
-  echo "  ⚠ op(1password-cli) 미설치 → JIRA_API_TOKEN 미주입 (위 ZenHub 안내와 동일하게 op 설치 후 재실행)"
+  echo "  ⚠ op(1password-cli) 미설치 → JIRA_API_TOKEN 미주입 (위 ZenHub 안내와 동일하게 op 설치 후 './mac-setup.sh --env-only' 실행)"
 elif inject_jira_token; then
   echo "  ✓ JIRA_API_TOKEN 주입 완료 (~/.zshrc, 토큰 값은 커밋되지 않음)"
 else
@@ -800,11 +858,34 @@ else
     echo "     확인하세요:"
     echo "       1) 팀 'API Token' 볼트 접근 권한이 있는지 (없으면 팀 관리자에게 공유 요청)"
     echo "       2) 볼트에 'Atlassian API Token' 항목 + 'Jira API Token' 필드가 있는지"
-    echo "     확인 후 스크립트를 재실행하면 자동 주입됩니다 (그전까지 jira MCP는 미주입 상태)."
+    echo "     확인 후 './mac-setup.sh --env-only' 를 실행하면 토큰만 다시 주입됩니다 (그전까지 jira MCP는 미주입 상태)."
   else
     echo "  ⚠ JIRA_API_TOKEN 미주입 — op 계정이 아직 준비되지 않았습니다 (위 8.5 ZenHub 안내 참고)."
-    echo "     op(1Password CLI) 설정을 마친 뒤 스크립트를 재실행하면 ZenHub·Jira 토큰이 함께 주입됩니다."
+    echo "     op(1Password CLI) 설정을 마친 뒤 './mac-setup.sh --env-only' 를 실행하면 ZenHub·Jira 토큰이 함께 주입됩니다."
   fi
+fi
+
+# ------------------------------------------------------------
+# 8.9. --env-only 마무리: 주입 결과만 요약하고 종료 (아래 9단계 전체 검증은 돌리지 않음)
+#   토큰 유무는 9단계와 같은 기준(~/.zshrc의 값)으로 판단한다 — MCP의 'Connected' 표시는
+#   인증 성공을 뜻하지 않기 때문 (8.5단계 주석 참고).
+# ------------------------------------------------------------
+if (( ENV_ONLY )); then
+  log "환경변수 업데이트 결과 (--env-only)"
+  ZH_VAL=$(grep '^export ZENHUB_API_TOKEN=' "$HOME/.zshrc" 2>/dev/null | tail -1 | sed 's/^export ZENHUB_API_TOKEN=//; s/^"//; s/"$//')
+  JIRA_VAL=$(grep '^export JIRA_API_TOKEN=' "$HOME/.zshrc" 2>/dev/null | tail -1 | sed 's/^export JIRA_API_TOKEN=//; s/^"//; s/"$//')
+  echo "  ZENHUB_API_TOKEN: $([[ -n "$ZH_VAL" ]] && echo '✓ 주입됨' || echo '❌ 미주입 (위 안내 참고)')"
+  echo "  JIRA_API_TOKEN  : $([[ -n "$JIRA_VAL" ]] && echo '✓ 주입됨' || echo '❌ 미주입 (위 안내 참고)')"
+  echo ""
+  if [[ -n "$ZH_VAL" || -n "$JIRA_VAL" ]]; then
+    echo "✅ 완료! 새 터미널을 열거나 'source ~/.zshrc' 를 실행한 뒤 claude를 다시 켜세요."
+    echo "   (jira MCP는 colima/docker 데몬이 떠 있어야 연결됩니다 — 'colima start')"
+  else
+    # 하나도 못 넣었으면 '완료' 배너 대신 다음 행동을 알려준다 (종료코드는 전체 설치와 같은 '경고 후 계속' 철학으로 0 유지)
+    echo "⚠ 주입된 토큰이 없습니다 — 위 안내(1Password 앱 CLI 통합·금고 권한)를 마친 뒤"
+    echo "   './mac-setup.sh --env-only' 를 다시 실행해 주세요."
+  fi
+  exit 0
 fi
 
 # ------------------------------------------------------------
@@ -828,21 +909,21 @@ case "${OP_STATUS:-missing}" in
   # 여기서 op를 다시 불러 구분하면 또 멈출 수 있으므로, 확인 순서만 알려준다.
   not-ready)
     echo "  op(1Password CLI): ⚠ 설치됨 (설정 미완료 — 토큰을 읽지 못했습니다)"
-    echo "     ① 1Password 앱 > 설정(⌘,) > 개발자 > '1Password CLI와 통합' 체크 확인 → 스크립트 재실행"
+    echo "     ① 1Password 앱 > 설정(⌘,) > 개발자 > '1Password CLI와 통합' 체크 확인 → './mac-setup.sh --env-only' 실행"
     echo "     ② 이미 켜져 있다면 팀 'API Token' 금고 접근 권한이 없는 경우입니다 → 팀 관리자에게 공유 요청"
     ;;
-  *)         echo "  op(1Password CLI): ❌ (brew install --cask 1password-cli 후 재실행)" ;;
+  *)         echo "  op(1Password CLI): ❌ (brew install --cask 1password-cli 후 './mac-setup.sh --env-only' 실행)" ;;
 esac
 ZH_VAL=$(grep '^export ZENHUB_API_TOKEN=' "$HOME/.zshrc" 2>/dev/null | tail -1 | sed 's/^export ZENHUB_API_TOKEN=//; s/^"//; s/"$//')
 # 토큰 유무는 ~/.zshrc 값으로 판단한다. `claude mcp list`의 'Connected'는 서버 연결만 뜻할 뿐
 # 인증 성공을 뜻하지 않는다 — 토큰이 비어도 Connected로 보이고 실제 호출만 실패한다.
 echo "  mcp:zenhub: $(claude mcp list 2>/dev/null | grep -q '^zenhub' \
-  && echo "✓ 등록됨$([[ -n "$ZH_VAL" ]] && echo ' + 토큰 주입됨 (새 터미널에서 적용)' || echo ' (⚠ 토큰 미주입 — 1Password 앱 CLI 통합 후 재실행)')" \
+  && echo "✓ 등록됨$([[ -n "$ZH_VAL" ]] && echo ' + 토큰 주입됨 (새 터미널에서 적용)' || echo ' (⚠ 토큰 미주입 — 1Password 앱 CLI 통합 후 --env-only 재실행)')" \
   || echo '❌')"
 # jira(mcp-atlassian): Docker + Jira REST 직결 — zenhub와 동일 기준으로 등록/주입 상태를 본다.
 JIRA_VAL=$(grep '^export JIRA_API_TOKEN=' "$HOME/.zshrc" 2>/dev/null | tail -1 | sed 's/^export JIRA_API_TOKEN=//; s/^"//; s/"$//')
 echo "  mcp:mcp-atlassian(jira): $(claude mcp list 2>/dev/null | grep -q '^mcp-atlassian' \
-  && echo "✓ 등록됨$([[ -n "$JIRA_VAL" ]] && echo ' + 토큰 주입됨 (새 터미널·docker 실행 중이어야 적용)' || echo ' (⚠ 토큰 미주입 — 1Password 앱 CLI 통합/볼트 권한 확인 후 재실행)')" \
+  && echo "✓ 등록됨$([[ -n "$JIRA_VAL" ]] && echo ' + 토큰 주입됨 (새 터미널·docker 실행 중이어야 적용)' || echo ' (⚠ 토큰 미주입 — 1Password 앱 CLI 통합/볼트 권한 확인 후 --env-only 재실행)')" \
   || echo '❌')"
 echo "  maestro : $(maestro --version 2>/dev/null | head -1 || echo '❌')"
 echo "  marionette: $([[ -x "$PUB_CACHE/bin/marionette_mcp" ]] && echo '✓' || echo '❌')"
@@ -865,7 +946,7 @@ echo "     ↳ jira(atlassian)는 더 이상 OAuth 로그인이 필요 없습니
 echo "  6. zenhub·jira 토큰(1Password CLI): 실행 중 8.5/8.6단계에서 설정 안내가 나오면 아래를 마친 뒤 Enter를 누르면 자동 주입됩니다"
 echo "     ↳ 1Password 앱 로그인(team-cocodeinc) → 설정(⌘,) > 개발자 > '1Password CLI와 통합' 체크"
 echo "       ('개발자' 탭이 없으면 설정 > 보안 > 'Touch ID로 잠금 해제'를 먼저 켜세요)"
-echo "       확인: op account list 에 팀 계정이 보이면 성공 · 건너뛰었다면 스크립트 재실행 시 주입됩니다"
+echo "       확인: op account list 에 팀 계정이 보이면 성공 · 건너뛰었다면 './mac-setup.sh --env-only' 로 토큰만 다시 주입할 수 있습니다"
 echo "     ↳ jira 토큰은 팀 'API Token' 볼트 > 'Atlassian API Token' > 'Jira API Token' 필드(개발팀 공용 계정"
 echo "       dev@cocode.im)에서 읽어 주입됩니다. jira MCP는 sooperset/mcp-atlassian(Docker) — Jira REST 직결(Rovo 우회)"
 echo "     ↳ 주입 후에는 반드시 '새 터미널'에서 claude를 실행하세요(그리고 colima/docker 데몬이 떠 있어야 합니다)."
