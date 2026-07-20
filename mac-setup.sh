@@ -666,7 +666,7 @@ ZENHUB_TOKEN_OP_REF="op://API Token/ZenHub API Token/credential"      # 팀 공�
 #   자격증명은 개발팀 공용 계정(dev@cocode.im)의 Jira 개인 API 토큰(ATATT…)이며,
 #   mcp-atlassian이 JIRA_USERNAME+JIRA_API_TOKEN으로 Basic 인증을 내부 처리하므로
 #   ~/.zshrc에는 raw 토큰만 JIRA_API_TOKEN으로 주입한다(zenhub와 동일한 단순 패턴).
-JIRA_TOKEN_OP_REF="op://API Token/Atlassian API Token/Jira API Token"  # 팀 공용 항목 경로 (토큰 값은 1Password에만 존재)
+JIRA_TOKEN_OP_REF="op://API Token/Laputa Atlassian API Token/Jira API Token"  # 팀 공용 항목 경로 (토큰 값은 1Password에만 존재)
 
 # ~/.zshrc에서 기존 ZENHUB_API_TOKEN 라인을 모두 제거한다.
 #   빈 값(export ZENHUB_API_TOKEN="")이 남아 있으면 zenhub MCP가 인증 없이 뜨면서
@@ -834,7 +834,7 @@ fi
 # 8.6. JIRA_API_TOKEN 주입 (개발팀 공용 계정 Jira 토큰 — 1Password에서 자동 주입)
 #   ZenHub와 동일한 방식. op 계정 설정(앱 CLI 통합)은 위 8.5에서 이미 안내·처리됐으므로
 #   여기서는 그 안내를 반복하지 않고 '주입 시도 + 원인별 경고'만 한다.
-#   자격증명은 개발팀 공용 계정(dev@cocode.im)의 Jira 토큰(팀 "API Token" 볼트 > "Atlassian API Token" > "Jira API Token" 필드).
+#   자격증명은 개발팀 공용 계정(dev@cocode.im)의 Jira 토큰(팀 "API Token" 볼트 > "Laputa Atlassian API Token" > "Jira API Token" 필드).
 #   mcp-atlassian(Docker)이 JIRA_USERNAME+JIRA_API_TOKEN으로 Basic 인증을 내부 처리하므로 raw 토큰만 주입한다.
 #   (2026-07 실측: 이 토큰으로 mcp-atlassian 경유 실제 Jira 프로젝트 조회 성공 — Rovo 없이 동작 검증됨.)
 # ------------------------------------------------------------
@@ -854,10 +854,10 @@ elif inject_jira_token; then
 else
   # op가 준비됐는데도 못 읽었다면 대개 팀 'API Token' 볼트 접근 권한이 없거나 항목/필드명이 다른 경우.
   if op_has_account; then
-    echo "  ⚠ JIRA_API_TOKEN 미주입 — 1Password에서 'Atlassian API Token > Jira API Token'을 읽지 못했습니다."
+    echo "  ⚠ JIRA_API_TOKEN 미주입 — 1Password에서 'Laputa Atlassian API Token > Jira API Token'을 읽지 못했습니다."
     echo "     확인하세요:"
     echo "       1) 팀 'API Token' 볼트 접근 권한이 있는지 (없으면 팀 관리자에게 공유 요청)"
-    echo "       2) 볼트에 'Atlassian API Token' 항목 + 'Jira API Token' 필드가 있는지"
+    echo "       2) 볼트에 'Laputa Atlassian API Token' 항목 + 'Jira API Token' 필드가 있는지"
     echo "     확인 후 './mac-setup.sh --env-only' 를 실행하면 토큰만 다시 주입됩니다 (그전까지 jira MCP는 미주입 상태)."
   else
     echo "  ⚠ JIRA_API_TOKEN 미주입 — op 계정이 아직 준비되지 않았습니다 (위 8.5 ZenHub 안내 참고)."
@@ -947,7 +947,7 @@ echo "  6. zenhub·jira 토큰(1Password CLI): 실행 중 8.5/8.6단계에서 �
 echo "     ↳ 1Password 앱 로그인(team-cocodeinc) → 설정(⌘,) > 개발자 > '1Password CLI와 통합' 체크"
 echo "       ('개발자' 탭이 없으면 설정 > 보안 > 'Touch ID로 잠금 해제'를 먼저 켜세요)"
 echo "       확인: op account list 에 팀 계정이 보이면 성공 · 건너뛰었다면 './mac-setup.sh --env-only' 로 토큰만 다시 주입할 수 있습니다"
-echo "     ↳ jira 토큰은 팀 'API Token' 볼트 > 'Atlassian API Token' > 'Jira API Token' 필드(개발팀 공용 계정"
+echo "     ↳ jira 토큰은 팀 'API Token' 볼트 > 'Laputa Atlassian API Token' > 'Jira API Token' 필드(개발팀 공용 계정"
 echo "       dev@cocode.im)에서 읽어 주입됩니다. jira MCP는 sooperset/mcp-atlassian(Docker) — Jira REST 직결(Rovo 우회)"
 echo "     ↳ 주입 후에는 반드시 '새 터미널'에서 claude를 실행하세요(그리고 colima/docker 데몬이 떠 있어야 합니다)."
 echo "       claude 실행 시점의 환경변수에서 토큰을 읽으므로, 예전 터미널에서 띄운 claude는 토큰을 못 읽습니다."

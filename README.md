@@ -379,12 +379,12 @@ avd     : ...
 > | `op: command not found` | CLI가 설치되지 않았습니다 → `brew install --cask 1password-cli` 후 `./mac-setup.sh --env-only` 실행 |
 > | 설치 검증에 `op(1Password CLI): ⚠ 설치됨 (설정 미완료 …)` | 토큰을 읽지 못한 상태입니다 → ① 위 2번(앱 CLI 통합)이 켜져 있는지 확인 후 `./mac-setup.sh --env-only` 실행, ② 이미 켜져 있다면 "API Token" 금고 권한 문제이니 관리자에게 공유 요청 |
 > | `op account list`가 한참(수십 초) 멈춰 있음 | 1Password 앱이 승인(Touch ID)을 기다리는 중입니다 → 1Password 창에서 잠금 해제하면 바로 진행됩니다 |
-> | `mcp:mcp-atlassian(jira): ✓ 등록됨 (⚠ 토큰 미주입 …)` | op는 되지만 팀 'API Token' 볼트의 'Atlassian API Token > Jira API Token'을 못 읽는 경우입니다 → 볼트 접근 권한을 팀 관리자에게 요청 후 `./mac-setup.sh --env-only` 실행 |
+> | `mcp:mcp-atlassian(jira): ✓ 등록됨 (⚠ 토큰 미주입 …)` | op는 되지만 팀 'API Token' 볼트의 'Laputa Atlassian API Token > Jira API Token'을 못 읽는 경우입니다 → 볼트 접근 권한을 팀 관리자에게 요청 후 `./mac-setup.sh --env-only` 실행 |
 > | jira MCP가 연결 안 됨 (docker 관련) | jira MCP는 Docker로 뜹니다 → **colima/docker 데몬을 먼저 켜세요** (`colima start`), 그 뒤 새 터미널에서 `claude` |
 >
 > **Jira는 어떻게 인증하나요 (Rovo 안 거침)**
 >
-> Jira는 **개발팀 공용 계정(`dev@cocode.im`)의 Jira API 토큰**으로 인증합니다. jira MCP는 오픈소스 **`sooperset/mcp-atlassian`(Docker)** 이며, Atlassian 공식 원격 MCP(Rovo)를 거치지 않고 **Jira Cloud REST API에 토큰으로 직접** 붙습니다 — 그래서 조직 Rovo 엔타이틀먼트가 필요 없습니다. 토큰은 팀 공용 1Password **"API Token" 볼트 > "Atlassian API Token" 항목 > "Jira API Token" 필드**에 있고, op 설정만 되면 raw 토큰이 `JIRA_API_TOKEN`으로 자동 주입됩니다(서버가 이메일+토큰으로 Basic 인증을 내부 처리).
+> Jira는 **개발팀 공용 계정(`dev@cocode.im`)의 Jira API 토큰**으로 인증합니다. jira MCP는 오픈소스 **`sooperset/mcp-atlassian`(Docker)** 이며, Atlassian 공식 원격 MCP(Rovo)를 거치지 않고 **Jira Cloud REST API에 토큰으로 직접** 붙습니다 — 그래서 조직 Rovo 엔타이틀먼트가 필요 없습니다. 토큰은 팀 공용 1Password **"API Token" 볼트 > "Laputa Atlassian API Token" 항목 > "Jira API Token" 필드**에 있고, op 설정만 되면 raw 토큰이 `JIRA_API_TOKEN`으로 자동 주입됩니다(서버가 이메일+토큰으로 Basic 인증을 내부 처리).
 >
 > 그래서 팀원은 위 **1Password CLI 설정(op)만 마치고**, **colima/docker를 켜 둔 상태**에서 새 터미널의 `claude`를 쓰면 됩니다. (op는 되는데 "미주입"이면 대개 볼트 접근 권한 문제 → 관리자에게 공유 요청.)
 >
