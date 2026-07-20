@@ -16,7 +16,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # ------------------------------------------------------------
 # 실행 옵션 파싱
 #   (옵션 없음) : 전체 설치 (1~9단계)
-#   --env-only  : 1Password(op)에서 팀 공용 토큰만 다시 읽어 ~/.zshrc에 주입 (8.5·8.6단계만)
+#   --env-only  : 1Password(op)에서 팀 공용 토큰만 다시 읽어 ~/.zshrc에 주입 (8.5~8.7단계만)
 #   -h, --help  : 사용법 출력
 #   모르는 옵션은 즉시 에러 종료한다 — 오탈자(예: --env-onyl)가 조용히
 #   수 분짜리 전체 설치로 이어지는 사고를 막기 위함이다.
@@ -26,8 +26,9 @@ usage() {
 사용법: ./mac-setup.sh [옵션]
 
   (옵션 없음)   co:code 팀 표준 개발환경 전체 설치 (1~9단계)
-  --env-only    1Password(op)에서 팀 공용 토큰(ZENHUB_API_TOKEN·JIRA_API_TOKEN)만
-                다시 읽어 ~/.zshrc에 주입합니다. 앱/도구 설치 단계는 전부 건너뜁니다.
+  --env-only    1Password(op)에서 팀 공용 토큰(ZENHUB_API_TOKEN·JIRA_API_TOKEN·
+                SLANG_GPT_API_KEY)만 다시 읽어 ~/.zshrc에 주입합니다.
+                앱/도구 설치 단계는 전부 건너뜁니다.
                 (토큰이 바뀌었거나, 설치 때 토큰 주입을 건너뛴 경우에 사용)
   -h, --help    이 도움말을 표시합니다
 USAGE
@@ -84,9 +85,10 @@ export CI=true                   # 많은 CLI가 CI 모드에서 프롬프트 �
 #   8.   ~/.zshrc / ~/.p10k.zsh 반영
 #   8.5. ZENHUB_API_TOKEN 주입 (1Password op read → .zshrc, TTY면 안내 후 Enter)
 #   8.6. JIRA_API_TOKEN 주입 (1Password op read → .zshrc, mcp-atlassian Docker MCP용)
+#   8.7. SLANG_GPT_API_KEY 주입 (1Password op read → .zshrc, slang_gpt 다국어 자동 번역용)
 #   9.   설치 검증 + 다음 단계 안내
 # 공통 규칙: 모든 단계 멱등(이미 설치 시 스킵) · 실패해도 ⚠ 후 계속 · 시크릿 미커밋
-# 실행 옵션: 옵션 없음=전체 실행 · --env-only=8.5·8.6(토큰 주입)만 재실행 · -h/--help=사용법
+# 실행 옵션: 옵션 없음=전체 실행 · --env-only=8.5~8.7(토큰 주입)만 재실행 · -h/--help=사용법
 # ============================================================
 
 # ============================================================
@@ -624,7 +626,7 @@ if ! grep -qE '^[[:space:]]*export PATH=.*\.local/bin' "$HOME/.zshrc" 2>/dev/nul
   echo "  ✓ ~/.zshrc에 ~/.local/bin PATH 추가 (Claude Code)"
 fi
 
-fi  # ══ 설치 단계(1~8) 끝 — 여기부터(8.5·8.6 토큰 주입)는 --env-only 실행 시에도 수행된다 ══
+fi  # ══ 설치 단계(1~8) 끝 — 여기부터(8.5~8.7 토큰 주입)는 --env-only 실행 시에도 수행된다 ══
 
 # --env-only 가드: 아직 전체 세팅을 한 번도 하지 않은 맥이면 토큰을 붙일 ~/.zshrc 골격이
 #   없다. 빈 .zshrc를 새로 만들어 토큰만 꽂으면 PATH·테마 등이 빠진 반쪽짜리 설정이 되므로,
@@ -667,6 +669,10 @@ ZENHUB_TOKEN_OP_REF="op://API Token/ZenHub API Token/credential"      # 팀 공�
 #   mcp-atlassian이 JIRA_USERNAME+JIRA_API_TOKEN으로 Basic 인증을 내부 처리하므로
 #   ~/.zshrc에는 raw 토큰만 JIRA_API_TOKEN으로 주입한다(zenhub와 동일한 단순 패턴).
 JIRA_TOKEN_OP_REF="op://API Token/Laputa Atlassian API Token/Jira API Token"  # 팀 공용 항목 경로 (토큰 값은 1Password에만 존재)
+# slang_gpt(다국어 자동 번역 CLI)용 GPT 키도 같은 팀 계정·같은 볼트에서 읽는다 (아래 8.7단계에서 주입).
+#   MCP 인증용이 아니라 slang_gpt가 셸 환경변수 SLANG_GPT_API_KEY를 직접 읽는 순수 환경변수라
+#   claude mcp 등록 단계는 없다.
+SLANG_GPT_TOKEN_OP_REF="op://API Token/Slang GPT API Token/credential"  # 팀 공용 항목 경로 (키 값은 1Password에만 존재)
 
 # ~/.zshrc에서 기존 ZENHUB_API_TOKEN 라인을 모두 제거한다.
 #   빈 값(export ZENHUB_API_TOKEN="")이 남아 있으면 zenhub MCP가 인증 없이 뜨면서
@@ -743,6 +749,34 @@ inject_jira_token() {
   [[ -n "$tok" ]] || return 1
   strip_jira_token_lines
   printf 'export JIRA_API_TOKEN=%q\n' "$tok" >> "$HOME/.zshrc"
+}
+
+# ── slang_gpt 번역 키 헬퍼 — 위 ZenHub·Jira와 동일 패턴 ──────────────
+#   slang_gpt(Flutter 다국어 자동 번역 CLI)가 셸 환경변수 SLANG_GPT_API_KEY를 직접 읽는다.
+#   MCP 등록이 없는 순수 환경변수라 주입 3형제만 있으면 된다.
+strip_slang_gpt_token_lines() {
+  touch "$HOME/.zshrc"
+  { grep -v '^export SLANG_GPT_API_KEY=' "$HOME/.zshrc" || true; } > "$HOME/.zshrc.tmp"
+  mv "$HOME/.zshrc.tmp" "$HOME/.zshrc"
+}
+
+slang_gpt_token_line_is_empty() {
+  local line val
+  line="$(grep '^export SLANG_GPT_API_KEY=' "$HOME/.zshrc" 2>/dev/null | tail -1)"
+  [[ -n "$line" ]] || return 1
+  val="${line#export SLANG_GPT_API_KEY=}"
+  val="${val#\"}"; val="${val%\"}"
+  val="${val#\'}"; val="${val%\'}"
+  [[ -z "$val" ]]
+}
+
+inject_slang_gpt_token() {
+  local tok
+  op_has_account || return 1
+  tok="$(op read --account "$ZENHUB_TOKEN_OP_ACCOUNT" "$SLANG_GPT_TOKEN_OP_REF" 2>/dev/null </dev/null)" || return 1
+  [[ -n "$tok" ]] || return 1
+  strip_slang_gpt_token_lines
+  printf 'export SLANG_GPT_API_KEY=%q\n' "$tok" >> "$HOME/.zshrc"
 }
 
 log "ZENHUB_API_TOKEN 주입 (1Password 공용 토큰)"
@@ -861,7 +895,48 @@ else
     echo "     확인 후 './mac-setup.sh --env-only' 를 실행하면 토큰만 다시 주입됩니다 (그전까지 jira MCP는 미주입 상태)."
   else
     echo "  ⚠ JIRA_API_TOKEN 미주입 — op 계정이 아직 준비되지 않았습니다 (위 8.5 ZenHub 안내 참고)."
-    echo "     op(1Password CLI) 설정을 마친 뒤 './mac-setup.sh --env-only' 를 실행하면 ZenHub·Jira 토큰이 함께 주입됩니다."
+    echo "     op(1Password CLI) 설정을 마친 뒤 './mac-setup.sh --env-only' 를 실행하면 ZenHub·Jira·Slang GPT 토큰이 함께 주입됩니다."
+  fi
+fi
+
+# ------------------------------------------------------------
+# 8.7. SLANG_GPT_API_KEY 주입 (slang_gpt 다국어 자동 번역용 GPT 키 — 1Password에서 자동 주입)
+#
+#   [이 단계가 하는 일 — 비개발자용 설명]
+#   Flutter 앱의 다국어(한국어·영어…) 문구를 자동으로 번역해 주는 도구 slang_gpt가
+#   GPT 서비스를 부를 때 쓰는 '키'가 필요하다. ZenHub·Jira 토큰과 똑같이 팀 공용
+#   1Password 금고에서 읽어 ~/.zshrc에 적어준다.
+#
+#   ZenHub(8.5)·Jira(8.6)와 동일한 방식이며, op 계정 설정(앱 CLI 통합) 안내는 8.5에서
+#   이미 처리했으므로 여기서는 반복하지 않고 '주입 시도 + 원인별 경고'만 한다.
+#   ※ 팀 공용 1Password 항목: "API Token" 볼트 > "Slang GPT API Token" > credential 필드
+#   ※ 이 값은 MCP 인증용이 아니라 slang_gpt CLI가 환경변수로 직접 읽는 값이라
+#     claude mcp 등록 단계가 없다 (그래서 9단계 검증도 'mcp:' 형태가 아닌 단순 주입 여부만 표시).
+# ------------------------------------------------------------
+log "SLANG_GPT_API_KEY 주입 (1Password 공용 키, slang_gpt 다국어 자동 번역용)"
+
+# 값이 빈 기존 라인은 먼저 걷어낸다 (ZenHub·Jira와 동일 — 빈 값이 남으면 도구가 키를 읽은 것처럼
+# 동작하다 호출만 실패한다)
+if slang_gpt_token_line_is_empty; then
+  strip_slang_gpt_token_lines
+  echo "  · 값이 비어 있던 기존 SLANG_GPT_API_KEY 라인을 제거했습니다 (잘못된 인증 상태 방지)"
+fi
+
+if ! have op; then
+  echo "  ⚠ op(1password-cli) 미설치 → SLANG_GPT_API_KEY 미주입 (위 ZenHub 안내와 동일하게 op 설치 후 './mac-setup.sh --env-only' 실행)"
+elif inject_slang_gpt_token; then
+  echo "  ✓ SLANG_GPT_API_KEY 주입 완료 (~/.zshrc, 키 값은 커밋되지 않음)"
+else
+  # op가 준비됐는데도 못 읽었다면 대개 팀 'API Token' 볼트 접근 권한이 없거나 항목/필드명이 다른 경우.
+  if op_has_account; then
+    echo "  ⚠ SLANG_GPT_API_KEY 미주입 — 1Password에서 'Slang GPT API Token > credential'을 읽지 못했습니다."
+    echo "     확인하세요:"
+    echo "       1) 팀 'API Token' 볼트 접근 권한이 있는지 (없으면 팀 관리자에게 공유 요청)"
+    echo "       2) 볼트에 'Slang GPT API Token' 항목 + 'credential' 필드가 있는지"
+    echo "     확인 후 './mac-setup.sh --env-only' 를 실행하면 키만 다시 주입됩니다 (그전까지 slang_gpt 번역은 사용 불가)."
+  else
+    echo "  ⚠ SLANG_GPT_API_KEY 미주입 — op 계정이 아직 준비되지 않았습니다 (위 8.5 ZenHub 안내 참고)."
+    echo "     op(1Password CLI) 설정을 마친 뒤 './mac-setup.sh --env-only' 를 실행하면 ZenHub·Jira·Slang GPT 토큰이 함께 주입됩니다."
   fi
 fi
 
@@ -874,10 +949,12 @@ if (( ENV_ONLY )); then
   log "환경변수 업데이트 결과 (--env-only)"
   ZH_VAL=$(grep '^export ZENHUB_API_TOKEN=' "$HOME/.zshrc" 2>/dev/null | tail -1 | sed 's/^export ZENHUB_API_TOKEN=//; s/^"//; s/"$//')
   JIRA_VAL=$(grep '^export JIRA_API_TOKEN=' "$HOME/.zshrc" 2>/dev/null | tail -1 | sed 's/^export JIRA_API_TOKEN=//; s/^"//; s/"$//')
+  SLANG_GPT_VAL=$(grep '^export SLANG_GPT_API_KEY=' "$HOME/.zshrc" 2>/dev/null | tail -1 | sed 's/^export SLANG_GPT_API_KEY=//; s/^"//; s/"$//')
   echo "  ZENHUB_API_TOKEN: $([[ -n "$ZH_VAL" ]] && echo '✓ 주입됨' || echo '❌ 미주입 (위 안내 참고)')"
   echo "  JIRA_API_TOKEN  : $([[ -n "$JIRA_VAL" ]] && echo '✓ 주입됨' || echo '❌ 미주입 (위 안내 참고)')"
+  echo "  SLANG_GPT_API_KEY: $([[ -n "$SLANG_GPT_VAL" ]] && echo '✓ 주입됨' || echo '❌ 미주입 (위 안내 참고)')"
   echo ""
-  if [[ -n "$ZH_VAL" || -n "$JIRA_VAL" ]]; then
+  if [[ -n "$ZH_VAL" || -n "$JIRA_VAL" || -n "$SLANG_GPT_VAL" ]]; then
     echo "✅ 완료! 새 터미널을 열거나 'source ~/.zshrc' 를 실행한 뒤 claude를 다시 켜세요."
     echo "   (jira MCP는 colima/docker 데몬이 떠 있어야 연결됩니다 — 'colima start')"
   else
@@ -925,6 +1002,11 @@ JIRA_VAL=$(grep '^export JIRA_API_TOKEN=' "$HOME/.zshrc" 2>/dev/null | tail -1 |
 echo "  mcp:mcp-atlassian(jira): $(claude mcp list 2>/dev/null | grep -q '^mcp-atlassian' \
   && echo "✓ 등록됨$([[ -n "$JIRA_VAL" ]] && echo ' + 토큰 주입됨 (새 터미널·docker 실행 중이어야 적용)' || echo ' (⚠ 토큰 미주입 — 1Password 앱 CLI 통합/볼트 권한 확인 후 --env-only 재실행)')" \
   || echo '❌')"
+# slang_gpt 키: MCP가 아니라 CLI가 셸 환경변수로 직접 읽는 값이라 등록 여부 없이 주입 여부만 본다.
+SLANG_GPT_VAL=$(grep '^export SLANG_GPT_API_KEY=' "$HOME/.zshrc" 2>/dev/null | tail -1 | sed 's/^export SLANG_GPT_API_KEY=//; s/^"//; s/"$//')
+echo "  SLANG_GPT_API_KEY: $([[ -n "$SLANG_GPT_VAL" ]] \
+  && echo '✓ 주입됨 (새 터미널에서 적용 — slang_gpt 다국어 자동 번역용)' \
+  || echo '❌ 미주입 (1Password 앱 CLI 통합/볼트 권한 확인 후 --env-only 재실행)')"
 echo "  maestro : $(maestro --version 2>/dev/null | head -1 || echo '❌')"
 echo "  marionette: $([[ -x "$PUB_CACHE/bin/marionette_mcp" ]] && echo '✓' || echo '❌')"
 echo "  mcp_server_dart: $(dart pub global list 2>/dev/null | grep -q '^mcp_server_dart ' && echo '✓' || echo '❌')"
@@ -943,12 +1025,14 @@ echo "  3. Android Studio 실행 후 flutter doctor (SDK/NDK/AVD는 이미 자�
 echo "  4. Claude Code 로그인: claude"
 echo "  5. Claude Code에서 /mcp 실행 → figma를 팀 계정으로 OAuth 로그인 (최초 1회)"
 echo "     ↳ jira(atlassian)는 더 이상 OAuth 로그인이 필요 없습니다 — zenhub처럼 1Password 팀 공용 토큰으로 인증합니다"
-echo "  6. zenhub·jira 토큰(1Password CLI): 실행 중 8.5/8.6단계에서 설정 안내가 나오면 아래를 마친 뒤 Enter를 누르면 자동 주입됩니다"
+echo "  6. zenhub·jira·slang_gpt 토큰(1Password CLI): 실행 중 8.5/8.6/8.7단계에서 설정 안내가 나오면 아래를 마친 뒤 Enter를 누르면 자동 주입됩니다"
 echo "     ↳ 1Password 앱 로그인(team-cocodeinc) → 설정(⌘,) > 개발자 > '1Password CLI와 통합' 체크"
 echo "       ('개발자' 탭이 없으면 설정 > 보안 > 'Touch ID로 잠금 해제'를 먼저 켜세요)"
 echo "       확인: op account list 에 팀 계정이 보이면 성공 · 건너뛰었다면 './mac-setup.sh --env-only' 로 토큰만 다시 주입할 수 있습니다"
 echo "     ↳ jira 토큰은 팀 'API Token' 볼트 > 'Laputa Atlassian API Token' > 'Jira API Token' 필드(개발팀 공용 계정"
 echo "       dev@cocode.im)에서 읽어 주입됩니다. jira MCP는 sooperset/mcp-atlassian(Docker) — Jira REST 직결(Rovo 우회)"
+echo "     ↳ SLANG_GPT_API_KEY(slang_gpt 다국어 자동 번역용)는 같은 볼트 > 'Slang GPT API Token' > 'credential' 필드에서"
+echo "       읽어 주입됩니다. MCP가 아니라 slang_gpt CLI가 환경변수로 직접 읽는 값이라 별도 로그인이 없습니다"
 echo "     ↳ 주입 후에는 반드시 '새 터미널'에서 claude를 실행하세요(그리고 colima/docker 데몬이 떠 있어야 합니다)."
 echo "       claude 실행 시점의 환경변수에서 토큰을 읽으므로, 예전 터미널에서 띄운 claude는 토큰을 못 읽습니다."
 echo "       (jira MCP가 docker로 뜨므로 'colima start'로 데몬을 먼저 켜 두세요)"
