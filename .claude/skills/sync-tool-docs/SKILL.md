@@ -22,11 +22,18 @@ description: mac-setup.sh에서 도구(GUI 앱·CLI·Dart 패키지·MCP/플러�
 - [ ] **🧰 우리 팀의 기술 스택** (`<a id="tech-stack">`) — 해당 분류 테이블(GUI 앱 / AI 코딩 도구 / CLI 도구 / Flutter·Dart / 클라우드·런타임 / 터미널 환경)에 셀 추가/삭제
   - GUI 앱 테이블은 5열, CLI 도구 테이블은 6열 그리드 — 행이 넘치면 새 `<tr>` 추가, 빈 자리는 빈 `<td>`로 채움
   - 삭제 시 빈 `<td>`로 남기지 말고 뒤 셀을 당겨 정렬
-- [ ] **아이콘** (`assets/icons/`)
-  - 추가: [Simple Icons](https://simpleicons.org)에서 SVG 다운로드 우선 → 없으면 실제 앱 아이콘 추출(PNG) → 그것도 어려우면 텍스트만 표기
-  - Dart 생태계 도구는 `dart.svg` 재사용 관례
+- [ ] **아이콘** (`assets/icons/`) — 도구를 추가하면 **항상 실제 아이콘을 내려받아 반영한다.** 텍스트-only는 어떤 소스로도 못 구할 때의 최후 수단이며, "귀찮아서" 텍스트로 두지 않는다. 획득 순서(위에서부터 성공하는 것을 채택):
+  1. **Simple Icons SVG** (선호) — `curl -fsSL https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/<slug>.svg`
+     - 기존 파일 형식에 맞춘다: 단색 `<path>` + 브랜드색 `fill="#hex"`(Simple Icons 색상표) + `<title>`. 예: `<svg fill="#00ADD8" role="img" viewBox="0 0 24 24" ...>`
+     - Dart 생태계 도구는 `dart.svg` 재사용 관례
+  2. **실제 브랜드/앱 아이콘 PNG** — Simple Icons에 없을 때(신규 AI 도구 등, 예: codex·agy). 안정적 소스:
+     - Google 파비콘 서비스: `curl -fsSL "https://www.google.com/s2/favicons?domain=<도메인>&sz=128" -o assets/icons/<name>.png` (봇 차단 사이트도 우회됨)
+     - 또는 공식 사이트 파비콘/apple-touch-icon 직접 다운로드
+     - 128px 이상 정사각 PNG로 저장 → `file`·`sips -g pixelWidth`로 유효성/크기 확인 → **실제로 열어(Read) 올바른 로고인지 눈으로 확인**(파비콘 서비스가 엉뚱한 globe를 주는 경우 방지)
+  3. (1·2 모두 실패했을 때만) 텍스트 표기
+  - 저장한 아이콘은 README `<img src="assets/icons/…">` 셀 **양쪽**(🧰 기술 스택 표 + 도구별 상세 표)에서 참조한다 (기술 스택은 36px, 상세 표는 20px)
   - 삭제: 다른 곳에서 안 쓰는 아이콘 파일이면 `assets/icons/`에서도 제거
-  - 기술 스택 섹션 하단 `<sub>※ ...</sub>` **각주**(아이콘 출처/텍스트 표기 목록)도 함께 갱신
+  - 기술 스택 섹션 하단 `<sub>※ ...</sub>` **각주**(아이콘 출처: Simple Icons / 실제 브랜드 아이콘 / 텍스트 표기 목록)도 함께 갱신
 - [ ] **📦 무엇이 설치되나요** (`<a id="whats-installed">`) — 요약 테이블의 해당 분류 행에서 도구 이름 추가/삭제
 - [ ] **도구별 상세 설명 펼쳐보기** (`<details>`) — 해당 분류 표에 `| 아이콘 | 도구 | 용도 |` 행 추가/삭제 (용도는 비개발자도 이해할 수 있는 한 줄 설명)
 - [ ] **✅ 설치 후 확인할 것** (`<a id="after-install">`) — 검증 출력 예시 코드 블록, 수동 후속 단계 목록에 영향이 있으면 갱신
