@@ -75,6 +75,7 @@ export CI=true                   # 많은 CLI가 CI 모드에서 프롬프트 �
 #   2.5. Claude MCP (figma 플러그인 + zenhub·jira(mcp-atlassian) 토큰 등록 + maestro·flutter-mcp-toolkit)
 #        └ 설정 기록/자체완결 설치라 런타임(node·dart)보다 앞서도 무해.
 #          런타임은 새 세션에서 MCP 서버가 실제 뜰 때만 필요 (그땐 스크립트 완료 후).
+#   2.6. 다른 AI 코딩 CLI (codex=OpenAI(brew cask) · agy=Google Antigravity(공식 스크립트→~/.local/bin))
 #   3.   CLI 도구 (brew formulae: go·gh·jq·docker 등)
 #   3.2. Git 사용자 이메일 (git config --global user.email, TTY면 입력·s로 건너뜀)
 #   3.5. cocode-skills 팀 플러그인 (사설 레포 install.sh, gh 인증 필요)
@@ -271,6 +272,42 @@ if have claude; then
   fi
 else
   echo "  ⚠ claude CLI가 없어 flutter-mcp-toolkit 플러그인 설치를 건너뜁니다"
+fi
+
+# ------------------------------------------------------------
+# 2.6. 다른 AI 코딩 CLI (codex, antigravity(agy))
+#   Claude Code와 나란히 터미널에서 쓰는 AI 코딩 에이전트 두 가지를 추가로 설치한다.
+#     · codex (OpenAI): 공식 Homebrew cask로 설치. 바이너리는 `codex`. 최초 실행 시 ChatGPT 계정 로그인.
+#     · agy   (Google Antigravity CLI): 은퇴한 Gemini CLI의 공식 후속 도구. 단일 Go 바이너리라
+#             Claude Code와 똑같이 공식 설치 스크립트로 ~/.local/bin/agy 에 설치한다(node·python 불필요).
+#             brew로도 받을 수 있으나 GUI 앱과 바이너리 충돌 사례가 있어 공식 스크립트를 쓴다.
+#             최초 실행 시 Google 계정으로 로그인.
+#   두 도구 모두 멱등(이미 있으면 건너뜀) · 실패 시 ⚠ 후 계속.
+# ------------------------------------------------------------
+log "다른 AI 코딩 CLI 설치 (codex, antigravity(agy))"
+
+# codex (OpenAI) — 공식 Homebrew cask
+if have codex; then
+  echo "  ✓ codex 이미 설치됨"
+else
+  brew install --cask codex \
+    && echo "  ✓ codex 설치 완료 (최초 실행 시 codex 로 ChatGPT 로그인)" \
+    || echo "  ⚠ codex 설치 실패 → 건너뜀 (수동 설치: brew install --cask codex)"
+fi
+
+# agy (Google Antigravity CLI) — 공식 설치 스크립트 (Claude Code와 동일 패턴, ~/.local/bin)
+#   같은 실행 세션의 아래 단계·검증에서 바로 잡히도록 PATH를 먼저 반영한다(section 2와 동일).
+export PATH="$HOME/.local/bin:$PATH"
+if have agy; then
+  echo "  ✓ agy(antigravity) 이미 설치됨"
+else
+  curl -fsSL https://antigravity.google/cli/install.sh | bash || true
+  # 성공 판정은 인스톨러 종료 코드가 아니라 바이너리 존재로 확인한다 (Claude Code와 동일 이유)
+  if have agy; then
+    echo "  ✓ agy(antigravity) 설치 완료 (~/.local/bin/agy, 최초 실행 시 agy 로 Google 로그인)"
+  else
+    echo "  ⚠ agy 설치 실패 → 건너뜀 (수동 설치: curl -fsSL https://antigravity.google/cli/install.sh | bash)"
+  fi
 fi
 
 # ------------------------------------------------------------
@@ -976,6 +1013,9 @@ echo "  python  : $(pyenv exec python --version 2>/dev/null || echo '❌')"
 echo "  node    : $(node --version 2>/dev/null || echo '❌')"
 echo "  npm     : $(npm --version 2>/dev/null || echo '❌')"
 echo "  claude  : $(claude --version 2>/dev/null || echo '❌ (수동 설치: curl -fsSL https://claude.ai/install.sh | bash)')"
+echo "  codex   : $(codex --version 2>/dev/null || echo '❌ (수동 설치: brew install --cask codex)')"
+# agy는 최초 실행이 대화형 로그인 마법사라, 검증에서는 버전 호출 대신 바이너리 존재만 확인한다.
+echo "  agy(antigravity): $(have agy && echo '✓ 설치됨 (최초 실행 시 agy 로 Google 로그인)' || echo '❌ (수동 설치: curl -fsSL https://antigravity.google/cli/install.sh | bash)')"
 echo "  git email: $(git config --global user.email 2>/dev/null || echo '❌ (git config --global user.email <이메일> 로 설정)')"
 echo "  mcp:figma: $(claude plugin list 2>/dev/null | grep -q 'figma@claude-plugins-official' && echo '✓ 설치됨 (/mcp 로그인 필요)' || echo '❌')"
 # op는 '설치됨'과 '설정됨(1Password 앱 CLI 통합)'이 다르다 — 설치만 되고 통합이 꺼져 있으면 토큰을 못 읽는다.
@@ -1023,6 +1063,7 @@ echo "  1. 새 터미널을 열거나: source ~/.zshrc"
 echo "  2. p10k 테마 설정이 없다면: p10k configure"
 echo "  3. Android Studio 실행 후 flutter doctor (SDK/NDK/AVD는 이미 자동 설치·구성됨)"
 echo "  4. Claude Code 로그인: claude"
+echo "     ↳ 함께 설치된 다른 AI 코딩 CLI도 최초 1회 로그인이 필요합니다: codex(실행: codex, ChatGPT 계정) · agy(실행: agy, Antigravity=Google 계정)"
 echo "  5. Claude Code에서 /mcp 실행 → figma를 팀 계정으로 OAuth 로그인 (최초 1회)"
 echo "     ↳ jira(atlassian)는 더 이상 OAuth 로그인이 필요 없습니다 — zenhub처럼 1Password 팀 공용 토큰으로 인증합니다"
 echo "  6. zenhub·jira·slang_gpt 토큰(1Password CLI): 실행 중 8.5/8.6/8.7단계에서 설정 안내가 나오면 아래를 마친 뒤 Enter를 누르면 자동 주입됩니다"
