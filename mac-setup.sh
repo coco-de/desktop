@@ -71,6 +71,9 @@ export CI=true                   # 많은 CLI가 CI 모드에서 프롬프트 �
 # ============================================================
 # 실행 단계 맵 (섹션 번호는 삽입 이력상 비순차 — 아래가 실제 실행 순서)
 #   1.   GUI 앱 (brew cask: 개발툴·브라우저·1Password·op 등)
+#   1.5. Xcode 설치 확인/자동 설치(mas, App Store 로그인 필요) + 개발자 도구 전환
+#        (CLT만 활성화돼 있으면 Xcode.app으로 xcode-select 전환 + 최초 실행 동의,
+#        sudo 암호 필요 · TTY에서만 시도)
 #   2.   Claude Code CLI
 #   2.5. Claude MCP (figma 플러그인 + zenhub·jira(mcp-atlassian) 토큰 등록 + maestro·flutter-mcp-toolkit)
 #        └ 설정 기록/자체완결 설치라 런타임(node·dart)보다 앞서도 무해.
@@ -84,6 +87,7 @@ export CI=true                   # 많은 CLI가 CI 모드에서 프롬프트 �
 #   5.   Python (pyenv)
 #   6.   Node.js (nvm)
 #   7.   oh-my-zsh + powerlevel10k
+#   7.5. Terminal.app 프로필 폰트 자동 적용 (MesloLGS NF, Terminal.app 실행 중일 때만)
 #   8.   ~/.zshrc / ~/.p10k.zsh 반영
 #   8.5. ZENHUB_API_TOKEN 주입 (1Password op read → .zshrc, TTY면 안내 후 Enter)
 #   8.6. JIRA_API_TOKEN 주입 (1Password op read → .zshrc, mcp-atlassian Docker MCP용)
@@ -133,6 +137,52 @@ install_cask tailscale              "Tailscale.app"
 install_cask orca                   "Orca.app"                 stablyai/orca/orca
 install_cask lumide                 "Lumide.app"
 install_cask zed                    "Zed.app"
+
+# ------------------------------------------------------------
+# 1.5. Xcode 설치 확인/자동 설치 + 개발자 도구 전환
+#   Xcode.app이 없으면 mas(App Store CLI)로 자동 설치를 시도한다(App Store에 Apple ID로
+#   로그인돼 있어야 함 — mas는 로그인 자체는 대신해줄 수 없다). 수십 GB 다운로드라 네트워크
+#   상태에 따라 수십 분~수 시간 걸릴 수 있다. mas 미설치·미로그인이면 조용히 건너뛰고
+#   App Store에서 직접 설치하도록 안내한다(기존 "전제 조건" 방식과 동일하게 계속 진행).
+#
+#   Xcode.app은 있지만 Command Line Tools만 활성화된 상태에서 xcodebuild를 실행하면
+#   "requires Xcode, but active developer directory ... CommandLineTools" 에러가 난다
+#   (cocoapods `pod install`, iOS 빌드 등도 같은 이유로 실패한다). Xcode.app이 있는데
+#   xcode-select가 CLT를 가리키면 Xcode.app으로 전환하고 최초 실행 동의(-runFirstLaunch)까지
+#   진행한다. sudo 암호 입력이 필요해 TTY에서만 시도한다.
+# ------------------------------------------------------------
+log "Xcode 설치 확인/자동 설치 + 개발자 도구 전환"
+
+if [[ ! -d /Applications/Xcode.app ]]; then
+  brew list mas >/dev/null 2>&1 || brew install mas || true
+  if have mas && mas account >/dev/null 2>&1; then
+    echo "  · Xcode.app 없음 → mas(App Store CLI)로 자동 설치 시도 (수십 GB 다운로드 · 네트워크에 따라 수십 분~수 시간 소요될 수 있습니다)"
+    mas install 497799835 \
+      && echo "  ✓ Xcode 설치 완료 (mas)" \
+      || echo "  ⚠ mas install 실패 → 건너뜀 (App Store에서 직접 설치: https://apps.apple.com/app/xcode/id497799835)"
+  elif have mas; then
+    echo "  ⚠ mas가 App Store 계정에 로그인돼 있지 않음 → Xcode 자동 설치 건너뜀 (App Store 앱에 Apple ID로 로그인 후 재실행하거나 직접 설치: https://apps.apple.com/app/xcode/id497799835)"
+  else
+    echo "  ⚠ mas(App Store CLI) 설치 실패 → Xcode 자동 설치 건너뜀 (App Store에서 직접 설치: https://apps.apple.com/app/xcode/id497799835)"
+  fi
+fi
+
+if [[ ! -d /Applications/Xcode.app ]]; then
+  echo "  ⚠ /Applications/Xcode.app 없음 → 개발자 도구 전환 건너뜀 (Xcode 설치 후 재실행하면 자동 전환됩니다)"
+elif [[ "$(xcode-select -p 2>/dev/null)" == "/Applications/Xcode.app/Contents/Developer" ]]; then
+  echo "  ✓ xcode-select가 이미 Xcode.app을 가리킴"
+elif [[ -t 0 ]]; then
+  echo "  · xcode-select가 Command Line Tools를 가리키고 있음 → Xcode.app으로 전환 (sudo 암호 입력 필요)"
+  if sudo xcode-select -switch /Applications/Xcode.app/Contents/Developer; then
+    sudo xcodebuild -runFirstLaunch >/dev/null 2>&1 \
+      && echo "  ✓ Xcode 전환 + 최초 실행(라이선스 동의) 완료" \
+      || echo "  ⚠ xcodebuild -runFirstLaunch 실패 → 건너뜀 (수동: sudo xcodebuild -runFirstLaunch)"
+  else
+    echo "  ⚠ xcode-select 전환 실패 → 건너뜀 (수동: sudo xcode-select -switch /Applications/Xcode.app/Contents/Developer)"
+  fi
+else
+  echo "  ⚠ 비대화형 실행 → Xcode 전환 건너뜀. 수동: sudo xcode-select -switch /Applications/Xcode.app/Contents/Developer && sudo xcodebuild -runFirstLaunch"
+fi
 
 # ------------------------------------------------------------
 # 2. Claude Code CLI
@@ -598,6 +648,46 @@ log "powerlevel10k + 플러그인 설치"
 
 # p10k 권장 폰트 (MesloLGS NF)
 brew install --cask font-meslo-lg-nerd-font 2>/dev/null || true
+
+# ------------------------------------------------------------
+# 7.5. Terminal.app 프로필 폰트 자동 적용
+#   위에서 설치한 MesloLGS Nerd Font는 "설치"만으로는 powerlevel10k 아이콘이 제대로
+#   보이지 않는다 — 터미널 앱이 실제로 그 폰트를 쓰도록 프로필에서 선택해야 한다.
+#   macOS 기본 Terminal.app은 AppleScript로 기본/시작 프로필 폰트를 자동 지정할 수 있어
+#   여기서 대신 처리한다(폰트 파일에서 PostScript 이름을 직접 추출해 로케일 영향을 받지
+#   않는다). 고정폭 렌더링이 중요한 터미널 용도라 "Mono" 변형을 우선한다.
+#   iTerm2 등 다른 터미널 앱은 자동화 대상이 아니라 계속 수동 설정이 필요하다.
+#   (Terminal.app을 새로 띄우면 다른 터미널에서 실행 중이어도 원치 않는 창이 열릴 수 있어,
+#   현재 실행 터미널이 Terminal.app일 때만 시도한다.)
+# ------------------------------------------------------------
+log "Terminal.app 프로필 폰트 자동 적용 (MesloLGS NF)"
+if [[ "$TERM_PROGRAM" != "Apple_Terminal" ]]; then
+  echo "  · Terminal.app이 아닌 터미널(${TERM_PROGRAM:-미확인})에서 실행 중 → 자동 적용 건너뜀 (해당 터미널 앱 환경설정에서 폰트를 MesloLGS NF로 직접 변경해주세요)"
+else
+  MESLO_FONT_FILE="$(find "$HOME/Library/Fonts" /Library/Fonts -maxdepth 1 -iname '*MesloLGS*Mono*Regular*.ttf' 2>/dev/null | head -1)"
+  [[ -z "$MESLO_FONT_FILE" ]] && \
+    MESLO_FONT_FILE="$(find "$HOME/Library/Fonts" /Library/Fonts -maxdepth 1 -iname '*MesloLGS*Regular*.ttf' 2>/dev/null | head -1)"
+  MESLO_PS_NAME=""
+  [[ -n "$MESLO_FONT_FILE" ]] && \
+    MESLO_PS_NAME="$(strings "$MESLO_FONT_FILE" 2>/dev/null | grep -E '^[A-Za-z0-9]+-Regular$' | head -1)"
+
+  if [[ -z "$MESLO_PS_NAME" ]]; then
+    echo "  ⚠ MesloLGS 폰트 파일을 찾지 못함 → 자동 적용 건너뜀 (Terminal 환경설정 > 프로필 > 폰트를 MesloLGS NF로 직접 변경)"
+  elif osascript <<APPLESCRIPT >/dev/null 2>&1
+tell application "Terminal"
+    set font name of default settings to "$MESLO_PS_NAME"
+    set font name of startup settings to "$MESLO_PS_NAME"
+    try
+        set font name of front window to "$MESLO_PS_NAME"
+    end try
+end tell
+APPLESCRIPT
+  then
+    echo "  ✓ Terminal.app 프로필 폰트를 ${MESLO_PS_NAME}로 자동 적용 (새 창부터 적용되며, 지금 이 창도 즉시 반영됩니다)"
+  else
+    echo "  ⚠ Terminal.app 폰트 자동 적용 실패 → 건너뜀 (환경설정 > 프로필 > 폰트를 MesloLGS NF로 직접 변경)"
+  fi
+fi
 
 # ------------------------------------------------------------
 # 8. ~/.zshrc / ~/.p10k.zsh 반영
@@ -1127,6 +1217,8 @@ fi
 # 9. 검증
 # ------------------------------------------------------------
 log "설치 검증"
+echo "  Xcode.app: $([[ -d /Applications/Xcode.app ]] && echo '✓ 설치됨' || echo '❌ (App Store에서 설치: https://apps.apple.com/app/xcode/id497799835, 또는 mas 로그인 후 재실행)')"
+echo "  xcode-select: $(xcode-select -p 2>/dev/null || echo '❌ (Xcode.app 설치 필요 — App Store)')"
 echo "  fvm     : $(fvm --version 2>/dev/null || echo '❌')"
 echo "  flutter : $(flutter --version 2>/dev/null | head -1 || echo '❌')"
 echo "  go      : $(go version 2>/dev/null || echo '❌')"
