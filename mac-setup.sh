@@ -79,13 +79,13 @@ export CI=true                   # 많은 CLI가 CI 모드에서 프롬프트 �
 #        └ 설정 기록/자체완결 설치라 런타임(node·dart)보다 앞서도 무해.
 #          런타임은 새 세션에서 MCP 서버가 실제 뜰 때만 필요 (그땐 스크립트 완료 후).
 #   2.6. 다른 AI 코딩 CLI (codex=OpenAI(brew cask) · agy=Google Antigravity(공식 스크립트→~/.local/bin))
-#   2.7. Claude Code 상태줄 (cc-statusline-tui: brew tap LokiQ0713 → cc-statusline, ~/.claude/settings.json 자동 등록)
 #   3.   CLI 도구 (brew formulae: go·gh·jq·docker 등)
 #   3.2. Git 사용자 이메일 (git config --global user.email, TTY면 입력·s로 건너뜀)
 #   3.5. cocode-skills 팀 플러그인 (사설 레포 install.sh, gh 인증 필요)
 #   4.   Flutter/Dart(FVM) · Dart 글로벌 · gcloud · DCM · Android SDK/AVD
 #   5.   Python (pyenv)
 #   6.   Node.js (nvm)
+#   6.5. Claude Code 상태줄 (ccstatusline: npx 기반, node 설치 직후에 실행 · ~/.claude/settings.json 자동 등록)
 #   7.   oh-my-zsh + powerlevel10k
 #   7.5. Terminal.app 프로필 폰트 자동 적용 (MesloLGS NF, Terminal.app 실행 중일 때만)
 #   8.   ~/.zshrc / ~/.p10k.zsh 반영
@@ -363,34 +363,6 @@ else
 fi
 
 # ------------------------------------------------------------
-# 2.7. Claude Code 상태줄(statusline) — cc-statusline-tui
-#   Claude Code 하단 상태줄을 모델·세션 비용·컨텍스트 사용량·git 상태까지 보여주는
-#   두 줄짜리 정보 표시줄로 바꿔 주는 도구다(Rust CLI, 바이너리 이름은 `cc-statusline`).
-#   설치 후 `cc-statusline`을 한 번 실행하면 ~/.claude/settings.json에 자기 자신을
-#   등록한다(재실행해도 같은 결과 = 멱등). 별도 로그인·설정 파일이 필요 없다.
-#   Homebrew 탭(LokiQ0713/cc-statusline-tui)으로 설치 · 실패 시 ⚠ 후 계속.
-#   ※ Claude Code(~/.claude)가 있어야 등록되므로 2단계(Claude Code CLI) 뒤에 둔다.
-# ------------------------------------------------------------
-log "Claude Code 상태줄 설치 (cc-statusline-tui)"
-
-if have cc-statusline; then
-  echo "  ✓ cc-statusline 이미 설치됨"
-else
-  brew tap LokiQ0713/cc-statusline-tui >/dev/null 2>&1 || true
-  brew install cc-statusline \
-    && echo "  ✓ cc-statusline 설치 완료" \
-    || echo "  ⚠ cc-statusline 설치 실패 → 건너뜀 (수동 설치: brew tap LokiQ0713/cc-statusline-tui && brew install cc-statusline)"
-fi
-
-# 상태줄을 ~/.claude/settings.json에 등록한다(이미 등록돼 있어도 안전 = 멱등).
-#   Claude Code가 설치돼 ~/.claude가 있을 때만 실행 · stdin은 막아 혹시라도 멈추지 않게 한다.
-if have cc-statusline && [[ -d "$HOME/.claude" ]]; then
-  cc-statusline </dev/null >/dev/null 2>&1 \
-    && echo "  ✓ 상태줄 등록 완료 (~/.claude/settings.json — Claude Code에서 바로 적용)" \
-    || echo "  ⚠ 상태줄 등록 실패 → 건너뜀 (수동 등록: cc-statusline)"
-fi
-
-# ------------------------------------------------------------
 # 3. CLI 도구 (go, pyenv, nvm, git 등)
 # ------------------------------------------------------------
 log "CLI 도구 설치 (go, pyenv, nvm, git, cocoapods 등)"
@@ -622,6 +594,29 @@ mkdir -p "$NVM_DIR"
 source "$(brew --prefix nvm)/nvm.sh"
 nvm install --lts
 nvm alias default 'lts/*'
+
+# ------------------------------------------------------------
+# 6.5. Claude Code 상태줄(statusline) — ccstatusline
+#   Claude Code 하단 상태줄을 모델·세션 비용·컨텍스트 사용량·git 상태까지 보여주는
+#   두 줄짜리 정보 표시줄로 바꿔 주는 대화형 TUI 도구다(Node.js 기반, npx로 그때그때
+#   실행 — 별도 설치가 필요 없다: https://github.com/sirmalloc/ccstatusline).
+#   실행 후 위젯을 구성해 저장하면 ~/.claude/settings.json에 statusLine으로 등록된다.
+#   대화형 TUI라 이 스크립트가 값을 자동으로 채워 넣을 수는 없어, stdin을 막고
+#   한 번 시도만 해 본다(실패해도 무해) · 실제 구성은 '다음 단계' 안내에서 사람이 진행.
+#   ※ npx가 node를 필요로 하므로 6단계(Node.js) 바로 뒤에 둔다.
+# ------------------------------------------------------------
+log "Claude Code 상태줄 확인 (ccstatusline — npx 기반, 사전 설치 불필요)"
+
+if grep -q '"statusLine"' "$HOME/.claude/settings.json" 2>/dev/null; then
+  echo "  ✓ 상태줄 이미 등록됨 (~/.claude/settings.json)"
+else
+  npx -y ccstatusline@latest </dev/null >/dev/null 2>&1 || true
+  if grep -q '"statusLine"' "$HOME/.claude/settings.json" 2>/dev/null; then
+    echo "  ✓ 상태줄 등록 완료 (~/.claude/settings.json — Claude Code에서 바로 적용)"
+  else
+    echo "  ⚠ 상태줄 자동 등록 안 됨 → 대화형 도구라 사람이 직접 한 번 실행해야 합니다 (수동 설정: npx -y ccstatusline@latest, 아래 '다음 단계' 참고)"
+  fi
+fi
 
 # ------------------------------------------------------------
 # 7. oh-my-zsh + powerlevel10k + 플러그인
@@ -1229,10 +1224,11 @@ echo "  claude  : $(claude --version 2>/dev/null || echo '❌ (수동 설치: cu
 echo "  codex   : $(codex --version 2>/dev/null || echo '❌ (수동 설치: brew install --cask codex)')"
 # agy는 최초 실행이 대화형 로그인 마법사라, 검증에서는 버전 호출 대신 바이너리 존재만 확인한다.
 echo "  agy(antigravity): $(have agy && echo '✓ 설치됨 (최초 실행 시 agy 로 Google 로그인)' || echo '❌ (수동 설치: curl -fsSL https://antigravity.google/cli/install.sh | bash)')"
-# cc-statusline: 설치 여부 + 상태줄 등록 여부(~/.claude/settings.json의 statusLine 키)를 함께 본다.
-echo "  cc-statusline: $(have cc-statusline \
-  && echo "✓ 설치됨$(grep -q '\"statusLine\"' "$HOME/.claude/settings.json" 2>/dev/null && echo ' + 상태줄 등록됨 (Claude Code에서 적용)' || echo ' (⚠ 미등록 — cc-statusline 실행)')" \
-  || echo '❌ (수동 설치: brew tap LokiQ0713/cc-statusline-tui && brew install cc-statusline)')"
+# ccstatusline: brew formula가 아니라 npx 실행형이라 have로 확인할 수 없다 —
+#   ~/.claude/settings.json의 statusLine 키 등록 여부로 판정한다.
+echo "  ccstatusline: $(grep -q '\"statusLine\"' "$HOME/.claude/settings.json" 2>/dev/null \
+  && echo '✓ 등록됨 (Claude Code에서 적용)' \
+  || echo '❌ 미등록 (수동 설정: npx -y ccstatusline@latest)')"
 echo "  git email: $(git config --global user.email 2>/dev/null || echo '❌ (git config --global user.email <이메일> 로 설정)')"
 echo "  mcp:figma: $(claude plugin list 2>/dev/null | grep -q 'figma@claude-plugins-official' && echo '✓ 설치됨 (/mcp 로그인 필요)' || echo '❌')"
 # op는 '설치됨'과 '설정됨(1Password 앱 CLI 통합)'이 다르다 — 설치만 되고 통합이 꺼져 있으면 토큰을 못 읽는다.
@@ -1288,7 +1284,7 @@ echo "  2. p10k 테마 설정이 없다면: p10k configure"
 echo "  3. Android Studio 실행 후 flutter doctor (SDK/NDK/AVD는 이미 자동 설치·구성됨)"
 echo "  4. Claude Code 로그인: claude"
 echo "     ↳ 함께 설치된 다른 AI 코딩 CLI도 최초 1회 로그인이 필요합니다: codex(실행: codex, ChatGPT 계정) · agy(실행: agy, Antigravity=Google 계정)"
-echo "     ↳ Claude Code 하단 상태줄은 cc-statusline(모델·비용·컨텍스트·git 상태)으로 이미 교체돼 있습니다 — 별도 로그인 불필요. 되돌리려면: rm -rf ~/.claude/statusline 후 settings.json의 statusLine 키 삭제"
+echo "     ↳ Claude Code 하단 상태줄(모델·비용·컨텍스트·git 상태)은 ccstatusline으로 구성할 수 있습니다 — 대화형 TUI라 자동 설정이 안 되니, \`npx -y ccstatusline@latest\` 실행 후 위젯을 고르고 저장하면 한 번만에 등록됩니다. 되돌리려면 settings.json의 statusLine 키만 지우면 됩니다"
 echo "  5. Claude Code에서 /mcp 실행 → figma를 팀 계정으로 OAuth 로그인 (최초 1회)"
 echo "     ↳ jira(atlassian)는 더 이상 OAuth 로그인이 필요 없습니다 — zenhub처럼 1Password 팀 공용 토큰으로 인증합니다"
 echo "  6. zenhub·jira·slang_gpt·DCM 토큰(1Password CLI): 실행 중 8.5/8.6/8.7/8.8단계에서 설정 안내가 나오면 아래를 마친 뒤 Enter를 누르면 자동 주입됩니다"
