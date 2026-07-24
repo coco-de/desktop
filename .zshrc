@@ -74,7 +74,26 @@ alias mk="minikube"
 alias cocode="cd ~/Development/cocode"
 
 ## Claude
-alias claude='claude --dangerously-skip-permissions'
+# Jira(Atlassian) MCP는 docker(colima) 데몬이 떠 있어야 붙는다. colima가 죽어 있으면
+# claude를 켜도 그 세션 내내 Jira MCP가 조용히 끊긴 채로 남으므로(재시작 전엔 복구 안 됨),
+# claude/cld 실행 직전에 매번 확인해 꺼져 있으면 자동으로 켠다.
+_ensure_colima() {
+  command -v docker >/dev/null 2>&1 || return 0
+  docker info >/dev/null 2>&1 && return 0
+  if command -v colima >/dev/null 2>&1; then
+    echo "🐳 colima(docker) 데몬이 꺼져 있어 Jira MCP가 연결되지 않습니다 — 자동으로 켭니다... (최초 실행 시 다소 걸릴 수 있습니다)"
+    if colima start; then
+      echo "  ✓ colima 시작됨 (Jira MCP 정상 연결)"
+    else
+      echo "  ⚠ colima 자동 시작 실패 → 'colima start'를 직접 실행한 뒤 다시 시도하세요"
+    fi
+  fi
+}
+
+claude() {
+  _ensure_colima
+  command claude --dangerously-skip-permissions "$@"
+}
 
 [[ -s "$HOME/.gvm/scripts/gvm" ]] && source "$HOME/.gvm/scripts/gvm"
 [[ -d /opt/homebrew/opt/gradle@7/bin ]] && export PATH="/opt/homebrew/opt/gradle@7/bin:$PATH"
@@ -151,6 +170,7 @@ _claude_session_name() {
 
 # cld : Agent Teams 모드 (프로젝트 에이전트 자동 로딩)
 cld() {
+  _ensure_colima
   command claude \
     --dangerously-skip-permissions \
     --name "$(_claude_session_name)" \
