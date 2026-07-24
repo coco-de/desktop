@@ -85,7 +85,9 @@ export CI=true                   # 많은 CLI가 CI 모드에서 프롬프트 �
 #   4.   Flutter/Dart(FVM) · Dart 글로벌 · gcloud · DCM · Android SDK/AVD
 #   5.   Python (pyenv)
 #   6.   Node.js (nvm)
-#   6.5. Claude Code 상태줄 (ccstatusline: npx 기반, node 설치 직후에 실행 · ~/.claude/settings.json 자동 등록)
+#   6.5. Claude Code 상태줄 (ccstatusline 먼저 시도 → 대화형이라 자동 등록에 보통 실패 →
+#        Awesome CC Statusline(small)로 자동 대체 설치, node 설치 직후에 실행 ·
+#        ~/.claude/settings.json 자동 등록)
 #   7.   oh-my-zsh + powerlevel10k
 #   7.5. Terminal.app 프로필 폰트 자동 적용 (MesloLGS NF, Terminal.app 실행 중일 때만)
 #   8.   ~/.zshrc / ~/.p10k.zsh 반영
@@ -596,25 +598,36 @@ nvm install --lts
 nvm alias default 'lts/*'
 
 # ------------------------------------------------------------
-# 6.5. Claude Code 상태줄(statusline) — ccstatusline
-#   Claude Code 하단 상태줄을 모델·세션 비용·컨텍스트 사용량·git 상태까지 보여주는
-#   두 줄짜리 정보 표시줄로 바꿔 주는 대화형 TUI 도구다(Node.js 기반, npx로 그때그때
-#   실행 — 별도 설치가 필요 없다: https://github.com/sirmalloc/ccstatusline).
-#   실행 후 위젯을 구성해 저장하면 ~/.claude/settings.json에 statusLine으로 등록된다.
-#   대화형 TUI라 이 스크립트가 값을 자동으로 채워 넣을 수는 없어, stdin을 막고
-#   한 번 시도만 해 본다(실패해도 무해) · 실제 구성은 '다음 단계' 안내에서 사람이 진행.
-#   ※ npx가 node를 필요로 하므로 6단계(Node.js) 바로 뒤에 둔다.
+# 6.5. Claude Code 상태줄(statusline) — ccstatusline → Awesome CC Statusline(small)
+#   1차: ccstatusline은 모델·세션 비용·컨텍스트 사용량·git 상태까지 보여주는
+#   대화형 TUI 도구다(Node.js 기반, npx로 그때그때 실행 — 별도 설치 불필요:
+#   https://github.com/sirmalloc/ccstatusline). 대화형이라 이 스크립트가 값을
+#   자동으로 채워 넣을 수 없어, stdin을 막고 한 번 시도만 해 본다(실패해도 무해).
+#   2차: 대화형이라 위 시도는 거의 항상 등록에 실패한다 — 그 경우 Awesome CC
+#   Statusline을 size=small로 완전 비대화형 설치한다
+#   (https://github.com/AwesomeJun/CC-statusline). 크기를 인자로 넘기면 프롬프트
+#   없이 바로 ~/.claude/settings.json에 등록된다. jq 의존성은 3단계(CLI 도구)에서
+#   이미 설치돼 있다.
+#   두 도구 모두 같은 statusLine 키를 쓰므로, 나중에 다른 크기/도구로 바꾸고
+#   싶으면 ~/.claude/settings.json의 statusLine 키를 지우고 원하는 쪽을 다시
+#   실행하면 된다.
+#   ※ 둘 다 node/네트워크가 필요하므로 6단계(Node.js) 바로 뒤에 둔다.
 # ------------------------------------------------------------
-log "Claude Code 상태줄 확인 (ccstatusline — npx 기반, 사전 설치 불필요)"
+log "Claude Code 상태줄 확인 (ccstatusline 시도 → 실패 시 Awesome CC Statusline(small)로 자동 대체)"
 
 if grep -q '"statusLine"' "$HOME/.claude/settings.json" 2>/dev/null; then
   echo "  ✓ 상태줄 이미 등록됨 (~/.claude/settings.json)"
 else
   npx -y ccstatusline@latest </dev/null >/dev/null 2>&1 || true
   if grep -q '"statusLine"' "$HOME/.claude/settings.json" 2>/dev/null; then
-    echo "  ✓ 상태줄 등록 완료 (~/.claude/settings.json — Claude Code에서 바로 적용)"
+    echo "  ✓ 상태줄 등록 완료 (ccstatusline, ~/.claude/settings.json — Claude Code에서 바로 적용)"
   else
-    echo "  ⚠ 상태줄 자동 등록 안 됨 → 대화형 도구라 사람이 직접 한 번 실행해야 합니다 (수동 설정: npx -y ccstatusline@latest, 아래 '다음 단계' 참고)"
+    echo "  ↳ ccstatusline은 대화형 TUI라 자동 등록되지 않음 → Awesome CC Statusline(small)로 자동 설치 시도"
+    if curl -fsSL https://raw.githubusercontent.com/AwesomeJun/CC-statusline/main/install.sh 2>/dev/null | bash -s -- small >/dev/null 2>&1; then
+      echo "  ✓ 상태줄 등록 완료 (Awesome CC Statusline, size: small — ~/.claude/settings.json)"
+    else
+      echo "  ⚠ 상태줄 자동 등록 실패 → 사람이 직접 설정해야 합니다 (수동 설정: npx -y ccstatusline@latest 또는 curl -fsSL https://raw.githubusercontent.com/AwesomeJun/CC-statusline/main/install.sh | bash -s -- small, 아래 '다음 단계' 참고)"
+    fi
   fi
 fi
 
@@ -1224,11 +1237,12 @@ echo "  claude  : $(claude --version 2>/dev/null || echo '❌ (수동 설치: cu
 echo "  codex   : $(codex --version 2>/dev/null || echo '❌ (수동 설치: brew install --cask codex)')"
 # agy는 최초 실행이 대화형 로그인 마법사라, 검증에서는 버전 호출 대신 바이너리 존재만 확인한다.
 echo "  agy(antigravity): $(have agy && echo '✓ 설치됨 (최초 실행 시 agy 로 Google 로그인)' || echo '❌ (수동 설치: curl -fsSL https://antigravity.google/cli/install.sh | bash)')"
-# ccstatusline: brew formula가 아니라 npx 실행형이라 have로 확인할 수 없다 —
-#   ~/.claude/settings.json의 statusLine 키 등록 여부로 판정한다.
-echo "  ccstatusline: $(grep -q '\"statusLine\"' "$HOME/.claude/settings.json" 2>/dev/null \
+# 상태줄(ccstatusline / Awesome CC Statusline): 둘 다 brew formula가 아니라
+#   npx/curl 실행형이라 have로 확인할 수 없다 — ~/.claude/settings.json의
+#   statusLine 키 등록 여부로 판정한다 (어느 쪽이 등록됐는지는 구분하지 않는다).
+echo "  상태줄(statusline): $(grep -q '\"statusLine\"' "$HOME/.claude/settings.json" 2>/dev/null \
   && echo '✓ 등록됨 (Claude Code에서 적용)' \
-  || echo '❌ 미등록 (수동 설정: npx -y ccstatusline@latest)')"
+  || echo '❌ 미등록 (수동 설정: npx -y ccstatusline@latest 또는 curl -fsSL https://raw.githubusercontent.com/AwesomeJun/CC-statusline/main/install.sh | bash -s -- small)')"
 echo "  git email: $(git config --global user.email 2>/dev/null || echo '❌ (git config --global user.email <이메일> 로 설정)')"
 echo "  mcp:figma: $(claude plugin list 2>/dev/null | grep -q 'figma@claude-plugins-official' && echo '✓ 설치됨 (/mcp 로그인 필요)' || echo '❌')"
 # op는 '설치됨'과 '설정됨(1Password 앱 CLI 통합)'이 다르다 — 설치만 되고 통합이 꺼져 있으면 토큰을 못 읽는다.
@@ -1284,7 +1298,7 @@ echo "  2. p10k 테마 설정이 없다면: p10k configure"
 echo "  3. Android Studio 실행 후 flutter doctor (SDK/NDK/AVD는 이미 자동 설치·구성됨)"
 echo "  4. Claude Code 로그인: claude"
 echo "     ↳ 함께 설치된 다른 AI 코딩 CLI도 최초 1회 로그인이 필요합니다: codex(실행: codex, ChatGPT 계정) · agy(실행: agy, Antigravity=Google 계정)"
-echo "     ↳ Claude Code 하단 상태줄(모델·비용·컨텍스트·git 상태)은 ccstatusline으로 구성할 수 있습니다 — 대화형 TUI라 자동 설정이 안 되니, \`npx -y ccstatusline@latest\` 실행 후 위젯을 고르고 저장하면 한 번만에 등록됩니다. 되돌리려면 settings.json의 statusLine 키만 지우면 됩니다"
+echo "     ↳ Claude Code 하단 상태줄(모델·비용·컨텍스트·git 상태)은 6.5단계에서 이미 자동으로 설정됐을 겁니다 — ccstatusline이 대화형이라 등록에 실패하면 Awesome CC Statusline(size: small)이 자동으로 대신 등록됩니다. 직접 위젯을 골라 커스터마이징하고 싶다면 \`npx -y ccstatusline@latest\`를, 다른 크기로 바꾸고 싶다면 \`curl -fsSL https://raw.githubusercontent.com/AwesomeJun/CC-statusline/main/install.sh | bash -s -- <크기>\`를 실행하면 됩니다(크기: xs/s/m/l/xl). 되돌리려면 settings.json의 statusLine 키만 지우면 됩니다"
 echo "  5. Claude Code에서 /mcp 실행 → figma를 팀 계정으로 OAuth 로그인 (최초 1회)"
 echo "     ↳ jira(atlassian)는 더 이상 OAuth 로그인이 필요 없습니다 — zenhub처럼 1Password 팀 공용 토큰으로 인증합니다"
 echo "  6. zenhub·jira·slang_gpt·DCM 토큰(1Password CLI): 실행 중 8.5/8.6/8.7/8.8단계에서 설정 안내가 나오면 아래를 마친 뒤 Enter를 누르면 자동 주입됩니다"
