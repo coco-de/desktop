@@ -113,7 +113,7 @@ if (( ! ENV_ONLY )); then
 # ------------------------------------------------------------
 # 1. GUI 앱 (brew cask)
 # ------------------------------------------------------------
-log "GUI 앱 설치 (Android Studio, Slack, Figma, Claude Desktop, Chrome, Dia, 1Password, Tailscale, Orca, Lumide, Zed) + 1Password CLI(op — 앱이 아닌 터미널 도구)"
+log "GUI 앱 설치 (Android Studio, Slack, Figma, Claude Desktop, Chrome, Dia, 1Password, Tailscale, Orca, Lumide, Zed, Rive) + 1Password CLI(op — 앱이 아닌 터미널 도구)"
 
 # cask 설치 (이미 /Applications 에 수동 설치된 앱은 건너뜀)
 install_cask() {
@@ -142,6 +142,7 @@ install_cask tailscale              "Tailscale.app"
 install_cask orca                   "Orca.app"                 stablyai/orca/orca
 install_cask lumide                 "Lumide.app"
 install_cask zed                    "Zed.app"
+install_cask rive                   "Rive.app"
 
 # ------------------------------------------------------------
 # 1.5. Xcode 설치 확인/자동 설치 + 개발자 도구 전환
