@@ -16,7 +16,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # ------------------------------------------------------------
 # 실행 옵션 파싱
 #   (옵션 없음) : 전체 설치 (1~9단계)
-#   --env-only  : 1Password(op)에서 팀 공용 토큰만 다시 읽어 ~/.zshrc에 주입 (8.5~8.8단계만)
+#   --env-only  : 1Password(op)에서 팀 공용 토큰만 다시 읽어 ~/.zshrc에 주입 (8.5~8.9단계만)
 #   -h, --help  : 사용법 출력
 #   모르는 옵션은 즉시 에러 종료한다 — 오탈자(예: --env-onyl)가 조용히
 #   수 분짜리 전체 설치로 이어지는 사고를 막기 위함이다.
@@ -27,7 +27,8 @@ usage() {
 
   (옵션 없음)   co:code 팀 표준 개발환경 전체 설치 (1~9단계)
   --env-only    1Password(op)에서 팀 공용 토큰(ZENHUB_API_TOKEN·JIRA_API_TOKEN·
-                SLANG_GPT_API_KEY·DCM_EMAIL·DCM_CI_KEY)만 다시 읽어 ~/.zshrc에
+                SLANG_GPT_API_KEY·DCM_EMAIL·DCM_CI_KEY·SLACK_TEAM_ID·
+                SLACK_BOT_TOKEN)만 다시 읽어 ~/.zshrc에
                 주입합니다. 앱/도구 설치 단계는 전부 건너뜁니다.
                 (토큰이 바뀌었거나, 설치 때 토큰 주입을 건너뛴 경우에 사용)
   -h, --help    이 도움말을 표시합니다
@@ -75,10 +76,11 @@ export CI=true                   # 많은 CLI가 CI 모드에서 프롬프트 �
 #        (CLT만 활성화돼 있으면 Xcode.app으로 xcode-select 전환 + 최초 실행 동의,
 #        sudo 암호 필요 · TTY에서만 시도)
 #   2.   Claude Code CLI
-#   2.5. Claude MCP (figma 플러그인 + zenhub·jira(mcp-atlassian) 토큰 등록 + maestro·flutter-mcp-toolkit)
+#   2.5. Claude MCP (figma 플러그인 + zenhub·jira(mcp-atlassian)·slack 토큰 등록 + maestro·flutter-mcp-toolkit)
 #        └ 설정 기록/자체완결 설치라 런타임(node·dart)보다 앞서도 무해.
 #          런타임은 새 세션에서 MCP 서버가 실제 뜰 때만 필요 (그땐 스크립트 완료 후).
 #   2.6. 다른 AI 코딩 CLI (codex=OpenAI(brew cask) · agy=Google Antigravity(공식 스크립트→~/.local/bin))
+#   2.7. Slack CLI (공식 설치 스크립트 → /usr/local/bin 또는 ~/.local/bin)
 #   3.   CLI 도구 (brew formulae: go·gh·jq·docker 등)
 #   3.2. Git 사용자 이메일 (git config --global user.email, TTY면 입력·s로 건너뜀)
 #   3.5. cocode-skills 팀 플러그인 (사설 레포 install.sh, gh 인증 필요)
@@ -95,9 +97,10 @@ export CI=true                   # 많은 CLI가 CI 모드에서 프롬프트 �
 #   8.6. JIRA_API_TOKEN 주입 (1Password op read → .zshrc, mcp-atlassian Docker MCP용)
 #   8.7. SLANG_GPT_API_KEY 주입 (1Password op read → .zshrc, slang_gpt 다국어 자동 번역용)
 #   8.8. DCM_EMAIL·DCM_CI_KEY 주입 (1Password op read → .zshrc, DCM CI 라이선스 인증용)
+#   8.9. SLACK_TEAM_ID·SLACK_BOT_TOKEN 주입 (1Password op read → .zshrc, slack MCP용)
 #   9.   설치 검증 + 다음 단계 안내
 # 공통 규칙: 모든 단계 멱등(이미 설치 시 스킵) · 실패해도 ⚠ 후 계속 · 시크릿 미커밋
-# 실행 옵션: 옵션 없음=전체 실행 · --env-only=8.5~8.8(토큰 주입)만 재실행 · -h/--help=사용법
+# 실행 옵션: 옵션 없음=전체 실행 · --env-only=8.5~8.9(토큰 주입)만 재실행 · -h/--help=사용법
 # ============================================================
 
 # ============================================================
@@ -210,12 +213,12 @@ else
 fi
 
 # ------------------------------------------------------------
-# 2.5. Claude Code MCP 서버 / 플러그인 (jira=atlassian, figma, zenhub, maestro, flutter-mcp-toolkit)
+# 2.5. Claude Code MCP 서버 / 플러그인 (jira=atlassian, figma, zenhub, slack, maestro, flutter-mcp-toolkit)
 #   MCP는 3계층으로 설치된다:
 #     ① 플러그인 계층  : claude plugin install (figma, flutter-mcp-toolkit) — 아래에서 자동
 #     ② 로컬 바이너리   : maestro CLI·flutter-mcp-toolkit CLI(아래), marionette_mcp·dart mcp-server(4단계에서 설치)
 #     ③ 인증 계층      : figma OAuth는 최초 1회 `/mcp`에서 수동 로그인 (자동화 불가),
-#                        zenhub·jira는 ~/.zshrc의 팀 공용 토큰(런타임 확장)으로 인증 — 토큰 값은 커밋 금지,
+#                        zenhub·jira·slack은 ~/.zshrc의 팀 공용 토큰(런타임 확장)으로 인증 — 토큰 값은 커밋 금지,
 #                        flutter-mcp-toolkit은 별도 인증 불필요
 #   ※ jira(atlassian)는 과거 OAuth 플러그인이었으나, 매번 `/mcp` 로그인하는 수고를 없애려고 팀 공용
 #     토큰 방식으로 전환했다. 공식 원격 MCP(mcp.atlassian.com, Rovo)는 조직 Rovo 엔타이틀먼트로 막혀,
@@ -225,7 +228,7 @@ fi
 #   ※ marionette·dart·figma(serve) MCP 정의는 사설 cocode-skills 플러그인 번들에서 제공됨
 #     (coco-de/skills의 install.sh — 아래 3.5단계에서 설치)
 # ------------------------------------------------------------
-log "Claude Code MCP 설치 (figma 플러그인 + zenhub·jira 토큰 등록 + maestro CLI + flutter-mcp-toolkit)"
+log "Claude Code MCP 설치 (figma 플러그인 + zenhub·jira·slack 토큰 등록 + maestro CLI + flutter-mcp-toolkit)"
 
 if have claude; then
   # 공식 마켓플레이스 등록 (이미 있으면 무시)
@@ -289,6 +292,19 @@ if have claude; then
        ghcr.io/sooperset/mcp-atlassian:latest --transport stdio >/dev/null 2>&1 \
     && echo "  ✓ mcp-atlassian(jira) MCP 등록/갱신 (토큰은 8.6단계에서 1Password 공용 항목으로 주입)" \
     || echo "  ⚠ mcp-atlassian 등록 실패 → 건너뜀"
+
+  # slack MCP = @modelcontextprotocol/server-slack (Anthropic 공식 레퍼런스 서버, npx 실행).
+  #   SLACK_BOT_TOKEN·SLACK_TEAM_ID는 ~/.zshrc에서 런타임 확장되므로 zenhub·jira와 동일하게
+  #   단일따옴표 '${VAR}' 리터럴로 등록(토큰 값 커밋 금지). 값 자체는 8.9단계에서 1Password
+  #   팀 공용 항목("Cocode Slack")으로 주입된다.
+  #   ⚠ zenhub·jira와 동일하게 항상 remove 후 add — 정의가 바뀐 업데이트를 재실행만으로 반영.
+  claude mcp remove slack >/dev/null 2>&1 || true
+  claude mcp add slack --scope user \
+    --env 'SLACK_TEAM_ID=${SLACK_TEAM_ID}' \
+    --env 'SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}' \
+    -- npx -y @modelcontextprotocol/server-slack >/dev/null 2>&1 \
+    && echo "  ✓ slack MCP 등록/갱신 (토큰은 8.9단계에서 1Password 공용 항목으로 주입)" \
+    || echo "  ⚠ slack MCP 등록 실패 → 건너뜀"
 else
   echo "  ⚠ claude CLI가 없어 MCP 플러그인 설치를 건너뜁니다"
 fi
@@ -361,6 +377,25 @@ else
     echo "  ✓ agy(antigravity) 설치 완료 (~/.local/bin/agy, 최초 실행 시 agy 로 Google 로그인)"
   else
     echo "  ⚠ agy 설치 실패 → 건너뜀 (수동 설치: curl -fsSL https://antigravity.google/cli/install.sh | bash)"
+  fi
+fi
+
+# ------------------------------------------------------------
+# 2.7. Slack CLI (slack)
+#   Slack 앱/워크플로 개발용 공식 CLI(slackapi/slack-cli). 공식 설치 스크립트가
+#   바이너리를 ~/.slack에 내려받고 /usr/local/bin(쓰기 가능 시) 또는 ~/.local/bin에
+#   심볼릭 링크를 건다 — claude/agy와 동일하게 성공 판정은 종료 코드가 아니라
+#   바이너리 존재(have slack)로 확인한다. ~/.local/bin은 section 2에서 이미 PATH에 반영됨.
+# ------------------------------------------------------------
+log "Slack CLI 설치 (공식 설치 스크립트)"
+if have slack; then
+  echo "  ✓ slack 이미 설치됨"
+else
+  curl -fsSL https://downloads.slack-edge.com/slack-cli/install.sh | bash || true
+  if have slack; then
+    echo "  ✓ slack 설치 완료 (최초 사용 시 slack login 으로 워크스페이스 인증)"
+  else
+    echo "  ⚠ slack 설치 실패 → 건너뜀 (수동 설치: curl -fsSL https://downloads.slack-edge.com/slack-cli/install.sh | bash)"
   fi
 fi
 
@@ -793,7 +828,7 @@ if ! grep -qE '^[[:space:]]*export PATH=.*\.local/bin' "$HOME/.zshrc" 2>/dev/nul
   echo "  ✓ ~/.zshrc에 ~/.local/bin PATH 추가 (Claude Code)"
 fi
 
-fi  # ══ 설치 단계(1~8) 끝 — 여기부터(8.5~8.8 토큰 주입)는 --env-only 실행 시에도 수행된다 ══
+fi  # ══ 설치 단계(1~8) 끝 — 여기부터(8.5~8.9 토큰 주입)는 --env-only 실행 시에도 수행된다 ══
 
 # --env-only 가드: 아직 전체 세팅을 한 번도 하지 않은 맥이면 토큰을 붙일 ~/.zshrc 골격이
 #   없다. 빈 .zshrc를 새로 만들어 토큰만 꽂으면 PATH·테마 등이 빠진 반쪽짜리 설정이 되므로,
@@ -845,6 +880,10 @@ SLANG_GPT_TOKEN_OP_REF="op://API Token/Slang GPT API Token/credential"  # 팀 �
 #   순수 환경변수라 claude mcp 등록 단계는 없다. 한 항목("DCM CI CD")의 두 필드를 각각 읽는다.
 DCM_EMAIL_OP_REF="op://API Token/DCM CI CD/username"     # 팀 공용 항목의 이메일 필드 (값은 1Password에만 존재)
 DCM_CI_KEY_OP_REF="op://API Token/DCM CI CD/credential"  # 팀 공용 항목의 CI 키 필드 (값은 1Password에만 존재)
+# slack MCP(@modelcontextprotocol/server-slack)용 토큰도 같은 팀 계정·같은 볼트에서 읽는다 (아래 8.9단계에서 주입).
+#   한 항목("Cocode Slack")의 두 필드(SLACK_TEAM_ID·SLACK_BOT_TOKEN)를 DCM과 동일하게 각각 읽는다.
+SLACK_TEAM_ID_OP_REF="op://API Token/Cocode Slack/SLACK_TEAM_ID"    # 팀 공용 항목의 팀 ID 필드 (값은 1Password에만 존재)
+SLACK_BOT_TOKEN_OP_REF="op://API Token/Cocode Slack/SLACK_BOT_TOKEN"  # 팀 공용 항목의 봇 토큰 필드 (값은 1Password에만 존재)
 
 # ~/.zshrc에서 기존 ZENHUB_API_TOKEN 라인을 모두 제거한다.
 #   빈 값(export ZENHUB_API_TOKEN="")이 남아 있으면 zenhub MCP가 인증 없이 뜨면서
@@ -988,6 +1027,39 @@ inject_dcm_token() {
   printf 'export DCM_CI_KEY=%q\n' "$key" >> "$HOME/.zshrc"
 }
 
+# ── slack MCP 토큰(SLACK_TEAM_ID·SLACK_BOT_TOKEN) 헬퍼 — 위 DCM과 동일 패턴, 한 항목에서 두 필드 ──
+#   slack MCP(@modelcontextprotocol/server-slack)가 두 환경변수를 모두 요구하므로 DCM과 동일하게
+#   둘 다 읽었을 때만 주입한다(반쪽 인증 방지).
+strip_slack_token_lines() {
+  touch "$HOME/.zshrc"
+  { grep -v '^export SLACK_TEAM_ID=' "$HOME/.zshrc" | grep -v '^export SLACK_BOT_TOKEN=' || true; } > "$HOME/.zshrc.tmp"
+  mv "$HOME/.zshrc.tmp" "$HOME/.zshrc"
+}
+
+slack_token_line_is_empty() {
+  local line val var
+  for var in SLACK_TEAM_ID SLACK_BOT_TOKEN; do
+    line="$(grep "^export ${var}=" "$HOME/.zshrc" 2>/dev/null | tail -1)"
+    [[ -n "$line" ]] || continue
+    val="${line#export ${var}=}"
+    val="${val#\"}"; val="${val%\"}"
+    val="${val#\'}"; val="${val%\'}"
+    [[ -z "$val" ]] && return 0
+  done
+  return 1
+}
+
+inject_slack_token() {
+  local team_id bot_token
+  op_has_account || return 1
+  team_id="$(op read --account "$ZENHUB_TOKEN_OP_ACCOUNT" "$SLACK_TEAM_ID_OP_REF" 2>/dev/null </dev/null)" || return 1
+  bot_token="$(op read --account "$ZENHUB_TOKEN_OP_ACCOUNT" "$SLACK_BOT_TOKEN_OP_REF" 2>/dev/null </dev/null)" || return 1
+  [[ -n "$team_id" && -n "$bot_token" ]] || return 1   # 둘 다 있어야 주입 (반쪽 인증 방지)
+  strip_slack_token_lines
+  printf 'export SLACK_TEAM_ID=%q\n' "$team_id" >> "$HOME/.zshrc"
+  printf 'export SLACK_BOT_TOKEN=%q\n' "$bot_token" >> "$HOME/.zshrc"
+}
+
 log "ZENHUB_API_TOKEN 주입 (1Password 공용 토큰)"
 # 값이 빈 기존 라인은 먼저 걷어낸다 — 남겨두면 zenhub MCP가 '연결됨'처럼 보이면서
 # 실제 호출만 조용히 실패한다. 주입에 성공하면 어차피 새 값으로 다시 기록된다.
@@ -1104,7 +1176,7 @@ else
     echo "     확인 후 './mac-setup.sh --env-only' 를 실행하면 토큰만 다시 주입됩니다 (그전까지 jira MCP는 미주입 상태)."
   else
     echo "  ⚠ JIRA_API_TOKEN 미주입 — op 계정이 아직 준비되지 않았습니다 (위 8.5 ZenHub 안내 참고)."
-    echo "     op(1Password CLI) 설정을 마친 뒤 './mac-setup.sh --env-only' 를 실행하면 ZenHub·Jira·Slang GPT·DCM 토큰이 함께 주입됩니다."
+    echo "     op(1Password CLI) 설정을 마친 뒤 './mac-setup.sh --env-only' 를 실행하면 ZenHub·Jira·Slang GPT·DCM·Slack 토큰이 함께 주입됩니다."
   fi
 fi
 
@@ -1145,7 +1217,7 @@ else
     echo "     확인 후 './mac-setup.sh --env-only' 를 실행하면 키만 다시 주입됩니다 (그전까지 slang_gpt 번역은 사용 불가)."
   else
     echo "  ⚠ SLANG_GPT_API_KEY 미주입 — op 계정이 아직 준비되지 않았습니다 (위 8.5 ZenHub 안내 참고)."
-    echo "     op(1Password CLI) 설정을 마친 뒤 './mac-setup.sh --env-only' 를 실행하면 ZenHub·Jira·Slang GPT·DCM 토큰이 함께 주입됩니다."
+    echo "     op(1Password CLI) 설정을 마친 뒤 './mac-setup.sh --env-only' 를 실행하면 ZenHub·Jira·Slang GPT·DCM·Slack 토큰이 함께 주입됩니다."
   fi
 fi
 
@@ -1188,12 +1260,50 @@ else
     echo "     확인 후 './mac-setup.sh --env-only' 를 실행하면 값만 다시 주입됩니다 (그전까지 DCM CI 인증은 사용 불가)."
   else
     echo "  ⚠ DCM_EMAIL·DCM_CI_KEY 미주입 — op 계정이 아직 준비되지 않았습니다 (위 8.5 ZenHub 안내 참고)."
-    echo "     op(1Password CLI) 설정을 마친 뒤 './mac-setup.sh --env-only' 를 실행하면 ZenHub·Jira·Slang GPT·DCM 토큰이 함께 주입됩니다."
+    echo "     op(1Password CLI) 설정을 마친 뒤 './mac-setup.sh --env-only' 를 실행하면 ZenHub·Jira·Slang GPT·DCM·Slack 토큰이 함께 주입됩니다."
   fi
 fi
 
 # ------------------------------------------------------------
-# 8.9. --env-only 마무리: 주입 결과만 요약하고 종료 (아래 9단계 전체 검증은 돌리지 않음)
+# 8.9. SLACK_TEAM_ID·SLACK_BOT_TOKEN 주입 (slack MCP용 팀 공용 토큰 — 1Password에서 자동 주입)
+#
+#   [이 단계가 하는 일 — 비개발자용 설명]
+#   slack MCP(2.5단계에서 등록)가 Slack 워크스페이스에 접속할 때 쓰는 '팀 ID + 봇 토큰' 한 쌍이
+#   필요하다. ZenHub·Jira·Slang GPT·DCM과 똑같이 팀 공용 1Password 금고에서 읽어 ~/.zshrc에 적어준다.
+#
+#   ZenHub(8.5)·Jira(8.6)·Slang GPT(8.7)·DCM(8.8)과 동일한 방식이며, op 계정 설정(앱 CLI 통합)
+#   안내는 8.5에서 이미 처리했으므로 여기서는 반복하지 않고 '주입 시도 + 원인별 경고'만 한다.
+#   ※ 팀 공용 1Password 항목: "API Token" 볼트 > "Cocode Slack" > SLACK_TEAM_ID·SLACK_BOT_TOKEN 필드
+#   ※ 두 값이 모두 있어야 인증되므로, 하나라도 못 읽으면 아무것도 주입하지 않는다(반쪽 인증 방지, DCM과 동일).
+# ------------------------------------------------------------
+log "SLACK_TEAM_ID·SLACK_BOT_TOKEN 주입 (1Password 공용 항목 'Cocode Slack', slack MCP용)"
+
+# 값이 빈 기존 라인은 먼저 걷어낸다 (다른 토큰과 동일 — 빈 값이 남으면 MCP가 '연결됨'처럼 보이며 호출만 실패한다)
+if slack_token_line_is_empty; then
+  strip_slack_token_lines
+  echo "  · 값이 비어 있던 기존 SLACK_TEAM_ID/SLACK_BOT_TOKEN 라인을 제거했습니다 (잘못된 인증 상태 방지)"
+fi
+
+if ! have op; then
+  echo "  ⚠ op(1password-cli) 미설치 → SLACK_TEAM_ID·SLACK_BOT_TOKEN 미주입 (위 ZenHub 안내와 동일하게 op 설치 후 './mac-setup.sh --env-only' 실행)"
+elif inject_slack_token; then
+  echo "  ✓ SLACK_TEAM_ID·SLACK_BOT_TOKEN 주입 완료 (~/.zshrc, 값은 커밋되지 않음)"
+else
+  # op가 준비됐는데도 못 읽었다면 대개 팀 'API Token' 볼트 접근 권한이 없거나 항목/필드명이 다른 경우.
+  if op_has_account; then
+    echo "  ⚠ SLACK_TEAM_ID·SLACK_BOT_TOKEN 미주입 — 1Password에서 'Cocode Slack'의 SLACK_TEAM_ID/SLACK_BOT_TOKEN을 읽지 못했습니다."
+    echo "     확인하세요:"
+    echo "       1) 팀 'API Token' 볼트 접근 권한이 있는지 (없으면 팀 관리자에게 공유 요청)"
+    echo "       2) 볼트에 'Cocode Slack' 항목 + SLACK_TEAM_ID·SLACK_BOT_TOKEN 필드가 있는지"
+    echo "     확인 후 './mac-setup.sh --env-only' 를 실행하면 값만 다시 주입됩니다 (그전까지 slack MCP는 미주입 상태)."
+  else
+    echo "  ⚠ SLACK_TEAM_ID·SLACK_BOT_TOKEN 미주입 — op 계정이 아직 준비되지 않았습니다 (위 8.5 ZenHub 안내 참고)."
+    echo "     op(1Password CLI) 설정을 마친 뒤 './mac-setup.sh --env-only' 를 실행하면 ZenHub·Jira·Slang GPT·DCM·Slack 토큰이 함께 주입됩니다."
+  fi
+fi
+
+# ------------------------------------------------------------
+# 8.10. --env-only 마무리: 주입 결과만 요약하고 종료 (아래 9단계 전체 검증은 돌리지 않음)
 #   토큰 유무는 9단계와 같은 기준(~/.zshrc의 값)으로 판단한다 — MCP의 'Connected' 표시는
 #   인증 성공을 뜻하지 않기 때문 (8.5단계 주석 참고).
 # ------------------------------------------------------------
@@ -1205,12 +1315,16 @@ if (( ENV_ONLY )); then
   # DCM은 이메일+키 두 값이 모두 있어야 인증되므로 둘 다 채워졌을 때만 '주입됨'으로 본다.
   DCM_EMAIL_VAL=$(grep '^export DCM_EMAIL=' "$HOME/.zshrc" 2>/dev/null | tail -1 | sed 's/^export DCM_EMAIL=//; s/^"//; s/"$//')
   DCM_CI_KEY_VAL=$(grep '^export DCM_CI_KEY=' "$HOME/.zshrc" 2>/dev/null | tail -1 | sed 's/^export DCM_CI_KEY=//; s/^"//; s/"$//')
+  # slack도 DCM과 동일하게 팀 ID+봇 토큰 두 값이 모두 있어야 인증되므로 둘 다 채워졌을 때만 '주입됨'으로 본다.
+  SLACK_TEAM_ID_VAL=$(grep '^export SLACK_TEAM_ID=' "$HOME/.zshrc" 2>/dev/null | tail -1 | sed 's/^export SLACK_TEAM_ID=//; s/^"//; s/"$//')
+  SLACK_BOT_TOKEN_VAL=$(grep '^export SLACK_BOT_TOKEN=' "$HOME/.zshrc" 2>/dev/null | tail -1 | sed 's/^export SLACK_BOT_TOKEN=//; s/^"//; s/"$//')
   echo "  ZENHUB_API_TOKEN: $([[ -n "$ZH_VAL" ]] && echo '✓ 주입됨' || echo '❌ 미주입 (위 안내 참고)')"
   echo "  JIRA_API_TOKEN  : $([[ -n "$JIRA_VAL" ]] && echo '✓ 주입됨' || echo '❌ 미주입 (위 안내 참고)')"
   echo "  SLANG_GPT_API_KEY: $([[ -n "$SLANG_GPT_VAL" ]] && echo '✓ 주입됨' || echo '❌ 미주입 (위 안내 참고)')"
   echo "  DCM_EMAIL/DCM_CI_KEY: $([[ -n "$DCM_EMAIL_VAL" && -n "$DCM_CI_KEY_VAL" ]] && echo '✓ 주입됨' || echo '❌ 미주입 (위 안내 참고)')"
+  echo "  SLACK_TEAM_ID/SLACK_BOT_TOKEN: $([[ -n "$SLACK_TEAM_ID_VAL" && -n "$SLACK_BOT_TOKEN_VAL" ]] && echo '✓ 주입됨' || echo '❌ 미주입 (위 안내 참고)')"
   echo ""
-  if [[ -n "$ZH_VAL" || -n "$JIRA_VAL" || -n "$SLANG_GPT_VAL" || ( -n "$DCM_EMAIL_VAL" && -n "$DCM_CI_KEY_VAL" ) ]]; then
+  if [[ -n "$ZH_VAL" || -n "$JIRA_VAL" || -n "$SLANG_GPT_VAL" || ( -n "$DCM_EMAIL_VAL" && -n "$DCM_CI_KEY_VAL" ) || ( -n "$SLACK_TEAM_ID_VAL" && -n "$SLACK_BOT_TOKEN_VAL" ) ]]; then
     echo "✅ 완료! 새 터미널을 열거나 'source ~/.zshrc' 를 실행한 뒤 claude를 다시 켜세요."
     echo "   (jira MCP는 colima/docker 데몬이 떠 있어야 연결됩니다 — 'colima start')"
   else
@@ -1237,6 +1351,7 @@ echo "  claude  : $(claude --version 2>/dev/null || echo '❌ (수동 설치: cu
 echo "  codex   : $(codex --version 2>/dev/null || echo '❌ (수동 설치: brew install --cask codex)')"
 # agy는 최초 실행이 대화형 로그인 마법사라, 검증에서는 버전 호출 대신 바이너리 존재만 확인한다.
 echo "  agy(antigravity): $(have agy && echo '✓ 설치됨 (최초 실행 시 agy 로 Google 로그인)' || echo '❌ (수동 설치: curl -fsSL https://antigravity.google/cli/install.sh | bash)')"
+echo "  slack   : $(slack --version 2>/dev/null || echo '❌ (수동 설치: curl -fsSL https://downloads.slack-edge.com/slack-cli/install.sh | bash)')"
 # 상태줄(ccstatusline / Awesome CC Statusline): 둘 다 brew formula가 아니라
 #   npx/curl 실행형이라 have로 확인할 수 없다 — ~/.claude/settings.json의
 #   statusLine 키 등록 여부로 판정한다 (어느 쪽이 등록됐는지는 구분하지 않는다).
@@ -1281,6 +1396,12 @@ DCM_CI_KEY_VAL=$(grep '^export DCM_CI_KEY=' "$HOME/.zshrc" 2>/dev/null | tail -1
 echo "  DCM_EMAIL/DCM_CI_KEY: $([[ -n "$DCM_EMAIL_VAL" && -n "$DCM_CI_KEY_VAL" ]] \
   && echo '✓ 주입됨 (새 터미널에서 적용 — DCM CI 라이선스 인증용)' \
   || echo '❌ 미주입 (1Password 앱 CLI 통합/볼트 권한 확인 후 --env-only 재실행)')"
+# slack: MCP가 등록됐어도 SLACK_TEAM_ID·SLACK_BOT_TOKEN 둘 다 있어야 실제 호출이 된다 (DCM과 동일 기준).
+SLACK_TEAM_ID_VAL=$(grep '^export SLACK_TEAM_ID=' "$HOME/.zshrc" 2>/dev/null | tail -1 | sed 's/^export SLACK_TEAM_ID=//; s/^"//; s/"$//')
+SLACK_BOT_TOKEN_VAL=$(grep '^export SLACK_BOT_TOKEN=' "$HOME/.zshrc" 2>/dev/null | tail -1 | sed 's/^export SLACK_BOT_TOKEN=//; s/^"//; s/"$//')
+echo "  mcp:slack: $(claude mcp list 2>/dev/null | grep -q '^slack' \
+  && echo "✓ 등록됨$([[ -n "$SLACK_TEAM_ID_VAL" && -n "$SLACK_BOT_TOKEN_VAL" ]] && echo ' + 토큰 주입됨 (새 터미널에서 적용)' || echo ' (⚠ 토큰 미주입 — 1Password 앱 CLI 통합/볼트 권한 확인 후 --env-only 재실행)')" \
+  || echo '❌')"
 echo "  maestro : $(maestro --version 2>/dev/null | head -1 || echo '❌')"
 echo "  marionette: $([[ -x "$PUB_CACHE/bin/marionette_mcp" ]] && echo '✓' || echo '❌')"
 echo "  mcp_server_dart: $(dart pub global list 2>/dev/null | grep -q '^mcp_server_dart ' && echo '✓' || echo '❌')"
@@ -1298,10 +1419,11 @@ echo "  2. p10k 테마 설정이 없다면: p10k configure"
 echo "  3. Android Studio 실행 후 flutter doctor (SDK/NDK/AVD는 이미 자동 설치·구성됨)"
 echo "  4. Claude Code 로그인: claude"
 echo "     ↳ 함께 설치된 다른 AI 코딩 CLI도 최초 1회 로그인이 필요합니다: codex(실행: codex, ChatGPT 계정) · agy(실행: agy, Antigravity=Google 계정)"
+echo "     ↳ Slack CLI로 직접 앱을 개발하려면 최초 1회 워크스페이스 로그인이 필요합니다: slack login (slack MCP는 아래 6번의 팀 공용 토큰으로 별도 인증)"
 echo "     ↳ Claude Code 하단 상태줄(모델·비용·컨텍스트·git 상태)은 6.5단계에서 이미 자동으로 설정됐을 겁니다 — ccstatusline이 대화형이라 등록에 실패하면 Awesome CC Statusline(size: small)이 자동으로 대신 등록됩니다. 직접 위젯을 골라 커스터마이징하고 싶다면 \`npx -y ccstatusline@latest\`를, 다른 크기로 바꾸고 싶다면 \`curl -fsSL https://raw.githubusercontent.com/AwesomeJun/CC-statusline/main/install.sh | bash -s -- <크기>\`를 실행하면 됩니다(크기: xs/s/m/l/xl). 되돌리려면 settings.json의 statusLine 키만 지우면 됩니다"
 echo "  5. Claude Code에서 /mcp 실행 → figma를 팀 계정으로 OAuth 로그인 (최초 1회)"
 echo "     ↳ jira(atlassian)는 더 이상 OAuth 로그인이 필요 없습니다 — zenhub처럼 1Password 팀 공용 토큰으로 인증합니다"
-echo "  6. zenhub·jira·slang_gpt·DCM 토큰(1Password CLI): 실행 중 8.5/8.6/8.7/8.8단계에서 설정 안내가 나오면 아래를 마친 뒤 Enter를 누르면 자동 주입됩니다"
+echo "  6. zenhub·jira·slang_gpt·DCM·slack 토큰(1Password CLI): 실행 중 8.5/8.6/8.7/8.8/8.9단계에서 설정 안내가 나오면 아래를 마친 뒤 Enter를 누르면 자동 주입됩니다"
 echo "     ↳ 1Password 앱 로그인(team-cocodeinc) → 설정(⌘,) > 개발자 > '1Password CLI와 통합' 체크"
 echo "       ('개발자' 탭이 없으면 설정 > 보안 > 'Touch ID로 잠금 해제'를 먼저 켜세요)"
 echo "       확인: op account list 에 팀 계정이 보이면 성공 · 건너뛰었다면 './mac-setup.sh --env-only' 로 토큰만 다시 주입할 수 있습니다"
@@ -1311,6 +1433,8 @@ echo "     ↳ SLANG_GPT_API_KEY(slang_gpt 다국어 자동 번역용)는 같은
 echo "       읽어 주입됩니다. MCP가 아니라 slang_gpt CLI가 환경변수로 직접 읽는 값이라 별도 로그인이 없습니다"
 echo "     ↳ DCM_EMAIL·DCM_CI_KEY(DCM CI 라이선스 인증용)는 같은 볼트 > 'DCM CI CD' 항목의 사용자명(username)·자격 증명(credential)"
 echo "       두 필드에서 읽어 주입됩니다. 이 역시 MCP가 아니라 dcm CLI가 환경변수로 직접 읽는 값이라 별도 로그인이 없습니다"
+echo "     ↳ SLACK_TEAM_ID·SLACK_BOT_TOKEN(slack MCP용)은 같은 볼트 > 'Cocode Slack' 항목의 SLACK_TEAM_ID·SLACK_BOT_TOKEN"
+echo "       두 필드에서 읽어 주입됩니다. slack MCP는 @modelcontextprotocol/server-slack(npx) — 새 터미널에서 claude 실행 시 적용"
 echo "     ↳ 주입 후에는 반드시 '새 터미널'에서 claude를 실행하세요(그리고 colima/docker 데몬이 떠 있어야 합니다)."
 echo "       claude 실행 시점의 환경변수에서 토큰을 읽으므로, 예전 터미널에서 띄운 claude는 토큰을 못 읽습니다."
 echo "       (jira MCP가 docker로 뜨므로 'colima start'로 데몬을 먼저 켜 두세요)"
