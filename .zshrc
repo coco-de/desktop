@@ -1,14 +1,22 @@
 [[ -o interactive ]] || return
 
+# PATH 중복 제거 — 터미널을 중첩해서 열어도(tmux, claude, 서브셸 등) 같은 경로가 계속
+# 쌓이지 않게 한다. 이 한 줄이 없으면 셸을 열 때마다 PATH가 11개씩 늘어나서,
+# 몇 단계만 겹쳐도 80개가 넘어가고 명령을 찾는 속도가 그만큼 느려진다.
+# (zsh가 알아서 앞쪽 항목만 남기고 뒤쪽 중복을 지우므로 우선순위는 그대로 유지된다.)
+typeset -U path fpath PATH FPATH
+
+# p10k의 경고 메시지만 숨기고 '즉시 프롬프트' 기능은 그대로 쓴다.
+#   ⚠ 이 설정은 반드시 아래 instant prompt 블록보다 **위**에 있어야 효과가 있다.
+#     (off로 두면 경고와 함께 즉시 프롬프트 자체가 꺼져 첫 화면이 느려진다.)
+typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
+
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
 # confirmations, etc.) must go above this block; everything else may go below.
 if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
-
-# 경고 메시지 억제 설정 추가
-typeset -g POWERLEVEL9K_INSTANT_PROMPT=off
 
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
@@ -33,26 +41,62 @@ source $ZSH/oh-my-zsh.sh
 
 # User configuration
 
-source ~/powerlevel10k/powerlevel10k.zsh-theme
+# powerlevel10k 테마는 위 ZSH_THEME 로 이미 로드된다. 아래 줄은 테마 로딩이 실패한
+# 맥(구버전 설치 등)에서만 대체 경로로 한 번 더 시도하는 안전장치다.
+#   - 예전에는 조건 없이 source 해서 테마가 두 번 로드됐고,
+#     ~/powerlevel10k 폴더가 없는 맥에서는 셸을 열 때마다 에러가 났다.
+(( $+functions[p10k] )) || [[ ! -r ~/powerlevel10k/powerlevel10k.zsh-theme ]] || \
+  source ~/powerlevel10k/powerlevel10k.zsh-theme
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 
+## [Node / nvm]
+# nvm은 읽어들이는 데만 약 0.4초가 걸려서, 예전에는 터미널을 열 때마다 그 시간을 그대로
+# 기다려야 했다(전체 시작 시간의 절반 이상). 그래서 아래처럼 둘로 나눈다.
+#   1) 설치돼 있는 node를 PATH에 바로 넣어 준다 → node/npm/npx는 지금까지처럼 즉시 사용 가능
+#   2) nvm 명령 자체는 실제로 `nvm`을 칠 때만 읽어들인다 → 평소 시작 시간에 영향 없음
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
+if [[ -s "$NVM_DIR/nvm.sh" ]]; then
+  # default 별칭이 구체 버전(v20.11.0 등)을 가리키면 그것을, 아니면 가장 최근에 설치된
+  # 버전을 쓴다. 버전을 바꾸고 싶으면 `nvm use ...`를 쓰면 되고, 그때 nvm 전체가 로드된다.
+  _nvm_default="$(<"$NVM_DIR/alias/default" 2>/dev/null)"
+  if [[ "$_nvm_default" == v* && -d "$NVM_DIR/versions/node/$_nvm_default/bin" ]]; then
+    export PATH="$NVM_DIR/versions/node/$_nvm_default/bin:$PATH"
+  else
+    _nvm_bin=("$NVM_DIR"/versions/node/*/bin(N/om))
+    (( $#_nvm_bin )) && export PATH="${_nvm_bin[1]}:$PATH"
+    unset _nvm_bin
+  fi
+  unset _nvm_default
+
+  # `nvm`을 처음 부르는 순간에만 진짜 nvm을 읽어들이고, 그 호출을 그대로 넘겨준다.
+  nvm() {
+    unset -f nvm
+    source "$NVM_DIR/nvm.sh"
+    nvm "$@"
+  }
+fi
+
 ## [Completion]
 ## Completion scripts setup. Remove the following line to uninstall
 [[ -f "$HOME/.dart-cli-completion/zsh-config.zsh" ]] && . "$HOME/.dart-cli-completion/zsh-config.zsh" || true
 ## [/Completion]
 
 ## [Java]
-export JAVA_HOME="$(/opt/homebrew/bin/brew --prefix openjdk@17)/libexec/openjdk.jdk/Contents/Home"
-export PATH="$JAVA_HOME/bin:$PATH"
+# openjdk@17 이 설치된 맥에서만 JAVA_HOME 을 잡는다.
+#   예전에는 brew 명령으로 경로를 알아냈는데, openjdk@17 이 아직 안 깔린 새 맥에서는
+#   셸을 열 때마다 brew 에러 메시지가 그대로 화면에 찍혔다. 경로는 항상 고정이라 그냥 확인만 한다.
+if [[ -d /opt/homebrew/opt/openjdk@17 ]]; then
+  export JAVA_HOME="/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home"
+  export PATH="$JAVA_HOME/bin:$PATH"
+fi
 
 ## [Ruby]
 export PATH="$HOME/.rbenv/bin:$PATH"
-if which rbenv > /dev/null; then eval "$(rbenv init -)"; fi
+# zsh에서는 which보다 command -v 가 정확하다(별칭·함수에 속지 않음).
+command -v rbenv >/dev/null && eval "$(rbenv init -)"
 
 # FVM 설정 개선
 export PATH="$HOME/fvm/default/bin:$PATH"
@@ -115,19 +159,22 @@ command -v direnv >/dev/null && eval "$(direnv hook zsh)"
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 
-# ── API 키 (값은 각자 발급해 채운다; 시크릿은 저장소에 커밋하지 말 것) ──
-# 실제 키는 아래처럼 git 추적 안 되는 ~/.zshrc.local 에 넣는 것을 권장한다.
-export GEMINI_API_KEY=''
-export FIGMA_API_TOKEN=""
-export FIGMA_ACCESS_TOKEN=""
-export ZENHUB_API_TOKEN=""
-export ANTHROPIC_API_KEY=""
+# ── API 키 ────────────────────────────────────────────────────────────────────
+# 개인 API 키는 여기에 두지 말고, git이 추적하지 않는 ~/.zshrc.local 에 넣는다:
+#   export GEMINI_API_KEY="..."
+#   export FIGMA_API_TOKEN="..."
+#   export ANTHROPIC_API_KEY="..."
+#
+# ⚠ 예전처럼 `export ANTHROPIC_API_KEY=""` 같은 '빈 값'을 여기에 적어두면 안 된다.
+#   ① 이미 환경에 들어 있던 진짜 키를 빈 값으로 덮어써 버리고,
+#   ② 도구에 따라 '키가 있다'고 판단해 인증 없이 동작하다 실패한다
+#      (zenhub MCP가 '✔ Connected'로 보이면서 호출은 "Missing Authorization token"으로
+#       실패하던 것이 바로 이 경우다 — mac-setup.sh 8.5단계 주석 참고).
+#   팀 공용 토큰(ZENHUB/JIRA/SLACK 등)은 mac-setup.sh가 1Password에서 읽어 이 파일 끝에
+#   직접 넣어주므로, 여기에 미리 빈 줄을 만들어 둘 필요가 없다.
 
 # Shorebird
 [[ -d "$HOME/.shorebird/bin" ]] && export PATH="$HOME/.shorebird/bin:$PATH"
-
-# pipx
-export PATH="$PATH:$HOME/.local/bin"
 
 # Windsurf
 [[ -d "$HOME/.codeium/windsurf/bin" ]] && export PATH="$HOME/.codeium/windsurf/bin:$PATH"
@@ -143,13 +190,12 @@ if [[ -n $CURSOR_TRACE_ID ]]; then
   preexec() { print -Pn "\e]133;C;\a" }
 fi
 
-export PATH=~/.npm-global/bin:$PATH
+export PATH="$HOME/.npm-global/bin:$PATH"
 
+# pipx / Claude Code 공식 인스톨러 경로
 export PATH="$HOME/.local/bin:$PATH"
 
-[[ "$TERM_PROGRAM" == "kiro" ]] && . "$(kiro --locate-shell-integration-path zsh)"
-
-# Added by setup: make Dart global executables available
+# Dart 전역 실행 파일 (dart pub global activate)
 export PATH="$HOME/.pub-cache/bin:$PATH"
 
 # Cursor 앱을 터미널 환경으로 실행

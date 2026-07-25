@@ -1068,11 +1068,30 @@ if [[ -f "$SCRIPT_DIR/.zshrc" ]]; then
   [[ -f "$HOME/.zshrc" ]] && cp "$HOME/.zshrc" "$HOME/.zshrc.backup.$(date +%Y%m%d%H%M%S)"
   cp "$SCRIPT_DIR/.zshrc" "$HOME/.zshrc"
   # --- 새 맥 호환 패치 ---
-  # JAVA_HOME: 버전 하드코딩 경로 → brew 심볼릭 경로로 교체
-  sed -i '' 's|^export JAVA_HOME=.*openjdk@17.*|export JAVA_HOME="$(/opt/homebrew/bin/brew --prefix openjdk@17)/libexec/openjdk.jdk/Contents/Home"|' "$HOME/.zshrc"
+  # JAVA_HOME: 버전 하드코딩 경로 → 설치돼 있을 때만 잡도록 교체
+  #   openjdk@17 이 아직 안 깔린 맥에서 셸을 열 때마다 에러가 찍히지 않게 존재 확인을 붙인다.
+  #   (경로는 brew 규칙상 항상 /opt/homebrew/opt/openjdk@17 이라 brew를 호출할 필요가 없다)
+  sed -i '' 's|^export JAVA_HOME=.*openjdk@17.*|[[ -d /opt/homebrew/opt/openjdk@17 ]] \&\& export JAVA_HOME="/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home"|' "$HOME/.zshrc"
   # 미설치 도구를 무조건 source 하는 라인 → 파일 존재 시에만 source 하도록 가드
   sed -i '' 's|^\. "\$HOME/.local/bin/env"|[[ -f "$HOME/.local/bin/env" ]] \&\& . "$HOME/.local/bin/env"|' "$HOME/.zshrc"
   sed -i '' 's|^eval "\$(direnv hook zsh)"|command -v direnv >/dev/null \&\& eval "$(direnv hook zsh)"|' "$HOME/.zshrc"
+  # PATH 중복 증식 방지: 터미널을 중첩해서 열 때마다 같은 경로가 쌓이는 것을 막는다.
+  #   예전 맥의 .zshrc를 그대로 가져오는 경우 이 설정이 없어서 셸을 열 때마다 PATH가
+  #   10개 이상씩 늘어난다(3단계만 겹쳐도 40개 육박 → 명령 탐색이 느려짐).
+  #   이미 있으면 건너뛴다 — 멱등.
+  #   (sed 삽입은 구현체마다 문법이 달라 실패하기 쉬우므로, 위 토큰 정리와 같은 임시파일 방식을 쓴다)
+  if ! grep -q '^typeset -U path' "$HOME/.zshrc" 2>/dev/null; then
+    if {
+      echo '# PATH 중복 제거 — 터미널을 중첩해서 열어도 같은 경로가 쌓이지 않게 한다 (mac-setup 자동 추가)'
+      echo 'typeset -U path fpath PATH FPATH'
+      cat "$HOME/.zshrc"
+    } > "$HOME/.zshrc.tmp" 2>/dev/null && mv "$HOME/.zshrc.tmp" "$HOME/.zshrc"; then
+      echo "  ✓ PATH 중복 제거 설정 추가"
+    else
+      rm -f "$HOME/.zshrc.tmp"
+      echo "  ⚠ PATH 중복 제거 설정 추가 실패 — 무시하고 계속합니다"
+    fi
+  fi
   echo "  ✓ 기존 .zshrc 복사 완료 (기존 파일은 백업됨, 새 맥 호환 패치 적용)"
 else
   [[ -f "$HOME/.zshrc" ]] && cp "$HOME/.zshrc" "$HOME/.zshrc.backup.$(date +%Y%m%d%H%M%S)"
