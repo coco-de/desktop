@@ -70,6 +70,14 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 >
 > 앱·도구 설치는 전부 건너뛰고, 1Password(`op`)에서 팀 공용 토큰(`ZENHUB_API_TOKEN`·`JIRA_API_TOKEN`·`SLANG_GPT_API_KEY`·`DCM_EMAIL`·`DCM_CI_KEY`·`SLACK_TEAM_ID`·`SLACK_BOT_TOKEN`)만 다시 읽어 `~/.zshrc`에 넣어줍니다. 토큰이 바뀌었거나 설치 때 토큰 주입(8.5~8.9단계)을 건너뛴 경우, 전체 설치를 다시 돌릴 필요 없이 몇 초 만에 끝납니다. 사용법은 `./mac-setup.sh --help`로도 볼 수 있습니다.
 
+> 🔐 **Orca가 폴더 접근 허용 창을 계속 띄운다면**
+>
+> ```bash
+> ./mac-setup.sh --perms-only
+> ```
+>
+> 설치·토큰 주입은 전부 건너뛰고, **Orca의 '전체 디스크 접근 권한'** 상태만 확인해 시스템 설정 창까지 열어 안내해 줍니다(9단계). 이미 켜져 있으면 아무것도 묻지 않고 바로 끝납니다. 자세한 내용은 아래 [🔐 Orca 전체 디스크 접근 권한](#orca-full-disk-access)을 봐주세요.
+
 <details>
 <summary>예전에 쓰던 맥이 있다면 (선택 사항)</summary>
 
@@ -216,6 +224,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 | ☁️ 클라우드 | Google Cloud CLI (gcloud) |
 | 🐍 언어 런타임 | Python 최신 3.x (pyenv), Node.js LTS + npm (nvm) |
 | 💻 터미널 환경 | oh-my-zsh, powerlevel10k 테마, zsh-autosuggestions, zsh-syntax-highlighting, MesloLGS NF 폰트 |
+| 🔐 앱 권한 | Orca의 **전체 디스크 접근 권한** 상태를 확인해, 아직 없으면 시스템 설정의 해당 창을 자동으로 열고 켜는 방법을 안내 (9단계 · 이미 켜져 있으면 건너뜀). 권한 자체는 macOS가 SIP로 잠가 두어 프로그램이 대신 켤 수 없으므로 마지막 토글은 직접 눌러야 합니다 — [설정 방법](#orca-full-disk-access) |
 
 모든 항목은 이미 설치되어 있으면 건너뛰도록 되어 있어, 스크립트를 여러 번 실행해도 안전합니다.
 
@@ -236,7 +245,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 | <img src="assets/icons/dia.png" width="20" height="20"> | Dia | AI 기반 웹 브라우저 |
 | <img src="assets/icons/1password.svg" width="20" height="20"> | 1Password | 비밀번호 관리자 |
 | <img src="assets/icons/tailscale.svg" width="20" height="20"> | Tailscale | 팀 내부망 접속용 VPN 메시 네트워크 (메뉴바 앱 + CLI) |
-| <img src="assets/icons/orca.png" width="20" height="20"> | Orca | AI 코딩 에이전트 도구 (stablyai/orca 탭) |
+| <img src="assets/icons/orca.png" width="20" height="20"> | Orca | AI 코딩 에이전트 도구 (stablyai/orca 탭) — 설치 후 [전체 디스크 접근 권한](#orca-full-disk-access)을 한 번 켜야 폴더 허용 창이 반복해서 뜨지 않습니다 |
 | <img src="assets/icons/lumide.png" width="20" height="20"> | Lumide | 에이전트 네이티브 코드 에디터 IDE ([lumide.dev](https://lumide.dev)) |
 | <img src="assets/icons/zed.svg" width="20" height="20"> | Zed | 협업 기능이 내장된 코드 에디터 ([zed.dev](https://zed.dev)) |
 | <img src="assets/icons/rive.svg" width="20" height="20"> | Rive | 인터랙티브 애니메이션·모션 그래픽 디자인 툴 ([rive.app](https://rive.app)) |
@@ -357,6 +366,7 @@ cocode-skills: ...
 android : ...
 ndk     : ...
 avd     : ...
+Orca 전체 디스크 접근: ...
 ```
 
 > `claude`는 공식 설치 스크립트로 `~/.local/bin`에 설치되며, 스크립트가 같은 실행 세션과 `~/.zshrc` 양쪽에 PATH를 반영해 주므로 버전이 바로 표시됩니다. `❌`로 나오면 안내된 수동 설치 명령을 실행해 주세요.
@@ -371,17 +381,55 @@ avd     : ...
 
 > `mcp:slack`은 `slack` MCP(`@modelcontextprotocol/server-slack`)의 등록·인증 상태입니다. zenhub·jira와 같은 기준으로, `SLACK_TEAM_ID`·`SLACK_BOT_TOKEN` **두 값이 모두 있어야** `+ 토큰 주입됨`으로 표시됩니다. `(⚠ 토큰 미주입)`이면 아래 안내를 따라 주세요.
 
+> `Orca 전체 디스크 접근`은 Orca가 다른 앱의 폴더를 읽을 수 있는지(= 허용 창이 반복해서 뜨지 않는지)를 보여줍니다. `⚠ 확인 불가`로 나와도 **문제가 생긴 게 아닙니다** — 이 상태를 조회하려면 조회하는 쪽(터미널)에도 같은 권한이 있어야 해서, 새로 세팅한 맥에서는 대개 확인만 못 하는 것입니다. 이때는 시스템 설정에서 Orca 토글이 켜져 있는지 눈으로 확인해 주세요. 자세한 내용은 아래 [🔐 Orca 전체 디스크 접근 권한](#orca-full-disk-access)에 있습니다.
+
 그 다음, 화면에 안내되는 대로 아래 순서를 진행해주세요.
 
 1. 새 터미널을 열거나 `source ~/.zshrc` 실행
-2. **macOS 기본 Terminal.app을 쓰고 있었다면** 폰트가 이미 **MesloLGS NF**로 자동 적용되어 있습니다(7.5단계) — 별도로 할 일 없습니다. **iTerm2 등 다른 터미널 앱**을 쓰고 있었다면 그 앱의 환경설정에서 폰트를 **MesloLGS NF**로 직접 변경해주세요 — 폰트 자체는 자동 설치되지만, 실제로 사용하도록 선택하는 건 직접 해주셔야 powerlevel10k 아이콘이 깨지지 않습니다
-3. `p10k configure` 실행 — 아직 p10k 테마 설정을 해본 적이 없다면
-4. Android Studio 실행 후 `flutter doctor`로 최종 확인 — SDK/NDK/에뮬레이터/AVD는 스크립트가 이미 자동으로 설치·구성해 두었으므로 첫 실행 설치 마법사를 따로 진행할 필요는 없습니다
-5. **(선택) `colima start` 미리 실행 — Jira(Atlassian) MCP를 쓰려면 필요합니다** (아래 🐳 안내 참고). Jira MCP는 docker 컨테이너로 뜨는데, colima가 그 docker 데몬입니다. 이제 `claude`/`cld` 실행 시 꺼져 있으면 자동으로 켜주지만, 최초 기동엔 수십 초가 걸릴 수 있어 미리 켜두면 더 빠릅니다
-6. `claude` 실행 후 Claude Code 로그인 (함께 설치된 `codex`는 ChatGPT 계정, `agy`(Antigravity)는 Google 계정으로 각각 처음 실행할 때 한 번 로그인). Claude Code 하단 상태줄(모델·비용·컨텍스트·git 상태)은 6.5단계에서 이미 자동으로 설정됐을 겁니다 — `ccstatusline`이 대화형이라 등록에 실패하면 `awesome-statusline`(size: small)이 자동으로 대신 등록됩니다. 직접 위젯을 골라 커스터마이징하고 싶다면 `npx -y ccstatusline@latest`를, 다른 크기로 바꾸고 싶다면 `curl -fsSL https://raw.githubusercontent.com/AwesomeJun/CC-statusline/main/install.sh | bash -s -- <크기>`를 실행하면 됩니다(크기: xs/s/m/l/xl). 되돌리려면 `~/.claude/settings.json`의 `statusLine` 키만 지우면 됩니다
-7. Slack CLI로 직접 앱/워크플로를 개발하려면 `slack login`으로 워크스페이스 인증(최초 1회) — Claude Code의 `slack` MCP는 이 로그인과 무관하게 아래 팀 공용 토큰으로 별도 인증됩니다
+2. **Orca를 완전히 종료(⌘Q, 메뉴막대 아이콘까지)했다가 다시 실행** — 9단계에서 켠 **전체 디스크 접근 권한**은 앱이 시작하는 시점에 읽히기 때문에, 재시작 전에는 적용되지 않습니다. 권한을 아직 안 켰거나 폴더 허용 창이 계속 뜬다면 `./mac-setup.sh --perms-only`로 안내를 다시 받을 수 있습니다 (아래 [🔐 Orca 전체 디스크 접근 권한](#orca-full-disk-access) 참고)
+3. **macOS 기본 Terminal.app을 쓰고 있었다면** 폰트가 이미 **MesloLGS NF**로 자동 적용되어 있습니다(7.5단계) — 별도로 할 일 없습니다. **iTerm2 등 다른 터미널 앱**을 쓰고 있었다면 그 앱의 환경설정에서 폰트를 **MesloLGS NF**로 직접 변경해주세요 — 폰트 자체는 자동 설치되지만, 실제로 사용하도록 선택하는 건 직접 해주셔야 powerlevel10k 아이콘이 깨지지 않습니다
+4. `p10k configure` 실행 — 아직 p10k 테마 설정을 해본 적이 없다면
+5. Android Studio 실행 후 `flutter doctor`로 최종 확인 — SDK/NDK/에뮬레이터/AVD는 스크립트가 이미 자동으로 설치·구성해 두었으므로 첫 실행 설치 마법사를 따로 진행할 필요는 없습니다
+6. **(선택) `colima start` 미리 실행 — Jira(Atlassian) MCP를 쓰려면 필요합니다** (아래 🐳 안내 참고). Jira MCP는 docker 컨테이너로 뜨는데, colima가 그 docker 데몬입니다. 이제 `claude`/`cld` 실행 시 꺼져 있으면 자동으로 켜주지만, 최초 기동엔 수십 초가 걸릴 수 있어 미리 켜두면 더 빠릅니다
+7. `claude` 실행 후 Claude Code 로그인 (함께 설치된 `codex`는 ChatGPT 계정, `agy`(Antigravity)는 Google 계정으로 각각 처음 실행할 때 한 번 로그인). Claude Code 하단 상태줄(모델·비용·컨텍스트·git 상태)은 6.5단계에서 이미 자동으로 설정됐을 겁니다 — `ccstatusline`이 대화형이라 등록에 실패하면 `awesome-statusline`(size: small)이 자동으로 대신 등록됩니다. 직접 위젯을 골라 커스터마이징하고 싶다면 `npx -y ccstatusline@latest`를, 다른 크기로 바꾸고 싶다면 `curl -fsSL https://raw.githubusercontent.com/AwesomeJun/CC-statusline/main/install.sh | bash -s -- <크기>`를 실행하면 됩니다(크기: xs/s/m/l/xl). 되돌리려면 `~/.claude/settings.json`의 `statusLine` 키만 지우면 됩니다
+8. Slack CLI로 직접 앱/워크플로를 개발하려면 `slack login`으로 워크스페이스 인증(최초 1회) — Claude Code의 `slack` MCP는 이 로그인과 무관하게 아래 팀 공용 토큰으로 별도 인증됩니다
 
 > ✉️ **Git 이메일 (실행 중 입력)**: 스크립트 실행 도중 Git 설정 단계(3.2)에서 커밋에 사용할 회사 이메일을 물어봅니다. 입력하면 `git config --global user.email`에 저장되고, 이미 설정된 맥이라면 묻지 않고 건너뜁니다. `s` + Enter로 건너뛸 수도 있으며, 그 경우 나중에 터미널에서 `git config --global user.email <이메일>`을 직접 실행하면 됩니다.
+
+<a id="orca-full-disk-access"></a>
+
+> ## 🔐 Orca 전체 디스크 접근 권한 (설치 후 한 번만)
+>
+> **증상** — Orca를 쓰다 보면 *"Orca이(가) 다른 앱의 데이터에 접근하려고 합니다"* 같은 macOS 허용 창이 계속 뜹니다. 허용을 눌러도 잠시 뒤 또 뜹니다.
+>
+> **왜 그런가요?** 이 창은 macOS의 개인정보 보호 기능(TCC)이 띄우는 것인데, **"항상 허용" 체크박스가 없습니다.** 허용을 눌러도 **그 순간 접근한 폴더 하나만** 기록되기 때문에, Orca가 다른 앱의 폴더를 새로 읽을 때마다 같은 창이 다시 뜹니다. Orca는 코딩 에이전트라 작업 폴더와 여러 도구의 설정 폴더를 폭넓게 읽어서, 이 반복이 유난히 자주 일어납니다.
+>
+> **근본 해결 — 전체 디스크 접근 권한을 한 번 켜기.** 한 번에 모든 앱 데이터 접근을 허용하는 유일한 방법입니다. 스크립트 9단계가 이 창을 자동으로 열고 안내해 주며, 나중에 다시 하고 싶으면 `./mac-setup.sh --perms-only`로 그 단계만 다시 실행할 수 있습니다.
+>
+> 1. **시스템 설정 → 개인정보 보호 및 보안 → 전체 디스크 접근 권한**
+> 2. 목록에 **Orca가 있으면 토글을 켜고**, 없으면 왼쪽 아래 **`+`** 로 `/Applications/Orca.app`을 추가합니다 (스크립트가 함께 열어 준 Finder 창에서 드래그해도 됩니다)
+> 3. **Orca를 완전히 종료(⌘Q — 메뉴막대 아이콘까지)한 뒤 다시 실행합니다.** 권한은 앱이 **시작하는 시점**에 읽히므로 재시작 전에는 적용되지 않습니다. 시스템 설정이 **"종료 후 다시 열기"** 버튼을 띄우면 그 버튼을 눌러도 됩니다
+>
+> 설정 창을 직접 바로 열고 싶다면:
+>
+> ```bash
+> open "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_AllFiles"
+> ```
+>
+> **이미 눌렀던 허용/거부 기록 확인** — **개인정보 보호 및 보안 → 파일 및 폴더**에서 Orca 항목을 펼치면 지금까지 허용·거부한 폴더 목록이 보입니다. 실수로 **"허용 안 함"** 을 누른 항목이 있으면 여기서 켜 주면 됩니다.
+>
+> **권한이 꼬여서 창이 계속 뜰 때** — 거부 기록이 캐시되어 이상 동작하는 경우입니다. 초기화한 뒤 위 순서대로 다시 켜 주세요.
+>
+> ```bash
+> tccutil reset SystemPolicyAllFiles com.stablyai.orca   # 전체 디스크 접근 기록만 초기화
+> tccutil reset All com.stablyai.orca                    # 전부 초기화 (마이크·화면 기록 등도 다시 물어봄)
+> ```
+>
+> 스크립트는 이 명령을 **대신 실행하지 않습니다** — 정상적으로 허용해 둔 기록까지 지워질 수 있어, 직접 판단해서 실행하시는 편이 안전합니다.
+>
+> **왜 스크립트가 권한까지 자동으로 켜주지 않나요?** 권한 기록은 macOS가 SIP(시스템 무결성 보호)로 잠가 두어서, 관리자 권한으로도 프로그램이 직접 켤 수 없습니다. 사람이 시스템 설정에서 직접 켜는 것이 유일한 방법이라, 스크립트는 **상태 확인 · 설정 창 자동 열기 · 안내**까지만 대신해 줍니다. (회사가 관리하는 기기라면 MDM의 PPPC 프로파일로 미리 배포할 수도 있지만, 개인 맥에서는 위 방법이 표준입니다.)
+>
+> ⚠️ **이 권한의 범위는 알고 계시는 게 좋습니다.** 전체 디스크 접근 권한은 말 그대로 **홈 폴더 전체와 다른 앱의 데이터까지 읽을 수 있는 강한 권한**입니다. Orca는 워크스페이스와 도구 설정을 폭넓게 읽어야 하는 코딩 에이전트라 성격상 맞는 권한이지만, 무엇을 허용하는지 이해한 뒤 켜 주세요. 부담스럽다면 켜지 않고 폴더별 허용 창을 그때그때 눌러도 동작은 합니다 (창이 자주 뜰 뿐입니다).
 
 > ## 🐳 Jira는 docker(colima) 데몬이 필요합니다 — 이제 자동으로 켜집니다
 >
@@ -464,10 +512,11 @@ avd     : ...
 
 - **이미 설치된 건 다시 건드리지 않습니다.** 앱/도구별로 설치 여부를 먼저 확인하고, 이미 있으면 `✓ 이미 설치됨`을 출력하고 건너뜁니다. 스크립트를 여러 번 실행해도 문제없습니다.
 - **일부가 실패해도 전체가 멈추지 않습니다.** 개별 항목 설치가 실패하면 `⚠` 표시와 함께 건너뛰고 나머지를 계속 진행합니다.
-- **설치 중 y/n 질문에 자동으로 답합니다.** (`NONINTERACTIVE=1`, `CI=true` 설정) 터미널 앞에서 계속 기다리지 않아도 되도록 하기 위함입니다. 단 두 곳, **Git 이메일 입력(3.2)** 과 **ZenHub 토큰 주입(8.5)** 에서만 잠깐 멈춰 입력을 기다립니다 — 각각 `s`로 건너뛸 수 있고, 이미 설정된 맥이라면 묻지 않습니다. (Jira 토큰 주입(8.6)·Slang GPT 키 주입(8.7)·DCM 키 주입(8.8)·Slack 토큰 주입(8.9)은 ZenHub에서 켠 op 설정을 그대로 재사용하므로 따로 멈추지 않습니다.) (터미널이 아닌 파이프 실행이면 멈추지 않고 건너뜁니다.)
+- **설치 중 y/n 질문에 자동으로 답합니다.** (`NONINTERACTIVE=1`, `CI=true` 설정) 터미널 앞에서 계속 기다리지 않아도 되도록 하기 위함입니다. 단 세 곳, **Git 이메일 입력(3.2)** · **ZenHub 토큰 주입(8.5)** · **Orca 권한 안내(9)** 에서만 잠깐 멈춰 입력을 기다립니다 — 각각 `s`로 건너뛸 수 있고, 이미 설정된 맥이라면 묻지 않습니다. (Jira 토큰 주입(8.6)·Slang GPT 키 주입(8.7)·DCM 키 주입(8.8)·Slack 토큰 주입(8.9)은 ZenHub에서 켠 op 설정을 그대로 재사용하므로 따로 멈추지 않습니다.) (터미널이 아닌 파이프 실행이면 멈추지 않고 건너뜁니다.)
 - **Xcode 전환(1.5단계)에서 sudo 암호를 한 번 물어볼 수 있습니다.** `xcode-select`가 Command Line Tools를 가리키고 있으면 Xcode.app으로 전환하는데, 이 작업엔 관리자 암호가 필요합니다. 이미 Xcode.app을 가리키고 있다면 묻지 않고 건너뜁니다. (터미널이 아닌 파이프 실행이면 시도하지 않고 건너뜁니다.)
 - **Terminal.app 폰트 자동 적용(7.5단계)은 macOS 기본 Terminal.app에서 실행 중일 때만 동작합니다.** 지금 실행 중인 터미널이 Terminal.app이 아니면(예: iTerm2) 건드리지 않고 건너뛰므로, 다른 터미널 앱에서 예상치 못한 창이 뜨는 일은 없습니다.
 - **기존 `~/.zshrc`는 자동으로 백업됩니다.** 새 설정을 쓰기 전에 `~/.zshrc.backup.년월일시분초` 형식으로 복사해 둡니다. 마음에 안 들면 이 백업 파일로 언제든 되돌릴 수 있습니다.
+- **권한은 스크립트가 대신 켜지 않습니다.** Orca의 [전체 디스크 접근 권한(9단계)](#orca-full-disk-access)은 macOS가 SIP로 잠가 두어 프로그램이 켤 수 없고, 스크립트는 **상태 확인 · 설정 창 열기 · 안내**까지만 합니다. 마지막 토글은 반드시 사용자가 직접 누르며, 켜지 않아도(=`s`로 건너뛰어도) 나머지 설치는 그대로 진행됩니다. 다만 이 권한은 홈 폴더 전체와 다른 앱의 데이터까지 읽을 수 있는 **강한 권한**이니, 무엇을 허용하는지 이해한 뒤 켜 주세요.
 - **코드가 전부 공개돼 있습니다.** 이 저장소의 [`mac-setup.sh`](./mac-setup.sh) 파일이 스크립트의 전부이며, 실행 전에 직접 열어서 읽어보실 수 있습니다.
 
 <details>
@@ -567,6 +616,32 @@ sudo xcodebuild -runFirstLaunch
 ```
 
 `/Applications/Xcode.app`이 없다면 App Store에서 Xcode를 먼저 설치해야 합니다.
+
+</details>
+
+<details>
+<summary>Orca가 다른 앱 폴더에 접근하겠다는 창을 계속 띄워요</summary>
+
+<br>
+
+macOS 개인정보 보호(TCC) 창이라 **"항상 허용"이 없고**, 허용을 눌러도 그때 읽은 폴더 하나만 기록됩니다. 그래서 Orca가 새 폴더를 읽을 때마다 다시 뜹니다. **전체 디스크 접근 권한**을 한 번 켜는 것이 유일한 근본 해결책입니다.
+
+```bash
+./mac-setup.sh --perms-only
+```
+
+설치는 전부 건너뛰고 권한 상태만 확인해 시스템 설정 창까지 열어 안내해 줍니다. 켠 뒤에는 **Orca를 완전히 종료(⌘Q)했다가 다시 실행**해야 적용됩니다. 자세한 설명과, 권한 기록이 꼬였을 때 초기화하는 방법(`tccutil reset`)은 [🔐 Orca 전체 디스크 접근 권한](#orca-full-disk-access)에 있습니다.
+
+</details>
+
+<details>
+<summary>설치 검증에 <code>Orca 전체 디스크 접근: ⚠ 확인 불가</code> 라고 떠요</summary>
+
+<br>
+
+**문제가 생긴 게 아닙니다.** 이 상태를 조회하려면 조회하는 쪽(스크립트를 실행한 터미널)에도 같은 권한이 필요한데, 새로 세팅한 맥의 터미널에는 보통 그 권한이 없습니다. 즉 **권한이 없다는 뜻이 아니라 "확인만 못 했다"** 는 뜻입니다.
+
+**시스템 설정 → 개인정보 보호 및 보안 → 전체 디스크 접근 권한**에서 Orca 토글이 켜져 있는지 눈으로 확인해 주세요. 켜져 있으면 그대로 쓰시면 됩니다.
 
 </details>
 

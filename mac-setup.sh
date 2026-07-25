@@ -15,9 +15,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # ------------------------------------------------------------
 # 실행 옵션 파싱
-#   (옵션 없음) : 전체 설치 (1~9단계)
-#   --env-only  : 1Password(op)에서 팀 공용 토큰만 다시 읽어 ~/.zshrc에 주입 (8.5~8.9단계만)
-#   -h, --help  : 사용법 출력
+#   (옵션 없음)  : 전체 설치 (1~10단계)
+#   --env-only   : 1Password(op)에서 팀 공용 토큰만 다시 읽어 ~/.zshrc에 주입 (8.5~8.9단계만)
+#   --perms-only : Orca 전체 디스크 접근 권한 점검·안내만 다시 실행 (9단계만)
+#   -h, --help   : 사용법 출력
 #   모르는 옵션은 즉시 에러 종료한다 — 오탈자(예: --env-onyl)가 조용히
 #   수 분짜리 전체 설치로 이어지는 사고를 막기 위함이다.
 # ------------------------------------------------------------
@@ -25,21 +26,26 @@ usage() {
   cat <<'USAGE'
 사용법: ./mac-setup.sh [옵션]
 
-  (옵션 없음)   co:code 팀 표준 개발환경 전체 설치 (1~9단계)
+  (옵션 없음)   co:code 팀 표준 개발환경 전체 설치 (1~10단계)
   --env-only    1Password(op)에서 팀 공용 토큰(ZENHUB_API_TOKEN·JIRA_API_TOKEN·
                 SLANG_GPT_API_KEY·DCM_EMAIL·DCM_CI_KEY·SLACK_TEAM_ID·
                 SLACK_BOT_TOKEN)만 다시 읽어 ~/.zshrc에
                 주입합니다. 앱/도구 설치 단계는 전부 건너뜁니다.
                 (토큰이 바뀌었거나, 설치 때 토큰 주입을 건너뛴 경우에 사용)
+  --perms-only  Orca의 '전체 디스크 접근 권한'만 다시 점검하고 안내합니다.
+                설치·토큰 주입 단계는 전부 건너뜁니다.
+                (설치 때 권한 설정을 건너뛰었거나, 권한 창이 계속 뜰 때 사용)
   -h, --help    이 도움말을 표시합니다
 USAGE
 }
 
 ENV_ONLY=0
+PERMS_ONLY=0
 for arg in "$@"; do
   case "$arg" in
-    --env-only) ENV_ONLY=1 ;;
-    -h|--help)  usage; exit 0 ;;
+    --env-only)   ENV_ONLY=1 ;;
+    --perms-only) PERMS_ONLY=1 ;;
+    -h|--help)    usage; exit 0 ;;
     *)
       echo "❌ 알 수 없는 옵션: $arg"
       echo ""
@@ -49,13 +55,21 @@ for arg in "$@"; do
   esac
 done
 
+# 두 모드 옵션은 하는 일이 서로 달라 함께 쓰면 어느 쪽을 원한 건지 알 수 없다 — 조용히
+# 한쪽만 실행하지 말고 무엇을 골라야 하는지 알려주고 멈춘다.
+if (( ENV_ONLY && PERMS_ONLY )); then
+  echo "❌ --env-only 와 --perms-only 는 함께 쓸 수 없습니다 (하나씩 따로 실행해 주세요)"
+  exit 1
+fi
+
 # Homebrew 경로 (Apple Silicon / Intel 자동 감지)
 if [[ -x /opt/homebrew/bin/brew ]]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
 elif [[ -x /usr/local/bin/brew ]]; then
   eval "$(/usr/local/bin/brew shellenv)"
-elif (( ENV_ONLY )); then
-  # --env-only는 아무것도 설치하지 않고 op만 쓰므로 Homebrew가 없어도 계속 진행한다
+elif (( ENV_ONLY || PERMS_ONLY )); then
+  # --env-only는 op만, --perms-only는 macOS 기본 명령(sqlite3·open)만 쓰므로
+  # 둘 다 아무것도 설치하지 않는다 — Homebrew가 없어도 계속 진행한다
   :
 else
   echo "❌ Homebrew가 없습니다. 먼저 설치하세요: https://brew.sh"
@@ -101,13 +115,220 @@ export CI=true                   # 많은 CLI가 CI 모드에서 프롬프트 �
 #   8.7. SLANG_GPT_API_KEY 주입 (1Password op read → .zshrc, slang_gpt 다국어 자동 번역용)
 #   8.8. DCM_EMAIL·DCM_CI_KEY 주입 (1Password op read → .zshrc, DCM CI 라이선스 인증용)
 #   8.9. SLACK_TEAM_ID·SLACK_BOT_TOKEN 주입 (1Password op read → .zshrc, slack MCP용)
-#   9.   설치 검증 + 다음 단계 안내
+#   9.   앱 권한 — Orca 전체 디스크 접근(Full Disk Access) 점검·안내
+#        (TTY면 시스템 설정 창을 열어주고 Enter 대기 · 이미 허용돼 있으면 건너뜀)
+#   10.  설치 검증 + 다음 단계 안내
 # 공통 규칙: 모든 단계 멱등(이미 설치 시 스킵) · 실패해도 ⚠ 후 계속 · 시크릿 미커밋
-# 실행 옵션: 옵션 없음=전체 실행 · --env-only=8.5~8.9(토큰 주입)만 재실행 · -h/--help=사용법
+# 실행 옵션: 옵션 없음=전체 실행 · --env-only=8.5~8.9(토큰 주입)만 재실행 ·
+#            --perms-only=9(앱 권한)만 재실행 · -h/--help=사용법
 # ============================================================
 
 # ============================================================
+# 9단계(앱 권한) 본체 — Orca 전체 디스크 접근(Full Disk Access)
+#
+#   [이 단계가 하는 일 — 비개발자용 설명]
+#   Orca는 코딩 에이전트라 워크스페이스와 다른 앱의 설정 폴더를 폭넓게 읽는다. macOS는
+#   그런 접근을 개인정보 보호(TCC) 기능으로 막고, 폴더를 읽을 때마다 허용 창을 띄운다.
+#   이 창에는 '항상 허용'이 없어서, 허용을 눌러도 그 순간 읽은 폴더 하나만 기록된다.
+#   → 다른 앱 폴더를 읽을 때마다 같은 창이 계속 뜬다. 이걸 한 번에 끝내는 유일한 방법이
+#     '전체 디스크 접근 권한'을 켜 주는 것이라, 이 단계에서 그 설정 창까지 열어 안내한다.
+#
+#   [왜 스크립트가 대신 켜주지 못하나]
+#   권한 기록(TCC.db)은 SIP(시스템 무결성 보호)로 잠겨 있어, sudo로도 프로그램이 직접
+#   쓸 수 없다. 회사 관리 기기라면 MDM의 PPPC 페이로드로 사전 배포할 수 있지만, 개인
+#   맥에서는 사용자가 시스템 설정에서 직접 켜는 것이 표준이다. 그래서 이 단계는
+#   '상태 조회 + 설정 창 자동 열기 + 안내'까지만 자동화한다.
+#
+#   [정의를 여기 둔 이유]
+#   --perms-only 는 설치 단계를 전부 건너뛰고 이 단계만 실행하므로, 설치 블록보다
+#   앞에서 정의돼 있어야 한다. 실제 호출은 (전체 실행 시) 아래 9단계 위치에서 한다.
+# ============================================================
+ORCA_APP_PATH="/Applications/Orca.app"
+ORCA_BUNDLE_ID="com.stablyai.orca"
+TCC_SYSTEM_DB="/Library/Application Support/com.apple.TCC/TCC.db"
+# 10단계 검증 출력에서 재사용할 권한 상태
+#   allowed=허용됨 · denied=거부로 기록됨 · unset=아직 기록 없음 ·
+#   unknown=조회 불가(권한 없음이 아니라 '모름') · missing-app=Orca 미설치
+ORCA_FDA_STATE="unknown"
+
+# Orca의 전체 디스크 접근 권한 상태를 macOS 권한 기록(TCC.db)에서 조회한다.
+#   ⚠ 이 기록 파일 자체가 전체 디스크 접근 대상이라, 스크립트를 실행 중인 터미널에
+#     그 권한이 없으면 조회가 실패한다. 새로 세팅한 맥에서는 이게 정상이므로
+#     실패를 '권한 없음'으로 단정하지 않고 unknown(모름)으로 돌려준다.
+orca_fda_state() {
+  local raw
+  have sqlite3 || { echo "unknown"; return 0; }
+  # 먼저 아주 가벼운 질의로 '읽을 수 있는지'만 본다 — 여기서 실패하면 권한이 아니라 조회 자체가 막힌 것이다.
+  sqlite3 "$TCC_SYSTEM_DB" "select count(*) from access;" >/dev/null 2>&1 || { echo "unknown"; return 0; }
+  raw=$(sqlite3 "$TCC_SYSTEM_DB" \
+    "select auth_value from access where service='kTCCServiceSystemPolicyAllFiles' and client='$ORCA_BUNDLE_ID' order by auth_value desc limit 1;" 2>/dev/null || true)
+  case "$raw" in
+    2)  echo "allowed" ;;   # 허용
+    0)  echo "denied"  ;;   # 거부(사용자가 '허용 안 함'을 눌렀거나 기록이 꼬인 상태)
+    *)  echo "unset"   ;;   # 기록 없음(빈 값) · 1=미결정 · 3=제한적 — 어느 쪽이든 다시 켜야 한다
+  esac
+}
+
+# 이 스크립트가 Orca 안의 터미널에서 실행 중인지 판별한다.
+#   맞다면 "지금 Orca를 종료하라"고 안내해선 안 된다 — 스크립트 자신이 함께 죽는다.
+running_inside_orca() {
+  [[ "${__CFBundleIdentifier:-}" == "$ORCA_BUNDLE_ID" || "${TERM_PROGRAM:-}" == "Orca" ]]
+}
+
+# 시스템 설정의 '전체 디스크 접근 권한' 창을 바로 연다.
+#   macOS 13(Ventura)부터 설정 앱이 바뀌면서 주소도 달라져, 버전에 따라 나눠 호출한다.
+open_fda_settings() {
+  local major
+  major="$(sw_vers -productVersion 2>/dev/null | cut -d. -f1)"
+  if [[ "${major:-0}" =~ ^[0-9]+$ ]] && (( major >= 13 )); then
+    open "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_AllFiles" >/dev/null 2>&1
+  else
+    open "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles" >/dev/null 2>&1
+  fi
+}
+
+print_orca_fda_guide() {
+  echo ""
+  echo "  ⏸  Orca에 '전체 디스크 접근 권한'을 켜 주세요."
+  echo ""
+  echo "     [무엇을 하는 건가요?]"
+  echo "     Orca는 코딩 에이전트라 작업 폴더와 다른 앱의 설정 폴더를 폭넓게 읽습니다."
+  echo "     권한이 없으면 폴더를 하나 읽을 때마다 macOS 허용 창이 반복해서 뜹니다."
+  echo "     그 창에는 '항상 허용'이 없어서, 허용을 눌러도 그때 읽은 폴더 하나만 기록됩니다."
+  echo "     전체 디스크 접근 권한을 한 번 켜는 것이 이 반복을 끝내는 유일한 방법입니다."
+  echo ""
+  echo "     [켜는 방법 — 방금 열어드린 시스템 설정 창에서]"
+  echo "       1) '개인정보 보호 및 보안 > 전체 디스크 접근 권한' 목록을 봅니다"
+  echo "       2) 목록에 Orca가 있으면 → 오른쪽 토글을 켭니다"
+  echo "       3) 목록에 없으면 → 왼쪽 아래 '+' 를 눌러 $ORCA_APP_PATH 를 추가합니다"
+  echo "          · 함께 열어드린 Finder 창에서 Orca를 목록으로 드래그해도 됩니다"
+  echo "          · '+' 를 누르면 암호나 Touch ID를 물어볼 수 있습니다 (정상입니다)"
+  echo ""
+  echo "     [참고 — 이미 눌렀던 허용/거부 기록을 보고 싶다면]"
+  echo "       '개인정보 보호 및 보안 > 파일 및 폴더'에서 Orca 항목을 펼치면 지금까지"
+  echo "       허용·거부한 폴더 목록이 보입니다. 실수로 '허용 안 함'을 누른 항목이 있으면"
+  echo "       거기서 켜 주면 됩니다."
+  echo ""
+  echo "     ※ 이 권한은 홈 폴더 전체와 다른 앱의 데이터까지 읽을 수 있는 강한 권한입니다."
+  echo "        Orca는 성격상 이 권한이 맞는 도구지만, 무엇을 허용하는지는 알고 계시는 게 좋습니다."
+  echo "        (부담스럽다면 s로 건너뛰고 폴더별 허용 창을 그때그때 눌러도 동작은 합니다.)"
+  echo ""
+}
+
+print_orca_fda_reset_guide() {
+  echo ""
+  echo "     [권한 기록이 꼬여 창이 계속 뜰 때 — 기록 초기화]"
+  echo "       tccutil reset SystemPolicyAllFiles $ORCA_BUNDLE_ID   ← 전체 디스크 접근 기록만 초기화"
+  echo "       tccutil reset All $ORCA_BUNDLE_ID                    ← 전부 초기화 (마이크·화면 기록 등도 다시 물어봄)"
+  echo "     ※ 스크립트가 대신 실행하지는 않습니다 — 정상적으로 허용해 둔 기록까지 지워질 수 있어"
+  echo "        직접 판단해서 실행하시는 편이 안전합니다. 초기화 후에는 위 방법으로 다시 켜 주세요."
+}
+
+print_orca_restart_notice() {
+  echo ""
+  echo "     [마지막 한 단계 — Orca 재시작]"
+  echo "     권한은 앱이 '시작하는 시점'에 읽힙니다. 지금 켜져 있는 Orca에는 재시작 전까지 적용되지 않습니다."
+  echo "     · 시스템 설정이 '종료 후 다시 열기' 버튼을 띄우면 그 버튼을 누르면 됩니다"
+  echo "     · 직접 하려면 Orca에서 ⌘Q (메뉴막대 아이콘까지 완전히 종료) 후 다시 실행하세요"
+  if running_inside_orca; then
+    echo "     ⚠ 지금 이 스크립트가 Orca 안의 터미널에서 실행 중입니다 — 여기서 Orca를 종료하면"
+    echo "        스크립트도 함께 끊깁니다. 재시작은 스크립트가 끝난 뒤에 해주세요."
+  fi
+}
+
+run_orca_permission_step() {
+  log "앱 권한 확인 (Orca 전체 디스크 접근 권한)"
+
+  if [[ ! -d "$ORCA_APP_PATH" ]]; then
+    ORCA_FDA_STATE="missing-app"
+    echo "  ⚠ $ORCA_APP_PATH 없음 → 건너뜀"
+    echo "     (Orca 설치 후 './mac-setup.sh --perms-only' 로 이 단계만 다시 실행할 수 있습니다)"
+    return 0
+  fi
+
+  ORCA_FDA_STATE="$(orca_fda_state)"
+
+  # 멱등: 이미 허용돼 있으면 아무것도 묻지 않고 넘어간다.
+  if [[ "$ORCA_FDA_STATE" == "allowed" ]]; then
+    echo "  ✓ Orca 전체 디스크 접근 권한 이미 허용됨 → 건너뜀"
+    return 0
+  fi
+
+  case "$ORCA_FDA_STATE" in
+    denied)
+      echo "  ✗ Orca가 '거부'로 기록돼 있습니다 — 켜기 전에 아래 초기화가 필요할 수 있습니다"
+      ;;
+    unset)
+      echo "  · Orca에 전체 디스크 접근 권한이 아직 없습니다"
+      ;;
+    *)
+      echo "  · 현재 권한 상태를 확인할 수 없습니다 — 이 터미널에 전체 디스크 접근 권한이 없어"
+      echo "    macOS 권한 기록을 읽지 못한 것이며, 실패가 아니라 '모름'입니다."
+      echo "    (이미 켜 두셨다면 아래 안내에서 s 를 눌러 건너뛰셔도 됩니다)"
+      ;;
+  esac
+
+  # 자동화할 수 있는 부분: 설정 창을 정확한 위치로 열고, 드래그용 Finder 창까지 띄운다.
+  #   목록에 추가하고 토글을 켜는 것은 macOS가 사람 손으로만 허용한다.
+  open -R "$ORCA_APP_PATH" >/dev/null 2>&1 || true   # Finder에 Orca.app 선택 표시 (드래그 앤 드롭용)
+  if open_fda_settings; then
+    echo "  · 시스템 설정의 '전체 디스크 접근 권한' 창을 열었습니다"
+  else
+    echo "  ⚠ 시스템 설정 창을 자동으로 열지 못했습니다 → 직접 여세요:"
+    echo "     시스템 설정 > 개인정보 보호 및 보안 > 전체 디스크 접근 권한"
+  fi
+
+  print_orca_fda_guide
+  if [[ "$ORCA_FDA_STATE" == "denied" ]]; then
+    print_orca_fda_reset_guide
+  fi
+
+  local fda_ans
+  if [[ -t 0 ]]; then
+    # 대화형: 권한을 켤 때까지 멈춰서 안내 → Enter로 재확인 (8.5단계 1Password 안내와 같은 패턴)
+    while true; do
+      printf "     권한을 켜셨으면 Enter(다시 확인) · 나중에 하려면 s 입력 후 Enter: "
+      read -r fda_ans || fda_ans="s"
+      if [[ "$fda_ans" == "s" || "$fda_ans" == "S" ]]; then
+        echo "  ⚠ 전체 디스크 접근 권한 설정 건너뜀"
+        echo "     → 나중에 './mac-setup.sh --perms-only' 로 이 안내를 다시 받을 수 있습니다"
+        break
+      fi
+      ORCA_FDA_STATE="$(orca_fda_state)"
+      if [[ "$ORCA_FDA_STATE" == "allowed" ]]; then
+        echo "  ✓ Orca 전체 디스크 접근 권한 확인됨"
+        break
+      fi
+      if [[ "$ORCA_FDA_STATE" == "unknown" ]]; then
+        # 이 터미널에 권한이 없어 확인만 못 하는 상황 — 사용자를 무한히 붙잡지 않는다.
+        echo "  · 확인은 못 했습니다(이 터미널에 권한이 없어 조회 불가) — 목록에서 Orca 토글이"
+        echo "    켜져 있다면 그대로 진행하셔도 됩니다"
+        break
+      fi
+      echo "  ✗ 아직 허용으로 보이지 않습니다 — 목록에서 Orca 토글이 켜져 있는지 확인 후 다시 Enter"
+      echo "     (목록에 Orca가 없다면 '+' 로 $ORCA_APP_PATH 를 먼저 추가해야 합니다)"
+    done
+  else
+    # 비대화형(TTY 없음): 멈추지 않고 건너뜀
+    echo "  ⚠ 비대화형 실행이라 여기서 멈추지 않습니다"
+    echo "     → 위 안내대로 권한을 켠 뒤 './mac-setup.sh --perms-only' 로 확인해 주세요"
+  fi
+
+  print_orca_restart_notice
+  return 0
+}
+
+# --perms-only: 설치·토큰 주입을 전부 건너뛰고 9단계(앱 권한)만 실행하고 끝낸다.
+if (( PERMS_ONLY )); then
+  run_orca_permission_step
+  echo ""
+  echo "✅ 앱 권한 점검 완료 (전체 설치는 옵션 없이 './mac-setup.sh' 실행)"
+  exit 0
+fi
+
+# ============================================================
 # 설치 단계 시작 (1~8단계) — --env-only 실행 시 이 블록 전체를 건너뛴다
+#   (--perms-only 는 위에서 9단계만 실행하고 이미 종료했으므로 여기까지 오지 않는다)
 #   기존 코드를 옮기지 않고 그대로 감싸기만 했으므로, 블록 안쪽 본문은
 #   들여쓰기 없이 유지된다 (짝이 되는 fi는 8.5단계 직전에 있다)
 # ============================================================
@@ -1188,7 +1409,7 @@ print_1password_cli_guide() {
   echo ""
 }
 
-# 9단계 검증 출력에서 재사용할 op 상태. 여기서 한 번만 판정한다 —
+# 10단계 검증 출력에서 재사용할 op 상태. 여기서 한 번만 판정한다 —
 # op 호출은 1Password 앱 승인(Touch ID)을 기다릴 수 있어 검증 단계에서 다시 부르면 또 멈춘다.
 #   missing = op 미설치 · not-ready = 설치됐지만 앱 CLI 통합/권한 미완료 · ready = 토큰까지 읽힘
 OP_STATUS="missing"
@@ -1243,7 +1464,7 @@ fi
 #   (2026-07 실측: 이 토큰으로 mcp-atlassian 경유 실제 Jira 프로젝트 조회 성공 — Rovo 없이 동작 검증됨.)
 # ------------------------------------------------------------
 log "JIRA_API_TOKEN 주입 (1Password 공용 계정 Jira 토큰, mcp-atlassian용)"
-# 주입 여부는 9단계 검증에서 ~/.zshrc의 JIRA_API_TOKEN 값(JIRA_VAL)으로 직접 판단한다.
+# 주입 여부는 10단계 검증에서 ~/.zshrc의 JIRA_API_TOKEN 값(JIRA_VAL)으로 직접 판단한다.
 
 # 값이 빈 기존 라인은 먼저 걷어낸다 (ZenHub와 동일 — 빈 값이 남으면 MCP가 '연결됨'처럼 보이며 호출만 실패)
 if jira_token_line_is_empty; then
@@ -1281,7 +1502,7 @@ fi
 #   이미 처리했으므로 여기서는 반복하지 않고 '주입 시도 + 원인별 경고'만 한다.
 #   ※ 팀 공용 1Password 항목: "API Token" 볼트 > "Slang GPT API Token" > credential 필드
 #   ※ 이 값은 MCP 인증용이 아니라 slang_gpt CLI가 환경변수로 직접 읽는 값이라
-#     claude mcp 등록 단계가 없다 (그래서 9단계 검증도 'mcp:' 형태가 아닌 단순 주입 여부만 표시).
+#     claude mcp 등록 단계가 없다 (그래서 10단계 검증도 'mcp:' 형태가 아닌 단순 주입 여부만 표시).
 # ------------------------------------------------------------
 log "SLANG_GPT_API_KEY 주입 (1Password 공용 키, slang_gpt 다국어 자동 번역용)"
 
@@ -1392,8 +1613,8 @@ else
 fi
 
 # ------------------------------------------------------------
-# 8.10. --env-only 마무리: 주입 결과만 요약하고 종료 (아래 9단계 전체 검증은 돌리지 않음)
-#   토큰 유무는 9단계와 같은 기준(~/.zshrc의 값)으로 판단한다 — MCP의 'Connected' 표시는
+# 8.10. --env-only 마무리: 주입 결과만 요약하고 종료 (아래 10단계 전체 검증은 돌리지 않음)
+#   토큰 유무는 10단계와 같은 기준(~/.zshrc의 값)으로 판단한다 — MCP의 'Connected' 표시는
 #   인증 성공을 뜻하지 않기 때문 (8.5단계 주석 참고).
 # ------------------------------------------------------------
 if (( ENV_ONLY )); then
@@ -1425,7 +1646,16 @@ if (( ENV_ONLY )); then
 fi
 
 # ------------------------------------------------------------
-# 9. 검증
+# 9. 앱 권한 — Orca 전체 디스크 접근(Full Disk Access)
+#   본체(run_orca_permission_step)는 파일 앞부분에 정의돼 있다 — --perms-only 가
+#   설치 단계를 건너뛰고 이 단계만 실행할 수 있어야 하기 때문이다.
+#   설치가 모두 끝난 뒤에 두는 이유: 권한을 켜면 Orca를 재시작해야 하는데, 설치 도중에
+#   Orca를 껐다 켜면(특히 Orca 안 터미널에서 실행 중일 때) 설치가 끊길 수 있다.
+# ------------------------------------------------------------
+run_orca_permission_step
+
+# ------------------------------------------------------------
+# 10. 검증
 # ------------------------------------------------------------
 log "설치 검증"
 echo "  Xcode.app: $([[ -d /Applications/Xcode.app ]] && echo '✓ 설치됨' || echo '❌ (App Store에서 설치: https://apps.apple.com/app/xcode/id497799835, 또는 mas 로그인 후 재실행)')"
@@ -1504,19 +1734,32 @@ echo "  cocode-skills: $([[ "$CS_COUNT" -gt 0 ]] && echo "✓ ${CS_COUNT}개 플
 echo "  android : $([[ -x "$ANDROID_HOME/platform-tools/adb" ]] && echo "✓ $ANDROID_HOME" || echo '❌')"
 echo "  ndk     : $([[ -n "${ANDROID_NDK_HOME:-}" && -d "${ANDROID_NDK_HOME:-}" ]] && echo "✓ $ANDROID_NDK_HOME" || echo '❌')"
 echo "  avd     : $([[ -n "${AVD_NAME:-}" ]] && "$AVDMANAGER" list avd 2>/dev/null | grep -q "$AVD_NAME" && echo "✓ $AVD_NAME" || echo '❌')"
+# Orca 전체 디스크 접근: 9단계에서 판정한 값을 쓰되, 그 뒤에 권한을 켰을 수도 있으니 한 번 더 조회한다
+#   (권한 조회는 파일 읽기 한 번이라 화면을 멈추지 않는다 — op와 달리 승인 대기가 없다).
+if [[ "$ORCA_FDA_STATE" != "missing-app" ]]; then ORCA_FDA_STATE="$(orca_fda_state)"; fi
+case "$ORCA_FDA_STATE" in
+  allowed)     echo "  Orca 전체 디스크 접근: ✓ 허용됨 (Orca를 완전히 종료했다 다시 실행해야 적용됩니다)" ;;
+  denied)      echo "  Orca 전체 디스크 접근: ❌ 거부로 기록됨 (tccutil reset SystemPolicyAllFiles $ORCA_BUNDLE_ID 후 './mac-setup.sh --perms-only')" ;;
+  unset)       echo "  Orca 전체 디스크 접근: ❌ 미설정 ('./mac-setup.sh --perms-only' 로 설정 창 안내를 다시 받을 수 있습니다)" ;;
+  missing-app) echo "  Orca 전체 디스크 접근: — (Orca 미설치)" ;;
+  *)           echo "  Orca 전체 디스크 접근: ⚠ 확인 불가 — 이 터미널에 권한이 없어 '조회만' 못 한 것입니다 (시스템 설정 > 개인정보 보호 및 보안 > 전체 디스크 접근 권한에서 Orca 토글로 직접 확인)" ;;
+esac
 
 echo ""
 echo "✅ 완료! 다음 단계:"
 echo "  1. 새 터미널을 열거나: source ~/.zshrc"
-echo "  2. p10k 테마 설정이 없다면: p10k configure"
-echo "  3. Android Studio 실행 후 flutter doctor (SDK/NDK/AVD는 이미 자동 설치·구성됨)"
-echo "  4. Claude Code 로그인: claude"
+echo "  2. Orca를 완전히 종료(⌘Q, 메뉴막대 아이콘까지)했다가 다시 실행하세요"
+echo "     ↳ 9단계에서 켠 '전체 디스크 접근 권한'은 앱이 시작하는 시점에 읽히므로, 재시작 전에는 적용되지 않습니다"
+echo "     ↳ 권한을 아직 안 켰거나 폴더 허용 창이 계속 뜬다면: ./mac-setup.sh --perms-only (설치는 건너뛰고 권한 안내만 다시 실행)"
+echo "  3. p10k 테마 설정이 없다면: p10k configure"
+echo "  4. Android Studio 실행 후 flutter doctor (SDK/NDK/AVD는 이미 자동 설치·구성됨)"
+echo "  5. Claude Code 로그인: claude"
 echo "     ↳ 함께 설치된 다른 AI 코딩 CLI도 최초 1회 로그인이 필요합니다: codex(실행: codex, ChatGPT 계정) · agy(실행: agy, Antigravity=Google 계정)"
-echo "     ↳ Slack CLI로 직접 앱을 개발하려면 최초 1회 워크스페이스 로그인이 필요합니다: slack login (slack MCP는 아래 6번의 팀 공용 토큰으로 별도 인증)"
+echo "     ↳ Slack CLI로 직접 앱을 개발하려면 최초 1회 워크스페이스 로그인이 필요합니다: slack login (slack MCP는 아래 7번의 팀 공용 토큰으로 별도 인증)"
 echo "     ↳ Claude Code 하단 상태줄(모델·비용·컨텍스트·git 상태)은 6.5단계에서 이미 자동으로 설정됐을 겁니다 — ccstatusline이 대화형이라 등록에 실패하면 Awesome CC Statusline(size: small)이 자동으로 대신 등록됩니다. 직접 위젯을 골라 커스터마이징하고 싶다면 \`npx -y ccstatusline@latest\`를, 다른 크기로 바꾸고 싶다면 \`curl -fsSL https://raw.githubusercontent.com/AwesomeJun/CC-statusline/main/install.sh | bash -s -- <크기>\`를 실행하면 됩니다(크기: xs/s/m/l/xl). 되돌리려면 settings.json의 statusLine 키만 지우면 됩니다"
-echo "  5. Claude Code에서 /mcp 실행 → figma를 팀 계정으로 OAuth 로그인 (최초 1회)"
+echo "  6. Claude Code에서 /mcp 실행 → figma를 팀 계정으로 OAuth 로그인 (최초 1회)"
 echo "     ↳ jira(atlassian)는 더 이상 OAuth 로그인이 필요 없습니다 — zenhub처럼 1Password 팀 공용 토큰으로 인증합니다"
-echo "  6. zenhub·jira·slang_gpt·DCM·slack 토큰(1Password CLI): 실행 중 8.5/8.6/8.7/8.8/8.9단계에서 설정 안내가 나오면 아래를 마친 뒤 Enter를 누르면 자동 주입됩니다"
+echo "  7. zenhub·jira·slang_gpt·DCM·slack 토큰(1Password CLI): 실행 중 8.5/8.6/8.7/8.8/8.9단계에서 설정 안내가 나오면 아래를 마친 뒤 Enter를 누르면 자동 주입됩니다"
 echo "     ↳ 1Password 앱 로그인(team-cocodeinc) → 설정(⌘,) > 개발자 > '1Password CLI와 통합' 체크"
 echo "       ('개발자' 탭이 없으면 설정 > 보안 > 'Touch ID로 잠금 해제'를 먼저 켜세요)"
 echo "       확인: op account list 에 팀 계정이 보이면 성공 · 건너뛰었다면 './mac-setup.sh --env-only' 로 토큰만 다시 주입할 수 있습니다"
@@ -1531,5 +1774,5 @@ echo "       두 필드에서 읽어 주입됩니다. slack MCP는 @modelcontext
 echo "     ↳ 주입 후에는 반드시 '새 터미널'에서 claude를 실행하세요."
 echo "       claude 실행 시점의 환경변수에서 토큰을 읽으므로, 예전 터미널에서 띄운 claude는 토큰을 못 읽습니다."
 echo "       (jira MCP가 docker로 뜨는데, colima가 꺼져 있으면 새 .zshrc의 claude/cld 함수가 자동으로 'colima start'를 시도합니다 — 최초 콜드 스타트는 수십 초 걸릴 수 있으니 미리 켜두면 더 빠릅니다)"
-echo "  7. cocode-skills 팀 플러그인이 '❌'이면: gh auth login 후 스크립트 재실행 (사설 레포 접근에 gh 인증 필요)"
-echo "  8. flutter-mcp-toolkit을 특정 Flutter 프로젝트에서 쓰려면 해당 프로젝트에서: flutter-mcp-toolkit codegen-init (mcp_toolkit 패키지 추가, 앱별 1회)"
+echo "  8. cocode-skills 팀 플러그인이 '❌'이면: gh auth login 후 스크립트 재실행 (사설 레포 접근에 gh 인증 필요)"
+echo "  9. flutter-mcp-toolkit을 특정 Flutter 프로젝트에서 쓰려면 해당 프로젝트에서: flutter-mcp-toolkit codegen-init (mcp_toolkit 패키지 추가, 앱별 1회)"
