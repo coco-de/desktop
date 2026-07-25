@@ -665,9 +665,12 @@ fi
 # ------------------------------------------------------------
 # 3. CLI 도구 (go, pyenv, nvm, git 등)
 # ------------------------------------------------------------
-log "CLI 도구 설치 (go, pyenv, nvm, git, cocoapods 등)"
+log "CLI 도구 설치 (go, pyenv, nvm, git, cocoapods, lefthook 등)"
 # zsh-syntax-highlighting, direnv, openjdk@17: 기존 .zshrc에서 참조하는 도구들
-FORMULAE=(go pyenv nvm git gh jq cocoapods fastlane awscli colima docker docker-compose zsh-syntax-highlighting direnv openjdk@17)
+# lefthook: 커밋·푸시 직전에 포맷/린트/테스트를 자동으로 돌려주는 Git 훅 관리자.
+#   팀 레포에 lefthook.yml 이 있으면 이 CLI가 깔려 있어야 훅이 동작한다
+#   (레포별로 최초 1회 `lefthook install` 필요 — 완료 안내 10번 참고).
+FORMULAE=(go pyenv nvm git gh jq cocoapods fastlane awscli colima docker docker-compose zsh-syntax-highlighting direnv openjdk@17 lefthook)
 for f in "${FORMULAE[@]}"; do
   brew list "$f" >/dev/null 2>&1 && echo "  ✓ $f 이미 설치됨" || brew install "$f"
 done
@@ -1694,6 +1697,7 @@ echo "  codex   : $(codex --version 2>/dev/null || echo '❌ (수동 설치: bre
 # agy는 최초 실행이 대화형 로그인 마법사라, 검증에서는 버전 호출 대신 바이너리 존재만 확인한다.
 echo "  agy(antigravity): $(have agy && echo '✓ 설치됨 (최초 실행 시 agy 로 Google 로그인)' || echo '❌ (수동 설치: curl -fsSL https://antigravity.google/cli/install.sh | bash)')"
 echo "  slack   : $(slack --version 2>/dev/null || echo '❌ (수동 설치: curl -fsSL https://downloads.slack-edge.com/slack-cli/install.sh | bash)')"
+echo "  lefthook: $(lefthook version 2>/dev/null || echo '❌ (수동 설치: brew install lefthook)')"
 # 상태줄(ccstatusline / Awesome CC Statusline): 둘 다 brew formula가 아니라
 #   npx/curl 실행형이라 have로 확인할 수 없다 — ~/.claude/settings.json의
 #   statusLine 키 등록 여부로 판정한다 (어느 쪽이 등록됐는지는 구분하지 않는다).
@@ -1795,3 +1799,5 @@ echo "       claude 실행 시점의 환경변수에서 토큰을 읽으므로, 
 echo "       (jira MCP가 docker로 뜨는데, colima가 꺼져 있으면 새 .zshrc의 claude/cld 함수가 자동으로 'colima start'를 시도합니다 — 최초 콜드 스타트는 수십 초 걸릴 수 있으니 미리 켜두면 더 빠릅니다)"
 echo "  8. cocode-skills 팀 플러그인이 '❌'이면: gh auth login 후 스크립트 재실행 (사설 레포 접근에 gh 인증 필요)"
 echo "  9. flutter-mcp-toolkit을 특정 Flutter 프로젝트에서 쓰려면 해당 프로젝트에서: flutter-mcp-toolkit codegen-init (mcp_toolkit 패키지 추가, 앱별 1회)"
+echo " 10. lefthook(Git 훅)은 레포마다 한 번씩 켜야 합니다 — lefthook.yml 이 있는 프로젝트 폴더에서: lefthook install"
+echo "     ↳ 이걸 해야 커밋·푸시할 때 포맷/린트/테스트가 자동으로 돌아갑니다 (설정 파일이 없는 레포에서는 할 일 없음)"
