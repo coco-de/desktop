@@ -203,6 +203,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 |---|---|
 | 🖥 GUI 앱 | Android Studio, Slack, Figma, Claude Desktop, Google Chrome, Dia, 1Password, Tailscale, Orca, Lumide, Zed, Rive |
 | 🍎 Xcode 개발자 도구 | Xcode.app이 없으면 `mas`(App Store CLI)로 자동 설치 시도(App Store 로그인 필요 · 수십 GB라 오래 걸릴 수 있음). Command Line Tools만 활성화돼 있으면(`xcodebuild` "requires Xcode" 에러 원인) `xcode-select`를 Xcode.app으로 자동 전환하고 최초 실행 동의(`xcodebuild -runFirstLaunch`)까지 진행 (sudo 암호 입력 필요) |
+| 🧩 브라우저 확장 프로그램 | Chrome·Dia에 [ZenHub for GitHub](https://chromewebstore.google.com/detail/zenhub-for-github/ogcgkffhplmphkaahpmffcafajaocjbd) 확장을 자동 등록(External Extensions 드롭인 방식, sudo 암호 입력 필요) — Dia는 동작이 보장되지 않아 실패해도 경고만 남기고 계속 진행 |
 | 🔌 Claude MCP | figma·flutter-mcp-toolkit 플러그인 자동 설치 + maestro CLI, flutter-mcp-toolkit CLI, marionette·dart MCP, zenhub·jira·slack MCP 자동 등록. `ZENHUB_API_TOKEN`·`JIRA_API_TOKEN`·`SLACK_TEAM_ID`·`SLACK_BOT_TOKEN`(팀 공용 토큰)은 1Password CLI(`op`)로 `~/.zshrc`에 자동 주입 — git에 커밋 안 됨 (⚠️ figma는 최초 1회 `/mcp` OAuth 로그인. zenhub·jira·slack은 OAuth 대신 1Password 팀 공용 토큰으로 인증 — 1Password 앱의 CLI 통합만 되면 자동 주입. jira는 `sooperset/mcp-atlassian`(Docker)로 **Jira REST API에 직접** 붙어(개발팀 공용 계정 토큰) 조직 Rovo 권한이 필요 없음 — 런타임에 colima/docker 데몬 필요. slack은 `@modelcontextprotocol/server-slack`(npx)로 뜨며 팀 ID+봇 토큰 두 값이 모두 있어야 인증됨 — [설정 방법](#after-install). flutter-mcp-toolkit은 인증 불필요하나, 특정 Flutter 프로젝트에서 쓰려면 해당 프로젝트에서 `flutter-mcp-toolkit codegen-init` 1회 실행 필요) |
 | 🔑 팀 공용 토큰 | 위 `ZENHUB_API_TOKEN`·`JIRA_API_TOKEN`·`SLACK_TEAM_ID`·`SLACK_BOT_TOKEN`에 더해, 다국어 자동 번역 도구 `slang_gpt`가 쓰는 `SLANG_GPT_API_KEY`, DCM을 CI 모드로 인증하는 `DCM_EMAIL`·`DCM_CI_KEY`(1Password 항목 `DCM CI CD`의 이메일+키 한 쌍)도 같은 방식(1Password CLI → `~/.zshrc`)으로 자동 주입 — `SLANG_GPT_API_KEY`·`DCM_EMAIL`·`DCM_CI_KEY`는 MCP가 아니라 명령줄 도구가 직접 읽는 값이라 등록·로그인 과정이 없음 ([설정 방법](#after-install)) |
 | 🧩 cocode-skills 팀 플러그인 | 사설 레포 `coco-de/skills`의 `install.sh`로 cc-* 플러그인 번들(marionette·dart·figma·dev-cycle·coui 등) 자동 동기화 (⚠️ `gh auth login` 인증 필요, 미인증 시 건너뜀) |
@@ -240,6 +241,10 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 | <img src="assets/icons/rive.svg" width="20" height="20"> | Rive | 인터랙티브 애니메이션·모션 그래픽 디자인 툴 ([rive.app](https://rive.app)) |
 
 이미 `/Applications`에 앱이 설치되어 있으면 건너뜁니다.
+
+**브라우저 확장 프로그램 자동 등록**
+
+Chrome·Dia 설치 직후, [ZenHub for GitHub](https://chromewebstore.google.com/detail/zenhub-for-github/ogcgkffhplmphkaahpmffcafajaocjbd) 확장을 구글이 공식 문서화한 "External Extensions" 드롭인 방식(`/Library/Application Support/<브라우저>/External Extensions/<확장ID>.json`)으로 자동 등록합니다. 다음에 해당 브라우저를 실행하면 스토어에서 자동으로 받아 설치됩니다. 시스템 폴더에 파일을 심어야 해서 **sudo 암호 입력이 필요**하며(터미널 대화형 실행일 때만 시도), Preferences 파일을 직접 고치는 방식은 브라우저의 변조 감지로 되돌아가기 때문에 이 공식 경로만 사용합니다. Dia는 Chrome과 같은 크로미움 기반이라 동일한 방식을 시도하지만, Arc 계열 제품 특성상 엔터프라이즈 정책 훅이 막혀 있을 수 있어 실제 설치까지 이어진다는 보장은 없습니다 — 적용되지 않아도 오류로 취급하지 않고 조용히 넘어가며, 안 될 경우 위 링크에서 수동으로 추가하면 됩니다.
 
 **Android SDK (자동 설치·구성)**
 
@@ -323,6 +328,7 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 ```
 Xcode.app: ...
 xcode-select: ...
+ZenHub 확장(Chrome/Dia): ...
 fvm     : ...
 flutter : ...
 go      : ...

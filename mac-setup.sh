@@ -75,6 +75,8 @@ export CI=true                   # 많은 CLI가 CI 모드에서 프롬프트 �
 #   1.5. Xcode 설치 확인/자동 설치(mas, App Store 로그인 필요) + 개발자 도구 전환
 #        (CLT만 활성화돼 있으면 Xcode.app으로 xcode-select 전환 + 최초 실행 동의,
 #        sudo 암호 필요 · TTY에서만 시도)
+#   1.6. Chrome/Dia 확장 프로그램 자동 추가 (ZenHub for GitHub, External Extensions
+#        드롭인 방식, sudo 필요 · TTY에서만 시도 · Dia는 동작 미보장이라 실패해도 경고 후 계속)
 #   2.   Claude Code CLI
 #   2.5. Claude MCP (figma 플러그인 + zenhub·jira(mcp-atlassian)·slack 토큰 등록 + maestro·flutter-mcp-toolkit)
 #        └ 설정 기록/자체완결 설치라 런타임(node·dart)보다 앞서도 무해.
@@ -189,6 +191,44 @@ elif [[ -t 0 ]]; then
 else
   echo "  ⚠ 비대화형 실행 → Xcode 전환 건너뜀. 수동: sudo xcode-select -switch /Applications/Xcode.app/Contents/Developer && sudo xcodebuild -runFirstLaunch"
 fi
+
+# ------------------------------------------------------------
+# 1.6. Chrome/Dia 확장 프로그램 자동 추가 (ZenHub for GitHub)
+#   구글이 공식 문서화한 "External Extensions" 드롭인 방식을 쓴다:
+#   /Library/Application Support/<브라우저>/External Extensions/<확장ID>.json 파일을
+#   심어두면 다음 실행 시 브라우저가 스토어에서 자동으로 받아 설치한다(Preferences를
+#   직접 고치는 방식은 브라우저의 변조 감지로 되돌아가므로 이 공식 경로만 동작한다).
+#   시스템 폴더(/Library)라 sudo가 필요해 TTY에서만 시도하고, 실패해도 경고 후 계속
+#   진행한다. Dia(company.thebrowser.dia)도 크로미움 기반이라 같은 방식을 시도하지만,
+#   Arc 계열 제품이라 엔터프라이즈 정책 훅을 의도적으로 막아뒀을 수 있어 실제 설치까지
+#   이어진다는 보장은 없다 — 적용 안 돼도 무해하므로 실패로 취급하지 않는다.
+# ------------------------------------------------------------
+log "Chrome/Dia 확장 프로그램 자동 추가 (ZenHub for GitHub)"
+
+install_external_extension() {
+  # $1: 브라우저 표시 이름, $2: /Applications 앱 번들명(존재 확인용),
+  # $3: /Library/Application Support 아래 폴더명, $4: 확장 ID
+  local name="$1" app_bundle="$2" dir_name="$3" ext_id="$4"
+  local target_dir="/Library/Application Support/$dir_name/External Extensions"
+  local target_file="$target_dir/$ext_id.json"
+  if [[ ! -d "/Applications/$app_bundle" ]]; then
+    echo "  · $name 미설치 → 확장 등록 건너뜀"
+  elif [[ -f "$target_file" ]]; then
+    echo "  ✓ $name: ZenHub for GitHub 확장 이미 등록됨"
+  elif [[ -t 0 ]]; then
+    if sudo mkdir -p "$target_dir" \
+      && echo '{"external_update_url": "https://clients2.google.com/service/update2/crx"}' | sudo tee "$target_file" >/dev/null; then
+      echo "  ✓ $name: ZenHub for GitHub 확장 등록 완료 (다음 $name 실행 시 자동 설치됩니다)"
+    else
+      echo "  ⚠ $name: 확장 등록 실패 → 건너뜀 (수동 설치: https://chromewebstore.google.com/detail/zenhub-for-github/$ext_id)"
+    fi
+  else
+    echo "  ⚠ $name: 비대화형 실행(sudo 불가) → 건너뜀. 수동: sudo mkdir -p \"$target_dir\" && echo '{\"external_update_url\": \"https://clients2.google.com/service/update2/crx\"}' | sudo tee \"$target_file\""
+  fi
+}
+
+install_external_extension "Chrome" "Google Chrome.app" "Google/Chrome" ogcgkffhplmphkaahpmffcafajaocjbd
+install_external_extension "Dia"    "Dia.app"           "Dia"           ogcgkffhplmphkaahpmffcafajaocjbd
 
 # ------------------------------------------------------------
 # 2. Claude Code CLI
@@ -1342,6 +1382,10 @@ fi
 log "설치 검증"
 echo "  Xcode.app: $([[ -d /Applications/Xcode.app ]] && echo '✓ 설치됨' || echo '❌ (App Store에서 설치: https://apps.apple.com/app/xcode/id497799835, 또는 mas 로그인 후 재실행)')"
 echo "  xcode-select: $(xcode-select -p 2>/dev/null || echo '❌ (Xcode.app 설치 필요 — App Store)')"
+# ZenHub for GitHub 확장(External Extensions 드롭인) 등록 여부 — Chrome은 공식 지원,
+# Dia는 동작이 보장되지 않아 파일이 없어도 오류가 아니라 "미보장" 문구로만 안내한다.
+ZH_EXT_ID="ogcgkffhplmphkaahpmffcafajaocjbd"
+echo "  ZenHub 확장(Chrome/Dia): $([[ -f "/Library/Application Support/Google/Chrome/External Extensions/$ZH_EXT_ID.json" ]] && echo 'Chrome ✓' || echo 'Chrome ❌') · $([[ -f "/Library/Application Support/Dia/External Extensions/$ZH_EXT_ID.json" ]] && echo 'Dia ✓' || echo 'Dia ❌(동작 미보장 — 안 되면 수동 설치: https://chromewebstore.google.com/detail/zenhub-for-github/'"$ZH_EXT_ID"')')"
 echo "  fvm     : $(fvm --version 2>/dev/null || echo '❌')"
 echo "  flutter : $(flutter --version 2>/dev/null | head -1 || echo '❌')"
 echo "  go      : $(go version 2>/dev/null || echo '❌')"
