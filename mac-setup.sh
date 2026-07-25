@@ -85,6 +85,7 @@ export CI=true                   # 많은 CLI가 CI 모드에서 프롬프트 �
 #   2.7. Slack CLI (공식 설치 스크립트 → /usr/local/bin 또는 ~/.local/bin)
 #   3.   CLI 도구 (brew formulae: go·gh·jq·docker 등)
 #   3.2. Git 사용자 이메일 (git config --global user.email, TTY면 입력·s로 건너뜀)
+#   3.3. 브라우저 번역 언어 자동 설정 (Chrome·Dia → 한국어로 자동 번역, 영어는 번역 안 함)
 #   3.5. cocode-skills 팀 플러그인 (사설 레포 install.sh, gh 인증 필요)
 #   4.   Flutter/Dart(FVM) · Dart 글로벌 · gcloud · DCM · Android SDK/AVD
 #   5.   Python (pyenv)
@@ -478,6 +479,53 @@ elif [[ -t 0 ]]; then
 else
   echo "  ⚠ 비대화형 실행 → Git 이메일 설정 건너뜀. 직접 실행: git config --global user.email <이메일>"
 fi
+
+# ------------------------------------------------------------
+# 3.3. 브라우저 번역 언어 자동 설정 (Chrome·Dia → 한국어)
+#   dia://settings/languages(Chrome은 chrome://settings/languages)에서 매번
+#   "Translate into this language: 한국어" + "Never translate: English"를 손으로
+#   설정해야 하는 번거로움을 없앤다. Chromium 계열 브라우저는 이 값을 프로필
+#   폴더의 Preferences(JSON) 파일에 저장하므로(translate.enabled·
+#   translate_recent_target·translate_blocked_languages), jq로 미리 심어둔다.
+#   브라우저가 실행 중이면 종료할 때 심어둔 값을 덮어쓸 수 있어 건너뛰고
+#   경고만 남긴다. 프로필이 아직 없으면(최초 설치, 한 번도 실행 안 함) Default
+#   프로필 폴더를 새로 만들어 심어둔다 — 최초 실행 때 이 파일을 그대로 읽는다.
+# ------------------------------------------------------------
+log "브라우저 번역 언어 자동 설정 (Chrome·Dia → 한국어로 자동 번역, 영어는 번역 안 함)"
+
+set_translate_ko() {
+  # $1: 사람이 읽는 이름, $2: 실행 중인지 확인할 프로세스명, $3: 프로필이 들어있는 상위 폴더
+  local name="$1" proc="$2" profiles_dir="$3"
+  local prefs="$profiles_dir/Default/Preferences"
+
+  if ! have jq; then
+    echo "  ⚠ jq 없음 → $name 번역 언어 자동 설정 건너뜀"
+    return
+  fi
+  if pgrep -x "$proc" >/dev/null 2>&1; then
+    echo "  ⚠ $name 실행 중 → 번역 언어 자동 설정 건너뜀 ($name 완전히 종료한 뒤 스크립트를 다시 실행하세요)"
+    return
+  fi
+
+  mkdir -p "$profiles_dir/Default"
+  [[ -f "$prefs" ]] || echo '{}' > "$prefs"
+
+  local tmp
+  tmp="$(mktemp)"
+  if jq '.translate.enabled = true
+         | .translate_recent_target = "ko"
+         | .translate_blocked_languages = (((.translate_blocked_languages // []) + ["en"]) | unique)' \
+       "$prefs" > "$tmp" 2>/dev/null && [[ -s "$tmp" ]]; then
+    mv "$tmp" "$prefs"
+    echo "  ✓ $name 번역 언어 자동 설정 완료 (한국어로 번역, 영어는 번역 안 함)"
+  else
+    rm -f "$tmp"
+    echo "  ⚠ $name 번역 언어 자동 설정 실패 → 건너뜀 (수동 설정: 브라우저의 언어 설정 페이지에서 직접 지정)"
+  fi
+}
+
+set_translate_ko "Google Chrome" "Google Chrome" "$HOME/Library/Application Support/Google/Chrome"
+set_translate_ko "Dia"           "Dia"           "$HOME/Library/Application Support/Dia/User Data"
 
 # ------------------------------------------------------------
 # 3.5. cocode-skills 팀 플러그인 설치 (사설 레포 coco-de/skills)
