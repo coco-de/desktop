@@ -337,7 +337,7 @@ if (( ! ENV_ONLY )); then
 # ------------------------------------------------------------
 # 1. GUI 앱 (brew cask)
 # ------------------------------------------------------------
-log "GUI 앱 설치 (Android Studio, Slack, Figma, Claude Desktop, Chrome, Dia, 1Password, Tailscale, Orca, Lumide, Zed, Rive) + 1Password CLI(op — 앱이 아닌 터미널 도구)"
+log "GUI 앱 설치 (Android Studio, Slack, Figma, Claude Desktop, Chrome, Dia, 1Password, Tailscale, Orca, Lumide, Zed, Rive, Stats) + 1Password CLI(op — 앱이 아닌 터미널 도구)"
 
 # cask 설치 (이미 /Applications 에 수동 설치된 앱은 건너뜀)
 install_cask() {
@@ -367,6 +367,9 @@ install_cask orca                   "Orca.app"                 stablyai/orca/orc
 install_cask lumide                 "Lumide.app"
 install_cask zed                    "Zed.app"
 install_cask rive                   "Rive.app"
+# Stats: 메뉴막대에 CPU·메모리·디스크·네트워크 사용량을 띄워 주는 시스템 모니터.
+#   설치만으로는 메뉴막대에 나타나지 않고, 최초 1회 직접 실행해야 한다 (마지막 안내 참고).
+install_cask stats                  "Stats.app"
 
 # ------------------------------------------------------------
 # 1.5. Xcode 설치 확인/자동 설치 + 개발자 도구 전환
@@ -1686,6 +1689,8 @@ echo "  xcode-select: $(xcode-select -p 2>/dev/null || echo '❌ (Xcode.app 설�
 # Dia는 동작이 보장되지 않아 파일이 없어도 오류가 아니라 "미보장" 문구로만 안내한다.
 ZH_EXT_ID="ogcgkffhplmphkaahpmffcafajaocjbd"
 echo "  ZenHub 확장(Chrome/Dia): $([[ -f "/Library/Application Support/Google/Chrome/External Extensions/$ZH_EXT_ID.json" ]] && echo 'Chrome ✓' || echo 'Chrome ❌') · $([[ -f "/Library/Application Support/Dia/External Extensions/$ZH_EXT_ID.json" ]] && echo 'Dia ✓' || echo 'Dia ❌(동작 미보장 — 안 되면 수동 설치: https://chromewebstore.google.com/detail/zenhub-for-github/'"$ZH_EXT_ID"')')"
+# Stats: 메뉴막대 앱이라 '설치됨'과 '메뉴막대에 보임'이 다르다 — 설치 여부만 확인하고 최초 실행은 마지막 안내로 넘긴다.
+echo "  Stats.app: $([[ -d /Applications/Stats.app || -d "$HOME/Applications/Stats.app" ]] && echo '✓ 설치됨 (메뉴막대에 안 보이면 최초 1회 실행 필요)' || echo '❌ (수동 설치: brew install --cask stats)')"
 echo "  fvm     : $(fvm --version 2>/dev/null || echo '❌')"
 echo "  flutter : $(flutter --version 2>/dev/null | head -1 || echo '❌')"
 echo "  go      : $(go version 2>/dev/null || echo '❌')"
@@ -1801,3 +1806,5 @@ echo "  8. cocode-skills 팀 플러그인이 '❌'이면: gh auth login 후 스�
 echo "  9. flutter-mcp-toolkit을 특정 Flutter 프로젝트에서 쓰려면 해당 프로젝트에서: flutter-mcp-toolkit codegen-init (mcp_toolkit 패키지 추가, 앱별 1회)"
 echo " 10. lefthook(Git 훅)은 레포마다 한 번씩 켜야 합니다 — lefthook.yml 이 있는 프로젝트 폴더에서: lefthook install"
 echo "     ↳ 이걸 해야 커밋·푸시할 때 포맷/린트/테스트가 자동으로 돌아갑니다 (설정 파일이 없는 레포에서는 할 일 없음)"
+echo " 11. Stats(시스템 모니터)는 최초 1회 직접 실행해야 메뉴막대에 나타납니다: open -a Stats"
+echo "     ↳ 실행 후 Stats 설정에서 '로그인 시 시작'을 켜 두면 다음부터는 자동으로 떠 있습니다"
