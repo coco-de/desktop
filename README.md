@@ -6,10 +6,12 @@
 [![Script](https://img.shields.io/badge/script-Bash-4EAA25?logo=gnubash&logoColor=white)](./mac-setup.sh)
 [![Package Manager](https://img.shields.io/badge/package_manager-Homebrew-FBB040?logo=homebrew&logoColor=white)](https://brew.sh)
 
-이 저장소에는 딱 두 개의 파일만 있습니다.
+이 저장소에서 보실 파일은 딱 두 개입니다.
 
 - [`mac-setup.sh`](./mac-setup.sh) — 개발환경을 자동으로 설치해주는 스크립트
 - `README.md` — 지금 보고 계신 이 문서
+
+(그 외에 팀 공통 터미널 설정 파일 `.zshrc`·`.p10k.zsh`가 함께 들어 있습니다. 스크립트가 설치 과정에서 알아서 가져다 쓰므로 직접 여실 일은 없습니다.)
 
 ## 목차
 
@@ -46,19 +48,36 @@ co:code는 엔지니어뿐 아니라 디자이너, PM도 하나의 엔지니어�
 
 ### 준비물
 
-- macOS가 설치된 맥북
-- Homebrew 설치 완료 — 없다면 [brew.sh](https://brew.sh) 안내를 따라 먼저 설치해주세요
-- Xcode 설치 완료 (App Store에서 설치) — Command Line Tools만 설치돼 있어 `xcode-select`가 그쪽을 가리키는 상태여도 괜찮습니다. 스크립트가 실행 중 자동으로 Xcode.app으로 전환해 드립니다(아래 [무엇이 설치되나요](#whats-installed) 참고)
+- **macOS가 설치된 맥북. 이게 전부입니다.**
 
-> 💡 **Homebrew가 뭔가요?** macOS에서 개발 도구들을 설치·관리해주는 프로그램입니다. 이 스크립트가 설치하는 대부분의 도구는 Homebrew를 통해 내려받아집니다. `mac-setup.sh`는 Homebrew가 없으면 바로 종료되고 안내 메시지를 보여주니, 먼저 설치해주세요.
+개발 도구를 미리 깔아둘 필요가 없습니다. 예전에는 Homebrew를 먼저 설치해야 했지만, 지금은 **스크립트가 없으면 알아서 설치**합니다(0단계). Xcode도 마찬가지로 없으면 자동 설치를 시도합니다(App Store 로그인 필요 · 아래 [무엇이 설치되나요](#whats-installed) 참고).
+
+> 💡 **Homebrew가 뭔가요?** macOS에서 개발 도구들을 설치·관리해주는 프로그램입니다. 이 스크립트가 설치하는 대부분의 도구는 Homebrew를 통해 내려받아집니다. 없으면 **공식 설치 스크립트로 자동 설치**되므로 따로 준비하실 필요는 없고, 설치 중에 **맥 로그인(관리자) 암호를 한 번 물어볼 수 있으니** 입력해주세요.
 
 ### 실행
+
+터미널을 열고 아래 한 줄을 붙여넣은 뒤 Enter를 누르세요.
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coco-de/co-mac/main/mac-setup.sh)"
+```
+
+레포를 내려받거나 Homebrew를 미리 설치할 필요 없이, 이 한 줄로 전부 진행됩니다.
+
+<details>
+<summary>레포를 직접 내려받아 실행하고 싶다면 (스크립트를 먼저 읽어보고 싶은 분)</summary>
+
+<br>
 
 ```bash
 git clone https://github.com/coco-de/co-mac.git
 cd co-mac
 chmod +x mac-setup.sh && ./mac-setup.sh
 ```
+
+결과는 위 한 줄 실행과 같습니다. 다만 **갓 세팅한 맥에서는 `git clone` 단계에서 macOS가 "명령어 라인 개발자 도구를 설치하겠습니까?" 창을 띄울 수 있어**, 그 설치가 끝날 때까지 기다려야 합니다. 위의 한 줄 실행은 그 도구까지 스크립트가 알아서 설치하므로 기다릴 일이 없습니다.
+
+</details>
 
 이게 전부입니다. 이후로는 화면에 뜨는 진행 상황(`▶ 단계 이름`)을 지켜보시면 됩니다. 도구별로 이미 설치되어 있으면 `✓`, 새로 설치하면 진행 로그, 일부가 실패해도 `⚠` 표시와 함께 건너뛰고 계속 진행됩니다. 실행 초반에 **커밋에 사용할 회사 이메일**을 한 번 물어보니 입력해주세요 (이미 설정된 맥이라면 묻지 않습니다).
 
@@ -83,9 +102,9 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 
 <br>
 
-예전 맥의 터미널 테마·설정을 그대로 옮겨오고 싶다면, 그 맥에서 `~/.zshrc`, `~/.p10k.zsh` 두 파일을 **이 스크립트와 같은 폴더**에 복사해 둔 뒤 실행하세요. 스크립트가 이 파일들을 감지하면 그대로 복사해서 씁니다.
+기본적으로는 **팀 공통 터미널 설정**(`.zshrc`·`.p10k.zsh`)이 자동으로 적용됩니다. 저장소에 함께 들어 있고, [빠른 시작](#quickstart)의 한 줄 실행으로 돌리면 스크립트가 저장소에서 알아서 내려받아 씁니다. 따로 하실 일은 없습니다.
 
-이 두 파일은 저장소에 들어있지 않습니다. 각자의 개인 설정 파일이라 필요한 분만 직접 준비하시면 됩니다. 파일이 없으면 스크립트가 기본 설정을 새로 만들어 줍니다.
+예전 맥의 터미널 테마·설정을 **대신** 쓰고 싶다면, 그 맥에서 `~/.zshrc`, `~/.p10k.zsh` 두 파일을 **이 스크립트와 같은 폴더**에 복사해 둔 뒤 실행하세요. 스크립트는 옆에 있는 파일을 우선하므로, 팀 설정 대신 여러분 것이 그대로 적용됩니다(이 경우 저장소에서 따로 내려받지 않습니다).
 
 ⚠️ 예전 `.zshrc`를 가져오실 경우 [보안 안내](#is-it-safe)를 꼭 확인해주세요.
 
@@ -100,6 +119,18 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 `mac-setup.sh` 하나로 co:code 팀 전체 노트북에 실제로 세팅되는 앱·CLI·언어 런타임을 한눈에 모았습니다. 아이콘은 대부분 [Simple Icons](https://simpleicons.org)에서 받아 이 저장소의 [`assets/icons/`](./assets/icons)에 함께 보관하고 있습니다. Simple Icons에 없는 앱(Slack·Dia·Orca·Lumide·Stats)은 실제 설치되는 앱의 아이콘을 그대로 추출해 사용했습니다. 공식 브랜드 아이콘이 아직 없는 도구는 이름만 표기했습니다.
 
 <br>
+
+**🍺 패키지 관리자** — 아래 도구 대부분이 이걸 통해 설치됩니다. 없으면 스크립트가 가장 먼저 자동으로 설치합니다.
+
+<table>
+<tr>
+<td align="center" width="100"><img src="assets/icons/homebrew.svg" width="36" height="36" alt="Homebrew"><br><sub><b>Homebrew</b></sub></td>
+<td align="center" width="100"></td>
+<td align="center" width="100"></td>
+<td align="center" width="100"></td>
+<td align="center" width="100"></td>
+</tr>
+</table>
 
 **🖥 GUI 앱**
 
@@ -209,6 +240,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 
 | 분류 | 항목 |
 |---|---|
+| 🍺 Homebrew | 맥용 패키지 관리자. 없으면 [공식 설치 스크립트](https://brew.sh)로 자동 설치하고 이어서 진행합니다(0단계 · 관리자 암호를 한 번 물어볼 수 있음). Homebrew가 필요로 하는 **Xcode Command Line Tools**도 이때 함께 설치됩니다. 이미 있으면 건너뜁니다 |
 | 🖥 GUI 앱 | Android Studio, Slack, Figma, Claude Desktop, Google Chrome, Dia, 1Password, Tailscale, Orca, Lumide, Zed, Rive, Stats(메뉴막대 시스템 모니터 — 최초 1회 직접 실행 필요) |
 | 🍎 Xcode 개발자 도구 | Xcode.app이 없으면 `mas`(App Store CLI)로 자동 설치 시도(App Store 로그인 필요 · 수십 GB라 오래 걸릴 수 있음). Command Line Tools만 활성화돼 있으면(`xcodebuild` "requires Xcode" 에러 원인) `xcode-select`를 Xcode.app으로 자동 전환하고 최초 실행 동의(`xcodebuild -runFirstLaunch`)까지 진행 (sudo 암호 입력 필요) |
 | 🧩 브라우저 확장 프로그램 | Chrome·Dia에 [ZenHub for GitHub](https://chromewebstore.google.com/detail/zenhub-for-github/ogcgkffhplmphkaahpmffcafajaocjbd) 확장을 자동 등록(External Extensions 드롭인 방식, sudo 암호 입력 필요) — Dia는 동작이 보장되지 않아 실패해도 경고만 남기고 계속 진행 |
@@ -232,6 +264,12 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 <summary>도구별 상세 설명 펼쳐보기 (하나하나 뭔지 궁금하신 분만)</summary>
 
 <br>
+
+**패키지 관리자**
+
+| | 도구 | 용도 |
+|---|---|---|
+| <img src="assets/icons/homebrew.svg" width="20" height="20"> | Homebrew (`brew`) | macOS용 앱·도구 설치 관리자. 아래 도구 대부분이 `brew`로 설치됩니다. 없으면 스크립트가 0단계에서 공식 설치 스크립트로 자동 설치하며(관리자 암호를 한 번 물어볼 수 있음), Homebrew가 필요로 하는 **Xcode Command Line Tools**도 이때 함께 설치됩니다 |
 
 **GUI 앱 (Homebrew Cask)**
 
@@ -338,6 +376,7 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 스크립트 맨 마지막에 아래 항목들의 버전을 자동으로 출력해서, 잘 설치됐는지 바로 확인할 수 있게 해줍니다.
 
 ```
+brew    : ...
 Xcode.app: ...
 xcode-select: ...
 ZenHub 확장(Chrome/Dia): ...
@@ -522,11 +561,18 @@ Orca 전체 디스크 접근: ...
 - **이미 설치된 건 다시 건드리지 않습니다.** 앱/도구별로 설치 여부를 먼저 확인하고, 이미 있으면 `✓ 이미 설치됨`을 출력하고 건너뜁니다. 스크립트를 여러 번 실행해도 문제없습니다.
 - **일부가 실패해도 전체가 멈추지 않습니다.** 개별 항목 설치가 실패하면 `⚠` 표시와 함께 건너뛰고 나머지를 계속 진행합니다.
 - **설치 중 y/n 질문에 자동으로 답합니다.** (`NONINTERACTIVE=1`, `CI=true` 설정) 터미널 앞에서 계속 기다리지 않아도 되도록 하기 위함입니다. 단 세 곳, **Git 이메일 입력(3.2)** · **ZenHub 토큰 주입(8.5)** · **Orca 권한 안내(9)** 에서만 잠깐 멈춰 입력을 기다립니다 — 각각 `s`로 건너뛸 수 있고, 이미 설정된 맥이라면 묻지 않습니다. (Jira 토큰 주입(8.6)·Slang GPT 키 주입(8.7)·DCM 키 주입(8.8)·Slack 토큰 주입(8.9)은 ZenHub에서 켠 op 설정을 그대로 재사용하므로 따로 멈추지 않습니다.) (터미널이 아닌 파이프 실행이면 멈추지 않고 건너뜁니다.)
+- **Homebrew 자동 설치(0단계)에서 관리자 암호를 한 번 물어볼 수 있습니다.** Homebrew는 이미 있으면 건드리지 않고, 없을 때만 [공식 설치 스크립트](https://brew.sh)를 그대로 실행합니다(비공식 경로를 쓰지 않습니다). **여기만은 실패하면 `⚠` 후 계속이 아니라 스크립트가 멈춥니다** — 이후 단계 대부분이 Homebrew로 설치되기 때문에, 계속 진행하면 전부 실패해서 원인을 알아보기 어려워지기 때문입니다.
 - **Xcode 전환(1.5단계)에서 sudo 암호를 한 번 물어볼 수 있습니다.** `xcode-select`가 Command Line Tools를 가리키고 있으면 Xcode.app으로 전환하는데, 이 작업엔 관리자 암호가 필요합니다. 이미 Xcode.app을 가리키고 있다면 묻지 않고 건너뜁니다. (터미널이 아닌 파이프 실행이면 시도하지 않고 건너뜁니다.)
 - **Terminal.app 폰트 자동 적용(7.5단계)은 macOS 기본 Terminal.app에서 실행 중일 때만 동작합니다.** 지금 실행 중인 터미널이 Terminal.app이 아니면(예: iTerm2) 건드리지 않고 건너뛰므로, 다른 터미널 앱에서 예상치 못한 창이 뜨는 일은 없습니다.
 - **기존 `~/.zshrc`는 자동으로 백업됩니다.** 새 설정을 쓰기 전에 `~/.zshrc.backup.년월일시분초` 형식으로 복사해 둡니다. 마음에 안 들면 이 백업 파일로 언제든 되돌릴 수 있습니다.
 - **권한은 스크립트가 대신 켜지 않습니다.** Orca의 [전체 디스크 접근 권한(9단계)](#orca-full-disk-access)은 macOS가 SIP로 잠가 두어 프로그램이 켤 수 없고, 스크립트는 **상태 확인 · 설정 창 열기 · 안내**까지만 합니다. 마지막 토글은 반드시 사용자가 직접 누르며, 켜지 않아도(=`s`로 건너뛰어도) 나머지 설치는 그대로 진행됩니다. 다만 이 권한은 홈 폴더 전체와 다른 앱의 데이터까지 읽을 수 있는 **강한 권한**이니, 무엇을 허용하는지 이해한 뒤 켜 주세요.
-- **코드가 전부 공개돼 있습니다.** 이 저장소의 [`mac-setup.sh`](./mac-setup.sh) 파일이 스크립트의 전부이며, 실행 전에 직접 열어서 읽어보실 수 있습니다.
+- **코드가 전부 공개돼 있습니다.** 이 저장소의 [`mac-setup.sh`](./mac-setup.sh) 파일이 스크립트의 전부이며, 실행 전에 직접 열어서 읽어보실 수 있습니다. [빠른 시작](#quickstart)의 한 줄 실행은 이 저장소의 파일을 그대로 받아 실행하는 것이라 내용이 같지만, **읽어보고 실행하고 싶다면** 같은 섹션의 `git clone` 방식을 쓰시거나 아래처럼 먼저 내려받아 열어보셔도 됩니다.
+
+  ```bash
+  curl -fsSL https://raw.githubusercontent.com/coco-de/co-mac/main/mac-setup.sh -o mac-setup.sh
+  open -e mac-setup.sh    # 내용을 확인한 뒤
+  bash mac-setup.sh
+  ```
 
 <details>
 <summary>기존 .zshrc를 가져올 때 자동으로 적용되는 호환성 패치</summary>
@@ -578,13 +624,17 @@ macOS에 기본으로 들어있는 앱입니다. `Cmd + Space`를 눌러 Spotlig
 
 <br>
 
-Homebrew가 설치되어 있지 않거나, 설치는 됐지만 터미널이 아직 경로를 인식하지 못하는 상태입니다.
+**스크립트를 실행하기 전이라면 그냥 두셔도 됩니다.** Homebrew가 없으면 스크립트가 0단계에서 자동으로 설치해 주기 때문에, 미리 깔아둘 필요가 없습니다.
 
-1. [brew.sh](https://brew.sh)에서 안내하는 방법으로 Homebrew를 설치하세요.
-2. 설치가 끝나면 안내 메시지에 나온 대로 터미널을 완전히 껐다가 다시 켜세요.
-3. `mac-setup.sh`를 다시 실행하세요.
+**스크립트를 다 돌린 뒤에도 이 메시지가 뜬다면**, 설치는 됐지만 지금 열려 있는 터미널이 아직 경로를 인식하지 못하는 상태입니다. 터미널을 완전히 껐다가 다시 켜거나, `source ~/.zshrc`를 실행해 보세요.
 
-스크립트도 Homebrew가 없으면 `❌ Homebrew가 없습니다. 먼저 설치하세요: https://brew.sh` 라는 메시지를 보여주고 스스로 멈추도록 되어 있습니다.
+**스크립트 실행 중에 아래 메시지가 뜨면서 멈췄다면**, 자동 설치가 실제로 실패한 경우입니다.
+
+```
+❌ Homebrew 자동 설치에 실패했습니다.
+```
+
+이후 단계 대부분이 Homebrew를 필요로 해서 일부러 멈추도록 되어 있습니다. 화면에 함께 뜨는 원인 메시지를 확인하시고(대개 관리자 암호를 잘못 입력했거나 네트워크가 끊긴 경우입니다), [brew.sh](https://brew.sh) 안내대로 직접 설치한 뒤 스크립트를 다시 실행해 주세요.
 
 </details>
 

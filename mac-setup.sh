@@ -1,13 +1,19 @@
 #!/bin/bash
 # ============================================================
 # 맥 초기 개발환경 세팅 스크립트
-# 전제: Homebrew, Xcode 설치 완료
-# 실행: chmod +x mac-setup.sh && ./mac-setup.sh
+# 전제: 없음 — Homebrew는 이 스크립트가 자동으로 설치한다(0단계).
+#       Xcode.app도 1.5단계에서 자동 설치를 시도한다(App Store 로그인 필요).
+#
+# 실행 (레포를 clone한 경우): chmod +x mac-setup.sh && ./mac-setup.sh
+# 실행 (clone 없이 한 줄로):
+#   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coco-de/co-mac/main/mac-setup.sh)"
+#   └ 이 경우 스크립트 파일 하나만 내려오므로, 팀 셸 설정(.zshrc·.p10k.zsh)은
+#     0.5단계에서 같은 레포에서 따로 내려받는다.
 #   └ 이미 세팅한 맥에서 토큰(환경변수)만 다시 주입하려면: ./mac-setup.sh --env-only
 #
 # 기존 맥의 테마/설정을 그대로 가져오려면, 기존 맥에서
 #   ~/.zshrc, ~/.p10k.zsh
-# 를 이 스크립트와 같은 폴더에 복사해 두세요. (있으면 그대로 사용)
+# 를 이 스크립트와 같은 폴더에 복사해 두세요. (있으면 레포 것 대신 그대로 사용)
 # ============================================================
 set -e
 
@@ -15,7 +21,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # ------------------------------------------------------------
 # 실행 옵션 파싱
-#   (옵션 없음)  : 전체 설치 (1~10단계)
+#   (옵션 없음)  : 전체 설치 (0~10단계)
 #   --env-only   : 1Password(op)에서 팀 공용 토큰만 다시 읽어 ~/.zshrc에 주입 (8.5~8.9단계만)
 #   --perms-only : Orca 전체 디스크 접근 권한 점검·안내만 다시 실행 (9단계만)
 #   -h, --help   : 사용법 출력
@@ -26,7 +32,8 @@ usage() {
   cat <<'USAGE'
 사용법: ./mac-setup.sh [옵션]
 
-  (옵션 없음)   co:code 팀 표준 개발환경 전체 설치 (1~10단계)
+  (옵션 없음)   co:code 팀 표준 개발환경 전체 설치 (0~10단계)
+                Homebrew가 없으면 0단계에서 자동으로 설치합니다.
   --env-only    1Password(op)에서 팀 공용 토큰(ZENHUB_API_TOKEN·JIRA_API_TOKEN·
                 SLANG_GPT_API_KEY·DCM_EMAIL·DCM_CI_KEY·SLACK_TEAM_ID·
                 SLACK_BOT_TOKEN)만 다시 읽어 ~/.zshrc에
@@ -62,29 +69,119 @@ if (( ENV_ONLY && PERMS_ONLY )); then
   exit 1
 fi
 
-# Homebrew 경로 (Apple Silicon / Intel 자동 감지)
-if [[ -x /opt/homebrew/bin/brew ]]; then
-  eval "$(/opt/homebrew/bin/brew shellenv)"
-elif [[ -x /usr/local/bin/brew ]]; then
-  eval "$(/usr/local/bin/brew shellenv)"
+log()  { echo ""; echo "▶ $1"; }
+have() { command -v "$1" >/dev/null 2>&1; }
+
+# 모든 y/n 확인 프롬프트 자동 통과
+#   아래 0단계(Homebrew 자동 설치)보다 반드시 먼저 내보내야 한다 — Homebrew 공식 설치
+#   스크립트가 이 값을 보고 "계속하려면 Enter를 누르세요" 대기를 생략하기 때문이다.
+export NONINTERACTIVE=1          # Homebrew 비대화 모드
+export CI=true                   # 많은 CLI가 CI 모드에서 프롬프트 생략
+
+# ------------------------------------------------------------
+# 0. Homebrew (없으면 자동 설치)
+#
+#   [이 단계가 하는 일 — 비개발자용 설명]
+#   Homebrew는 맥에서 개발 도구를 내려받아 설치해주는 프로그램이다. 이 스크립트가 까는
+#   도구 대부분이 Homebrew를 거쳐 설치된다. 예전에는 팀원이 brew.sh 안내를 보고 직접
+#   설치한 뒤에야 이 스크립트를 돌릴 수 있었지만, 이제는 없으면 여기서 알아서 깔고
+#   그대로 계속 진행한다. 준비물 없이 이 스크립트 하나로 끝내기 위한 단계다.
+#
+#   [왜 공식 설치 스크립트를 쓰나]
+#   Homebrew는 자기 자신을 brew로 설치할 수 없다. 공식 설치 스크립트가 유일한 표준
+#   경로이며, Homebrew가 필요로 하는 Xcode Command Line Tools(컴파일러 등 기본 개발
+#   도구)도 이 스크립트가 함께 설치해준다. 설치에 관리자 권한이 필요해서, 실행 중
+#   맥 로그인 암호를 한 번 물어볼 수 있다.
+#
+#   [설치 위치]
+#   칩에 따라 다르다 — Apple Silicon은 /opt/homebrew, Intel은 /usr/local.
+#   설치 직후에는 아직 PATH에 반영돼 있지 않으므로 shellenv를 즉시 적용해, 이어지는
+#   1단계부터 brew를 바로 쓸 수 있게 한다. (~/.zshrc 영구 반영은 8단계에서 처리)
+# ------------------------------------------------------------
+
+# Homebrew 경로 잡기 (Apple Silicon / Intel 자동 감지) — 없으면 1을 반환한다.
+# 설치 전/후 두 번 호출하므로 함수로 뺐다.
+brew_shellenv() {
+  if [[ -x /opt/homebrew/bin/brew ]]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  elif [[ -x /usr/local/bin/brew ]]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+  else
+    return 1
+  fi
+}
+
+if brew_shellenv; then
+  :   # 이미 설치돼 있으면 경로만 잡고 넘어간다 (멱등)
 elif (( ENV_ONLY || PERMS_ONLY )); then
   # --env-only는 op만, --perms-only는 macOS 기본 명령(sqlite3·open)만 쓰므로
   # 둘 다 아무것도 설치하지 않는다 — Homebrew가 없어도 계속 진행한다
   :
 else
-  echo "❌ Homebrew가 없습니다. 먼저 설치하세요: https://brew.sh"
-  exit 1
+  log "0. Homebrew 설치"
+  echo "  · Homebrew가 없습니다 → 공식 설치 스크립트로 자동 설치합니다"
+  echo "  · 설치 중 맥 로그인(관리자) 암호를 한 번 물어볼 수 있습니다"
+  echo "  · Xcode Command Line Tools가 없다면 함께 설치되며, 몇 분 걸릴 수 있습니다"
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" \
+    || echo "  ⚠ 설치 스크립트가 오류로 끝났습니다 → 실제 설치 여부를 아래에서 다시 확인합니다"
+
+  # 설치기가 오류를 뱉어도 실제로는 깔렸을 수 있어(마지막 정리 단계만 실패하는 경우 등)
+  # 종료 코드가 아니라 brew 실행 파일이 생겼는지로 최종 판정한다.
+  if brew_shellenv; then
+    echo "  ✓ Homebrew 설치 완료 ($(brew --prefix))"
+  else
+    # 여기만은 ⚠ 후 계속이 아니라 중단한다 — 이후 단계 대부분이 brew로 설치되므로,
+    # 계속 진행해봐야 전부 실패하고 무엇이 원인인지만 알아보기 어려워진다.
+    echo ""
+    echo "❌ Homebrew 자동 설치에 실패했습니다."
+    echo "   이후 단계 대부분이 Homebrew를 필요로 해서 여기서 멈춥니다."
+    echo "   https://brew.sh 안내대로 직접 설치하신 뒤 이 스크립트를 다시 실행해 주세요."
+    exit 1
+  fi
 fi
 
-log()  { echo ""; echo "▶ $1"; }
-have() { command -v "$1" >/dev/null 2>&1; }
+# ------------------------------------------------------------
+# 0.5. 팀 셸 설정(.zshrc · .p10k.zsh) 확보
+#
+#   [왜 필요한가]
+#   8단계는 이 스크립트 옆에 있는 .zshrc / .p10k.zsh를 그대로 복사해 팀 공통 셸 설정과
+#   터미널 프롬프트 테마를 맞춘다. 그런데 레포를 clone하지 않고 아래처럼 한 줄로 실행하면
+#     /bin/bash -c "$(curl -fsSL .../mac-setup.sh)"
+#   스크립트 파일 하나만 내려오기 때문에 그 두 파일이 옆에 없다. 그대로 두면 8단계가
+#   '기본 설정 생성' 경로로 빠져서, 설치는 성공한 것처럼 보이지만 팀과 다른 셸 환경이
+#   만들어진다. → 옆에 없으면 같은 레포에서 직접 내려받아 팀 설정을 그대로 유지한다.
+#
+#   [둘 다 없을 때만 받는 이유]
+#   기존 맥에서 쓰던 .zshrc만 옆에 복사해 두는 사용법(파일 상단 안내)을 존중하기 위함이다.
+#   하나라도 옆에 있으면 사용자가 의도적으로 가져온 것으로 보고 건드리지 않는다.
+#
+#   내려받기에 실패해도 중단하지 않는다 — 8단계의 기본 설정 생성 경로로 자연히 넘어간다.
+# ------------------------------------------------------------
+REPO_RAW_BASE="https://raw.githubusercontent.com/coco-de/co-mac/main"
+# 8단계가 참조할 dotfile 위치. 기본은 스크립트 옆이고, 원라이너 실행이면 임시 폴더로 바뀐다.
+DOTFILE_DIR="$SCRIPT_DIR"
 
-# 모든 y/n 확인 프롬프트 자동 통과
-export NONINTERACTIVE=1          # Homebrew 비대화 모드
-export CI=true                   # 많은 CLI가 CI 모드에서 프롬프트 생략
+if (( ! ENV_ONLY && ! PERMS_ONLY )) \
+   && [[ ! -f "$SCRIPT_DIR/.zshrc" && ! -f "$SCRIPT_DIR/.p10k.zsh" ]]; then
+  log "0.5. 팀 셸 설정(.zshrc · .p10k.zsh) 내려받기"
+  echo "  · 스크립트 옆에 설정 파일이 없습니다 (clone 없이 한 줄로 실행한 경우) → 레포에서 직접 받습니다"
+  DOTFILE_DIR="$(mktemp -d)"
+  for dotfile in .zshrc .p10k.zsh; do
+    if curl -fsSL "$REPO_RAW_BASE/$dotfile" -o "$DOTFILE_DIR/$dotfile"; then
+      echo "  ✓ $dotfile 내려받음"
+    else
+      rm -f "$DOTFILE_DIR/$dotfile"
+      echo "  ⚠ $dotfile 내려받기 실패 → 건너뜀 (8단계에서 기본 설정으로 대체)"
+    fi
+  done
+fi
 
 # ============================================================
 # 실행 단계 맵 (섹션 번호는 삽입 이력상 비순차 — 아래가 실제 실행 순서)
+#   0.   Homebrew (없으면 공식 설치 스크립트로 자동 설치 · Xcode Command Line Tools 동반
+#        설치 · 관리자 암호를 물어볼 수 있음 · 설치 실패 시에만 중단)
+#   0.5. 팀 셸 설정(.zshrc·.p10k.zsh) 확보 — 스크립트 옆에 둘 다 없으면 레포에서 내려받기
+#        (clone 없이 curl 한 줄로 실행한 경우 · 실패해도 8단계 기본 설정으로 계속)
 #   1.   GUI 앱 (brew cask: 개발툴·브라우저·1Password·op 등)
 #   1.5. Xcode 설치 확인/자동 설치(mas, App Store 로그인 필요) + 개발자 도구 전환
 #        (CLT만 활성화돼 있으면 Xcode.app으로 xcode-select 전환 + 최초 실행 동의,
@@ -1052,12 +1149,13 @@ fi
 # ------------------------------------------------------------
 # 8. ~/.zshrc / ~/.p10k.zsh 반영
 #    - 스크립트 옆에 기존 맥의 .zshrc/.p10k.zsh가 있으면 그대로 복사
-#    - 없으면 아래 기본 설정 생성
+#    - 옆에 둘 다 없었다면 0.5단계가 레포에서 받아둔 것을 복사 (DOTFILE_DIR가 그쪽을 가리킴)
+#    - 그것도 없으면 아래 기본 설정 생성
 # ------------------------------------------------------------
 log "~/.zshrc 설정"
 
-if [[ -f "$SCRIPT_DIR/.p10k.zsh" ]]; then
-  cp "$SCRIPT_DIR/.p10k.zsh" "$HOME/.p10k.zsh"
+if [[ -f "$DOTFILE_DIR/.p10k.zsh" ]]; then
+  cp "$DOTFILE_DIR/.p10k.zsh" "$HOME/.p10k.zsh"
   echo "  ✓ 기존 .p10k.zsh 복사 완료"
 elif [[ ! -f "$HOME/.p10k.zsh" ]]; then
   # 기존 맥에서 .p10k.zsh를 가져오지 않은 새 맥: powerlevel10k 기본 설정을 복사한다.
@@ -1071,9 +1169,9 @@ elif [[ ! -f "$HOME/.p10k.zsh" ]]; then
   fi
 fi
 
-if [[ -f "$SCRIPT_DIR/.zshrc" ]]; then
+if [[ -f "$DOTFILE_DIR/.zshrc" ]]; then
   [[ -f "$HOME/.zshrc" ]] && cp "$HOME/.zshrc" "$HOME/.zshrc.backup.$(date +%Y%m%d%H%M%S)"
-  cp "$SCRIPT_DIR/.zshrc" "$HOME/.zshrc"
+  cp "$DOTFILE_DIR/.zshrc" "$HOME/.zshrc"
   # --- 새 맥 호환 패치 ---
   # JAVA_HOME: 버전 하드코딩 경로 → 설치돼 있을 때만 잡도록 교체
   #   openjdk@17 이 아직 안 깔린 맥에서 셸을 열 때마다 에러가 찍히지 않게 존재 확인을 붙인다.
@@ -1684,6 +1782,7 @@ run_orca_permission_step
 # 10. 검증
 # ------------------------------------------------------------
 log "설치 검증"
+echo "  brew    : $(brew --version 2>/dev/null | head -1 || echo '❌ (수동 설치: https://brew.sh)')"
 echo "  Xcode.app: $([[ -d /Applications/Xcode.app ]] && echo '✓ 설치됨' || echo '❌ (App Store에서 설치: https://apps.apple.com/app/xcode/id497799835, 또는 mas 로그인 후 재실행)')"
 echo "  xcode-select: $(xcode-select -p 2>/dev/null || echo '❌ (Xcode.app 설치 필요 — App Store)')"
 # ZenHub for GitHub 확장(External Extensions 드롭인) 등록 여부 — Chrome은 공식 지원,
