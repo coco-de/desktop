@@ -92,7 +92,7 @@ export CI=true                   # 많은 CLI가 CI 모드에서 프롬프트 �
 #   1.6. Chrome/Dia 확장 프로그램 자동 추가 (ZenHub for GitHub, External Extensions
 #        드롭인 방식, sudo 필요 · TTY에서만 시도 · Dia는 동작 미보장이라 실패해도 경고 후 계속)
 #   2.   Claude Code CLI
-#   2.5. Claude MCP (figma 플러그인 + zenhub·jira(mcp-atlassian)·slack 토큰 등록 + maestro·flutter-mcp-toolkit)
+#   2.5. Claude MCP (figma 플러그인 + zenhub·jira(mcp-atlassian)·slack 토큰 등록 + maestro)
 #        └ 설정 기록/자체완결 설치라 런타임(node·dart)보다 앞서도 무해.
 #          런타임은 새 세션에서 MCP 서버가 실제 뜰 때만 필요 (그땐 스크립트 완료 후).
 #   2.6. 다른 AI 코딩 CLI (codex=OpenAI(brew cask) · agy=Google Antigravity(공식 스크립트→~/.local/bin))
@@ -479,13 +479,12 @@ else
 fi
 
 # ------------------------------------------------------------
-# 2.5. Claude Code MCP 서버 / 플러그인 (jira=atlassian, figma, zenhub, slack, maestro, flutter-mcp-toolkit)
+# 2.5. Claude Code MCP 서버 / 플러그인 (jira=atlassian, figma, zenhub, slack, maestro)
 #   MCP는 3계층으로 설치된다:
-#     ① 플러그인 계층  : claude plugin install (figma, flutter-mcp-toolkit) — 아래에서 자동
-#     ② 로컬 바이너리   : maestro CLI·flutter-mcp-toolkit CLI(아래), marionette_mcp·dart mcp-server(4단계에서 설치)
+#     ① 플러그인 계층  : claude plugin install (figma) — 아래에서 자동
+#     ② 로컬 바이너리   : maestro CLI(아래), marionette_mcp·dart mcp-server(4단계에서 설치)
 #     ③ 인증 계층      : figma OAuth는 최초 1회 `/mcp`에서 수동 로그인 (자동화 불가),
-#                        zenhub·jira·slack은 ~/.zshrc의 팀 공용 토큰(런타임 확장)으로 인증 — 토큰 값은 커밋 금지,
-#                        flutter-mcp-toolkit은 별도 인증 불필요
+#                        zenhub·jira·slack은 ~/.zshrc의 팀 공용 토큰(런타임 확장)으로 인증 — 토큰 값은 커밋 금지
 #   ※ jira(atlassian)는 과거 OAuth 플러그인이었으나, 매번 `/mcp` 로그인하는 수고를 없애려고 팀 공용
 #     토큰 방식으로 전환했다. 공식 원격 MCP(mcp.atlassian.com, Rovo)는 조직 Rovo 엔타이틀먼트로 막혀,
 #     Jira REST API에 토큰으로 직접 붙는 오픈소스 MCP(sooperset/mcp-atlassian, Docker)로 붙인다.
@@ -494,7 +493,7 @@ fi
 #   ※ marionette·dart·figma(serve) MCP 정의는 사설 cocode-skills 플러그인 번들에서 제공됨
 #     (coco-de/skills의 install.sh — 아래 3.5단계에서 설치)
 # ------------------------------------------------------------
-log "Claude Code MCP 설치 (figma 플러그인 + zenhub·jira·slack 토큰 등록 + maestro CLI + flutter-mcp-toolkit)"
+log "Claude Code MCP 설치 (figma 플러그인 + zenhub·jira·slack 토큰 등록 + maestro CLI)"
 
 if have claude; then
   # 공식 마켓플레이스 등록 (이미 있으면 무시)
@@ -585,29 +584,31 @@ else
 fi
 # marionette_mcp / dart mcp-server 는 4단계(Dart 글로벌 패키지 / FVM)에서 설치됨
 
-# flutter-mcp-toolkit (mcp_flutter): 실행 중인 Flutter 앱을 AI 에이전트가 검사/조작하는 MCP 서버
-#   ① 로컬 바이너리(CLI): 공식 install.sh
-#   ② Claude Code 플러그인: 마켓플레이스 등록 + 유저 스코프 설치 (jira/figma와 동일 패턴)
-#   ※ 앱별 연동(`flutter-mcp-toolkit codegen-init`으로 mcp_toolkit 패키지 추가)은 각 Flutter 프로젝트에서 별도 진행 (이 스크립트 범위 밖)
-if have flutter-mcp-toolkit; then
-  echo "  ✓ flutter-mcp-toolkit 이미 설치됨"
-else
-  curl -fsSL https://raw.githubusercontent.com/Arenukvern/mcp_flutter/main/install.sh | bash \
-    && echo "  ✓ flutter-mcp-toolkit 설치 완료" \
-    || echo "  ⚠ flutter-mcp-toolkit 설치 실패 → 건너뜀 (https://github.com/Arenukvern/mcp_flutter 수동 설치)"
-fi
-
+# flutter-mcp-toolkit (mcp_flutter): 팀 표준 세팅에서 제외됨 → 더 이상 설치하지 않는다.
+#   예전 버전 스크립트로 세팅한 맥에는 아직 남아 있을 수 있어, 재실행하면 아래에서 정리된다.
+#     · Claude 플러그인 / 마켓플레이스: 자동 제거 (없으면 조용히 건너뜀 — 멱등)
+#     · CLI 바이너리: 공식 제거 수단이 없어 스크립트가 임의 경로를 지우지 않는다. 위치만 알려주고 삭제는 본인 판단에 맡긴다
+#   ※ 실행 중인 Flutter 앱 조작은 marionette·dart MCP(4단계 설치)로 계속 가능하다
 if have claude; then
-  claude plugin marketplace add Arenukvern/mcp_flutter >/dev/null 2>&1 || true
-  if claude plugin list 2>/dev/null | grep -q "flutter-mcp-toolkit@Arenukvern-mcp_flutter"; then
-    echo "  ✓ flutter-mcp-toolkit 플러그인 이미 설치됨"
-  else
-    claude plugin install "flutter-mcp-toolkit@Arenukvern-mcp_flutter" --scope user >/dev/null 2>&1 \
-      && echo "  ✓ flutter-mcp-toolkit 플러그인 설치 완료" \
-      || echo "  ⚠ flutter-mcp-toolkit 플러그인 설치 실패 → 건너뜀 (claude 로그인 후 재시도)"
+  # 플러그인 id는 마켓플레이스 이름에 따라 달라져(예: @flutter-mcp-toolkit / @Arenukvern-mcp_flutter)
+  # 고정 문자열로 찾지 않고 실제 목록에서 뽑아 쓴다.
+  FMT_PLUGIN=$(claude plugin list 2>/dev/null | grep -o 'flutter-mcp-toolkit@[^ ]*' | head -1)
+  if [[ -n "$FMT_PLUGIN" ]]; then
+    claude plugin uninstall "$FMT_PLUGIN" >/dev/null 2>&1 \
+      && echo "  · 기존 flutter-mcp-toolkit 플러그인 제거 (팀 표준 세팅에서 제외됨)" \
+      || echo "  ⚠ flutter-mcp-toolkit 플러그인 제거 실패 → 수동 제거 필요(claude plugin uninstall $FMT_PLUGIN)"
   fi
-else
-  echo "  ⚠ claude CLI가 없어 flutter-mcp-toolkit 플러그인 설치를 건너뜁니다"
+  # 플러그인을 지워도 마켓플레이스 등록은 남으므로 함께 정리한다 (이 마켓플레이스는 이 도구 전용).
+  FMT_MARKET=$(claude plugin marketplace list 2>/dev/null | grep -B1 'Arenukvern/mcp_flutter' | sed -n 's/.*❯ *//p' | head -1)
+  if [[ -n "$FMT_MARKET" ]]; then
+    claude plugin marketplace remove "$FMT_MARKET" >/dev/null 2>&1 \
+      && echo "  · 기존 flutter-mcp-toolkit 마켓플레이스 등록 해제" \
+      || echo "  ⚠ flutter-mcp-toolkit 마켓플레이스 해제 실패 → 수동 제거 필요(claude plugin marketplace remove $FMT_MARKET)"
+  fi
+fi
+if have flutter-mcp-toolkit; then
+  echo "  · flutter-mcp-toolkit CLI가 아직 남아 있습니다 — 팀 표준에서 빠졌으니 필요 없으면 직접 지워 주세요:"
+  echo "      rm -f \"$(command -v flutter-mcp-toolkit)\""
 fi
 
 # ------------------------------------------------------------
@@ -1756,7 +1757,6 @@ echo "  mcp:slack: $(claude mcp list 2>/dev/null | grep -q '^slack' \
 echo "  maestro : $(maestro --version 2>/dev/null | head -1 || echo '❌')"
 echo "  marionette: $([[ -x "$PUB_CACHE/bin/marionette_mcp" ]] && echo '✓' || echo '❌')"
 echo "  mcp_server_dart: $(dart pub global list 2>/dev/null | grep -q '^mcp_server_dart ' && echo '✓' || echo '❌')"
-echo "  mcp:flutter-mcp-toolkit: $(have flutter-mcp-toolkit && echo -n '✓ CLI ' || echo -n '❌ CLI '; claude plugin list 2>/dev/null | grep -q 'flutter-mcp-toolkit@Arenukvern-mcp_flutter' && echo '+ ✓ 플러그인' || echo '+ ❌ 플러그인')"
 CS_COUNT=$(ls -d "$HOME/.claude/plugins/marketplaces/cocode-skills/plugins"/*/ 2>/dev/null | grep -c .)
 echo "  cocode-skills: $([[ "$CS_COUNT" -gt 0 ]] && echo "✓ ${CS_COUNT}개 플러그인" || echo '❌ (gh auth login 후 재실행)')"
 echo "  android : $([[ -x "$ANDROID_HOME/platform-tools/adb" ]] && echo "✓ $ANDROID_HOME" || echo '❌')"
@@ -1803,8 +1803,7 @@ echo "     ↳ 주입 후에는 반드시 '새 터미널'에서 claude를 실행
 echo "       claude 실행 시점의 환경변수에서 토큰을 읽으므로, 예전 터미널에서 띄운 claude는 토큰을 못 읽습니다."
 echo "       (jira MCP가 docker로 뜨는데, colima가 꺼져 있으면 새 .zshrc의 claude/cld 함수가 자동으로 'colima start'를 시도합니다 — 최초 콜드 스타트는 수십 초 걸릴 수 있으니 미리 켜두면 더 빠릅니다)"
 echo "  8. cocode-skills 팀 플러그인이 '❌'이면: gh auth login 후 스크립트 재실행 (사설 레포 접근에 gh 인증 필요)"
-echo "  9. flutter-mcp-toolkit을 특정 Flutter 프로젝트에서 쓰려면 해당 프로젝트에서: flutter-mcp-toolkit codegen-init (mcp_toolkit 패키지 추가, 앱별 1회)"
-echo " 10. lefthook(Git 훅)은 레포마다 한 번씩 켜야 합니다 — lefthook.yml 이 있는 프로젝트 폴더에서: lefthook install"
+echo "  9. lefthook(Git 훅)은 레포마다 한 번씩 켜야 합니다 — lefthook.yml 이 있는 프로젝트 폴더에서: lefthook install"
 echo "     ↳ 이걸 해야 커밋·푸시할 때 포맷/린트/테스트가 자동으로 돌아갑니다 (설정 파일이 없는 레포에서는 할 일 없음)"
-echo " 11. Stats(시스템 모니터)는 최초 1회 직접 실행해야 메뉴막대에 나타납니다: open -a Stats"
+echo " 10. Stats(시스템 모니터)는 최초 1회 직접 실행해야 메뉴막대에 나타납니다: open -a Stats"
 echo "     ↳ 실행 후 Stats 설정에서 '로그인 시 시작'을 켜 두면 다음부터는 자동으로 떠 있습니다"
