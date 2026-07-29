@@ -228,7 +228,7 @@ fi
 #   1.6. Chrome/Dia 확장 프로그램 자동 추가 (ZenHub for GitHub, External Extensions
 #        드롭인 방식, sudo 필요 · TTY에서만 시도 · Dia는 동작 미보장이라 실패해도 경고 후 계속)
 #   2.   Claude Code CLI
-#   2.5. Claude MCP (figma 플러그인 + zenhub·jira(mcp-atlassian)·slack 토큰 등록 + maestro)
+#   2.5. Claude MCP (figma 플러그인 + zenhub·jira(mcp-atlassian)·slack 토큰 등록)
 #        └ 설정 기록/자체완결 설치라 런타임(node·dart)보다 앞서도 무해.
 #          런타임은 새 세션에서 MCP 서버가 실제 뜰 때만 필요 (그땐 스크립트 완료 후).
 #   2.6. 다른 AI 코딩 CLI (codex=OpenAI(brew cask) · agy=Google Antigravity(공식 스크립트→~/.local/bin))
@@ -615,10 +615,10 @@ else
 fi
 
 # ------------------------------------------------------------
-# 2.5. Claude Code MCP 서버 / 플러그인 (jira=atlassian, figma, zenhub, slack, maestro)
+# 2.5. Claude Code MCP 서버 / 플러그인 (jira=atlassian, figma, zenhub, slack)
 #   MCP는 3계층으로 설치된다:
 #     ① 플러그인 계층  : claude plugin install (figma) — 아래에서 자동
-#     ② 로컬 바이너리   : maestro CLI(아래), marionette_mcp·dart mcp-server(4단계에서 설치)
+#     ② 로컬 바이너리   : marionette_mcp·dart mcp-server(4단계에서 설치)
 #     ③ 인증 계층      : figma OAuth는 최초 1회 `/mcp`에서 수동 로그인 (자동화 불가),
 #                        zenhub·jira·slack은 ~/.zshrc의 팀 공용 토큰(런타임 확장)으로 인증 — 토큰 값은 커밋 금지
 #   ※ jira(atlassian)는 과거 OAuth 플러그인이었으나, 매번 `/mcp` 로그인하는 수고를 없애려고 팀 공용
@@ -629,7 +629,7 @@ fi
 #   ※ marionette·dart·figma(serve) MCP 정의는 사설 cocode-skills 플러그인 번들에서 제공됨
 #     (coco-de/skills의 install.sh — 아래 3.5단계에서 설치)
 # ------------------------------------------------------------
-log "Claude Code MCP 설치 (figma 플러그인 + zenhub·jira·slack 토큰 등록 + maestro CLI)"
+log "Claude Code MCP 설치 (figma 플러그인 + zenhub·jira·slack 토큰 등록)"
 
 if have claude; then
   # 공식 마켓플레이스 등록 (이미 있으면 무시)
@@ -710,13 +710,14 @@ else
   echo "  ⚠ claude CLI가 없어 MCP 플러그인 설치를 건너뜁니다"
 fi
 
-# maestro CLI: pixel-loop의 maestro MCP가 요구 (미설치 시 MCP 연결 실패)
+# maestro CLI: 팀 표준 세팅에서 제외됨 → 더 이상 설치하지 않는다.
+#   ※ pixel-loop 플러그인에 딸린 maestro MCP는 이 CLI가 있어야 뜨므로, 앞으로는 연결되지 않는다.
+#     maestro가 꼭 필요한 사람은 직접 설치하면 된다(curl -Ls https://get.maestro.mobile.dev | bash).
+#   예전 버전 스크립트로 세팅한 맥에는 아직 남아 있을 수 있는데, 공식 제거 수단이 없어
+#   스크립트가 임의 경로를 지우지 않는다 — 위치만 알려주고 삭제는 본인 판단에 맡긴다.
 if have maestro; then
-  echo "  ✓ maestro 이미 설치됨"
-else
-  curl -Ls https://get.maestro.mobile.dev | bash \
-    && echo "  ✓ maestro 설치 완료" \
-    || echo "  ⚠ maestro 설치 실패 → 건너뜀 (https://maestro.mobile.dev 수동 설치)"
+  echo "  · maestro CLI가 아직 남아 있습니다 — 팀 표준에서 빠졌으니 필요 없으면 직접 지워 주세요:"
+  echo "      rm -rf \"\$HOME/.maestro\"   (그리고 ~/.zshrc의 .maestro/bin PATH 줄 삭제)"
 fi
 # marionette_mcp / dart mcp-server 는 4단계(Dart 글로벌 패키지 / FVM)에서 설치됨
 
@@ -896,7 +897,7 @@ set_translate_ko "Dia"           "Dia"           "$HOME/Library/Application Supp
 
 # ------------------------------------------------------------
 # 3.5. cocode-skills 팀 플러그인 설치 (사설 레포 coco-de/skills)
-#   marionette·dart·figma(serve)·maestro·dev-cycle·coui 등 cc-* 플러그인 번들을 설치한다.
+#   marionette·dart·figma(serve)·dev-cycle·coui 등 cc-* 플러그인 번들을 설치한다.
 #   private 레포라 `claude plugin marketplace add`가 안 되므로 팀 install.sh로 동기화.
 #   전제: gh 인증(gh auth login) + jq(위 3단계에서 설치). rsync는 macOS 기본 제공.
 # ------------------------------------------------------------
@@ -1912,7 +1913,6 @@ SLACK_BOT_TOKEN_VAL=$(grep '^export SLACK_BOT_TOKEN=' "$HOME/.zshrc" 2>/dev/null
 echo "  mcp:slack: $(claude mcp list 2>/dev/null | grep -q '^slack' \
   && echo "✓ 등록됨$([[ -n "$SLACK_TEAM_ID_VAL" && -n "$SLACK_BOT_TOKEN_VAL" ]] && echo ' + 토큰 주입됨 (새 터미널에서 적용)' || echo ' (⚠ 토큰 미주입 — 1Password 앱 CLI 통합/볼트 권한 확인 후 --env-only 재실행)')" \
   || echo '❌')"
-echo "  maestro : $(maestro --version 2>/dev/null | head -1 || echo '❌')"
 echo "  marionette: $([[ -x "$PUB_CACHE/bin/marionette_mcp" ]] && echo '✓' || echo '❌')"
 echo "  mcp_server_dart: $(dart pub global list 2>/dev/null | grep -q '^mcp_server_dart ' && echo '✓' || echo '❌')"
 CS_COUNT=$(ls -d "$HOME/.claude/plugins/marketplaces/cocode-skills/plugins"/*/ 2>/dev/null | grep -c .)
