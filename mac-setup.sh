@@ -17,7 +17,43 @@
 # ============================================================
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# ------------------------------------------------------------
+# 실행 방식 감지 — 파일로 실행했나, curl 원라이너로 실행했나
+#
+#   파일로 실행하면(./mac-setup.sh · bash mac-setup.sh) BASH_SOURCE[0]에 그 경로가 들어온다.
+#   원라이너(/bin/bash -c "$(curl ...)")로 실행하면 **빈 문자열**이 된다.
+#
+#   [왜 이걸 구분하나 — 예전에 여기서 사고가 났다]
+#   빈 문자열을 그대로 dirname에 넘기면 "."이 나오고, 결국 SCRIPT_DIR이 "지금 터미널이 열려
+#   있는 폴더"(대개 홈 폴더)로 잡힌다. 홈 폴더에는 보통 .zshrc가 이미 있으므로,
+#   8단계가 그 파일을 "스크립트 옆에 사용자가 놓아둔 설정"으로 착각해
+#   `cp ~/.zshrc ~/.zshrc`(자기 자신을 자기 위에 복사)를 시도하고,
+#   cp가 오류로 끝나면서 set -e에 걸려 스크립트 전체가 거기서 멈춰버렸다.
+#   → 원라이너에는 "옆 폴더"라는 개념 자체가 없으므로, 추측하지 말고 없다고 명시한다.
+# ------------------------------------------------------------
+if [[ -n "${BASH_SOURCE[0]:-}" ]]; then
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  STANDALONE=0
+else
+  SCRIPT_DIR=""
+  STANDALONE=1   # curl 원라이너 — 옆에 놓인 파일이 없다고 본다
+fi
+
+# dotfile을 안전하게 복사한다 — 원본과 대상이 같은 파일이면 건너뛴다.
+#   $1=원본  $2=대상  $3=사람이 읽을 이름
+#   `-ef`는 두 경로가 같은 파일(같은 장치·inode)인지 보는 검사다. 심볼릭 링크로 이어진
+#   경우까지 잡아내므로 경로 문자열 비교보다 안전하다.
+#   원본이 없으면 1을 반환한다 (호출부가 "기본 설정 생성" 경로로 넘어갈 수 있게).
+copy_dotfile() {
+  local src="$1" dst="$2" name="$3"
+  [[ -f "$src" ]] || return 1
+  if [[ "$src" -ef "$dst" ]]; then
+    echo "  ✓ $name 이미 제자리에 있음 (복사 생략)"
+  else
+    cp "$src" "$dst"
+    echo "  ✓ $name 반영 완료"
+  fi
+}
 
 # ------------------------------------------------------------
 # 실행 옵션 파싱
@@ -154,6 +190,9 @@ fi
 #   [둘 다 없을 때만 받는 이유]
 #   기존 맥에서 쓰던 .zshrc만 옆에 복사해 두는 사용법(파일 상단 안내)을 존중하기 위함이다.
 #   하나라도 옆에 있으면 사용자가 의도적으로 가져온 것으로 보고 건드리지 않는다.
+#   단, 원라이너(STANDALONE)에는 '옆 폴더'가 없으므로 이 판단을 아예 하지 않고 항상 받는다 —
+#   예전에는 이때 홈 폴더를 옆 폴더로 착각해, 사용자의 기존 ~/.zshrc를 '가져온 설정'으로
+#   오인하고 팀 설정을 건너뛰는 문제가 있었다.
 #
 #   내려받기에 실패해도 중단하지 않는다 — 8단계의 기본 설정 생성 경로로 자연히 넘어간다.
 # ------------------------------------------------------------
@@ -162,7 +201,7 @@ REPO_RAW_BASE="https://raw.githubusercontent.com/coco-de/co-mac/main"
 DOTFILE_DIR="$SCRIPT_DIR"
 
 if (( ! ENV_ONLY && ! PERMS_ONLY )) \
-   && [[ ! -f "$SCRIPT_DIR/.zshrc" && ! -f "$SCRIPT_DIR/.p10k.zsh" ]]; then
+   && { (( STANDALONE )) || [[ ! -f "$SCRIPT_DIR/.zshrc" && ! -f "$SCRIPT_DIR/.p10k.zsh" ]]; }; then
   log "0.5. 팀 셸 설정(.zshrc · .p10k.zsh) 내려받기"
   echo "  · 스크립트 옆에 설정 파일이 없습니다 (clone 없이 한 줄로 실행한 경우) → 레포에서 직접 받습니다"
   DOTFILE_DIR="$(mktemp -d)"
@@ -773,7 +812,10 @@ log "CLI 도구 설치 (go, pyenv, nvm, git, cocoapods, lefthook 등)"
 #   (레포별로 최초 1회 `lefthook install` 필요 — 완료 안내 10번 참고).
 FORMULAE=(go pyenv nvm git gh jq cocoapods fastlane awscli colima docker docker-compose zsh-syntax-highlighting direnv openjdk@17 lefthook)
 for f in "${FORMULAE[@]}"; do
-  brew list "$f" >/dev/null 2>&1 && echo "  ✓ $f 이미 설치됨" || brew install "$f"
+  # 실패해도 멈추지 않는다 — 하나가 안 깔린다고 나머지 15개까지 못 깔 이유가 없다.
+  # (가드가 없으면 set -e 때문에 스크립트 전체가 여기서 종료된다)
+  brew list "$f" >/dev/null 2>&1 && echo "  ✓ $f 이미 설치됨" \
+    || brew install "$f" || echo "  ⚠ $f 설치 실패 → 건너뜀 (수동 설치: brew install $f)"
 done
 
 # ------------------------------------------------------------
@@ -885,8 +927,9 @@ log "FVM 설치 및 Flutter stable 글로벌 설정"
 brew tap leoafarias/fvm 2>/dev/null || true
 brew trust leoafarias/fvm 2>/dev/null || true
 brew list fvm >/dev/null 2>&1 && echo "  ✓ fvm 이미 설치됨" || brew install fvm
-yes | fvm install stable
-yes | fvm global stable --force 2>/dev/null || yes | fvm global stable
+yes | fvm install stable || echo "  ⚠ Flutter stable 설치 실패 → 건너뜀 (수동 설치: fvm install stable)"
+yes | fvm global stable --force 2>/dev/null || yes | fvm global stable \
+  || echo "  ⚠ Flutter stable 글로벌 설정 실패 → 건너뜀 (수동 설정: fvm global stable)"
 export PATH="$HOME/fvm/default/bin:$PATH"
 
 # 4-b. Dart 글로벌 패키지 (serverpod_cli, marionette_mcp, mcp_server_dart)
@@ -1032,8 +1075,9 @@ export PYENV_ROOT="$HOME/.pyenv"
 export PATH="$PYENV_ROOT/bin:$PATH"
 eval "$(pyenv init -)" 2>/dev/null || true
 LATEST_PY=$(pyenv install --list | grep -E '^\s*3\.[0-9]+\.[0-9]+$' | tail -1 | tr -d ' ')
-pyenv versions --bare | grep -qx "$LATEST_PY" && echo "  ✓ Python $LATEST_PY 이미 설치됨" || pyenv install "$LATEST_PY"
-pyenv global "$LATEST_PY"
+pyenv versions --bare | grep -qx "$LATEST_PY" && echo "  ✓ Python $LATEST_PY 이미 설치됨" \
+  || pyenv install "$LATEST_PY" || echo "  ⚠ Python $LATEST_PY 설치 실패 → 건너뜀 (수동 설치: pyenv install $LATEST_PY)"
+pyenv global "$LATEST_PY" || echo "  ⚠ Python 기본 버전 지정 실패 → 건너뜀 (수동 설정: pyenv global $LATEST_PY)"
 
 # ------------------------------------------------------------
 # 6. Node.js (nvm으로 LTS, npm 포함)
@@ -1041,10 +1085,14 @@ pyenv global "$LATEST_PY"
 log "Node.js LTS 설치 (nvm, npm 포함)"
 export NVM_DIR="$HOME/.nvm"
 mkdir -p "$NVM_DIR"
+# nvm이 안 깔렸으면(3단계 실패) 여기서 멈추지 말고 6단계 전체를 건너뛴다.
 # shellcheck disable=SC1091
-source "$(brew --prefix nvm)/nvm.sh"
-nvm install --lts
-nvm alias default 'lts/*'
+if source "$(brew --prefix nvm)/nvm.sh" 2>/dev/null; then
+  nvm install --lts || echo "  ⚠ Node.js LTS 설치 실패 → 건너뜀 (수동 설치: nvm install --lts)"
+  nvm alias default 'lts/*' || echo "  ⚠ Node.js 기본 버전 지정 실패 → 건너뜀 (수동 설정: nvm alias default 'lts/*')"
+else
+  echo "  ⚠ nvm을 불러오지 못했습니다 → Node.js 설치 건너뜀 (3단계에서 nvm 설치가 실패했을 수 있습니다)"
+fi
 
 # ------------------------------------------------------------
 # 6.5. Claude Code 상태줄(statusline) — ccstatusline → Awesome CC Statusline(small)
@@ -1085,7 +1133,8 @@ fi
 # ------------------------------------------------------------
 log "oh-my-zsh 설치"
 if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
-  RUNZSH=no KEEP_ZSHRC=yes sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+  RUNZSH=no KEEP_ZSHRC=yes sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" \
+    || echo "  ⚠ oh-my-zsh 설치 실패 → 건너뜀 (테마·플러그인도 함께 건너뛸 수 있습니다)"
 else
   echo "  ✓ oh-my-zsh 이미 설치됨"
 fi
@@ -1094,14 +1143,18 @@ ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
 
 log "powerlevel10k + 플러그인 설치"
 [[ -d "$ZSH_CUSTOM/themes/powerlevel10k" ]] || \
-  git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$ZSH_CUSTOM/themes/powerlevel10k"
+  git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$ZSH_CUSTOM/themes/powerlevel10k" \
+  || echo "  ⚠ powerlevel10k 내려받기 실패 → 건너뜀 (프롬프트 테마가 적용되지 않습니다)"
 [[ -d "$ZSH_CUSTOM/plugins/zsh-autosuggestions" ]] || \
-  git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions "$ZSH_CUSTOM/plugins/zsh-autosuggestions"
+  git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions "$ZSH_CUSTOM/plugins/zsh-autosuggestions" \
+  || echo "  ⚠ zsh-autosuggestions 내려받기 실패 → 건너뜀"
 [[ -d "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting" ]] || \
-  git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
+  git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting" \
+  || echo "  ⚠ zsh-syntax-highlighting 내려받기 실패 → 건너뜀"
 # 기존 .zshrc가 ~/powerlevel10k 를 직접 source 하므로 동일 경로에도 clone
 [[ -d "$HOME/powerlevel10k" ]] || \
-  git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$HOME/powerlevel10k"
+  git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$HOME/powerlevel10k" \
+  || echo "  ⚠ ~/powerlevel10k 내려받기 실패 → 건너뜀 (기존 .zshrc가 이 경로를 참조할 때만 필요)"
 
 # p10k 권장 폰트 (MesloLGS NF)
 brew install --cask font-meslo-lg-nerd-font 2>/dev/null || true
@@ -1154,9 +1207,8 @@ fi
 # ------------------------------------------------------------
 log "~/.zshrc 설정"
 
-if [[ -f "$DOTFILE_DIR/.p10k.zsh" ]]; then
-  cp "$DOTFILE_DIR/.p10k.zsh" "$HOME/.p10k.zsh"
-  echo "  ✓ 기존 .p10k.zsh 복사 완료"
+if copy_dotfile "$DOTFILE_DIR/.p10k.zsh" "$HOME/.p10k.zsh" ".p10k.zsh"; then
+  :   # copy_dotfile이 결과 메시지를 직접 출력한다
 elif [[ ! -f "$HOME/.p10k.zsh" ]]; then
   # 기존 맥에서 .p10k.zsh를 가져오지 않은 새 맥: powerlevel10k 기본 설정을 복사한다.
   # 이게 없으면 새 셸마다 설정 마법사(p10k configure)가 떠서 "세팅이 정상적이지 않게" 보인다.
@@ -1170,8 +1222,15 @@ elif [[ ! -f "$HOME/.p10k.zsh" ]]; then
 fi
 
 if [[ -f "$DOTFILE_DIR/.zshrc" ]]; then
-  [[ -f "$HOME/.zshrc" ]] && cp "$HOME/.zshrc" "$HOME/.zshrc.backup.$(date +%Y%m%d%H%M%S)"
-  cp "$DOTFILE_DIR/.zshrc" "$HOME/.zshrc"
+  # 원본과 대상이 같은 파일이면 복사도 백업도 하지 않는다 — 자기 자신을 자기 위에 복사하면
+  # cp가 오류로 끝나고 set -e에 걸려 스크립트가 여기서 멈춰버린다.
+  # (아래 호환 패치는 어느 경우든 그대로 적용한다 — 모두 멱등이라 두 번 걸려도 안전하다)
+  if [[ "$DOTFILE_DIR/.zshrc" -ef "$HOME/.zshrc" ]]; then
+    echo "  ✓ .zshrc 이미 제자리에 있음 (복사 생략)"
+  else
+    [[ -f "$HOME/.zshrc" ]] && cp "$HOME/.zshrc" "$HOME/.zshrc.backup.$(date +%Y%m%d%H%M%S)"
+    cp "$DOTFILE_DIR/.zshrc" "$HOME/.zshrc"
+  fi
   # --- 새 맥 호환 패치 ---
   # JAVA_HOME: 버전 하드코딩 경로 → 설치돼 있을 때만 잡도록 교체
   #   openjdk@17 이 아직 안 깔린 맥에서 셸을 열 때마다 에러가 찍히지 않게 존재 확인을 붙인다.
@@ -1197,7 +1256,7 @@ if [[ -f "$DOTFILE_DIR/.zshrc" ]]; then
       echo "  ⚠ PATH 중복 제거 설정 추가 실패 — 무시하고 계속합니다"
     fi
   fi
-  echo "  ✓ 기존 .zshrc 복사 완료 (기존 파일은 백업됨, 새 맥 호환 패치 적용)"
+  echo "  ✓ .zshrc 반영 완료 (덮어썼다면 기존 파일은 백업됨, 새 맥 호환 패치 적용)"
 else
   [[ -f "$HOME/.zshrc" ]] && cp "$HOME/.zshrc" "$HOME/.zshrc.backup.$(date +%Y%m%d%H%M%S)"
   cat > "$HOME/.zshrc" <<'ZSHRC'

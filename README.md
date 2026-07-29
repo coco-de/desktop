@@ -64,6 +64,15 @@ co:code는 엔지니어뿐 아니라 디자이너, PM도 하나의 엔지니어�
 
 레포를 내려받거나 Homebrew를 미리 설치할 필요 없이, 이 한 줄로 전부 진행됩니다.
 
+> 💾 **나중에 `--env-only` 같은 옵션을 쓰실 분은** 스크립트를 파일로 받아 두시면 편합니다. 위 한 줄은 스크립트를 내려받아 바로 실행하고 **파일을 남기지 않기 때문**입니다.
+>
+> ```bash
+> mkdir -p ~/co-mac && curl -fsSL https://raw.githubusercontent.com/coco-de/co-mac/main/mac-setup.sh -o ~/co-mac/mac-setup.sh && chmod +x ~/co-mac/mac-setup.sh
+> ~/co-mac/mac-setup.sh
+> ```
+>
+> 이렇게 두면 이후 `~/co-mac/mac-setup.sh --env-only` 처럼 쓸 수 있습니다. (홈 폴더에 바로 두지 말고 `~/co-mac` 같은 **전용 폴더**에 두세요 — 홈 폴더에 두면 스크립트가 여러분의 기존 `~/.zshrc`를 "직접 가져다 둔 설정"으로 보고 팀 설정을 적용하지 않습니다.)
+
 <details>
 <summary>레포를 직접 내려받아 실행하고 싶다면 (스크립트를 먼저 읽어보고 싶은 분)</summary>
 
@@ -75,16 +84,24 @@ cd co-mac
 chmod +x mac-setup.sh && ./mac-setup.sh
 ```
 
-결과는 위 한 줄 실행과 같습니다. 다만 **갓 세팅한 맥에서는 `git clone` 단계에서 macOS가 "명령어 라인 개발자 도구를 설치하겠습니까?" 창을 띄울 수 있어**, 그 설치가 끝날 때까지 기다려야 합니다. 위의 한 줄 실행은 그 도구까지 스크립트가 알아서 설치하므로 기다릴 일이 없습니다.
+결과는 위 한 줄 실행과 같고, 스크립트 파일이 폴더에 남아 있어 나중에 `--env-only` 같은 옵션을 쓰기도 편합니다. 다만 **갓 세팅한 맥에서는 `git clone` 단계에서 macOS가 "명령어 라인 개발자 도구를 설치하겠습니까?" 창을 띄울 수 있어**, 창을 눌러 설치를 마칠 때까지 기다려야 합니다. 위의 한 줄 실행은 그 도구까지 스크립트가 0단계에서 함께 설치하므로 **창을 눌러가며 기다리는 단계가 없습니다** (설치 자체는 몇 분 걸릴 수 있습니다).
 
 </details>
 
-이게 전부입니다. 이후로는 화면에 뜨는 진행 상황(`▶ 단계 이름`)을 지켜보시면 됩니다. 도구별로 이미 설치되어 있으면 `✓`, 새로 설치하면 진행 로그, 일부가 실패해도 `⚠` 표시와 함께 건너뛰고 계속 진행됩니다. 실행 초반에 **커밋에 사용할 회사 이메일**을 한 번 물어보니 입력해주세요 (이미 설정된 맥이라면 묻지 않습니다).
+이게 전부입니다. 이후로는 화면에 뜨는 진행 상황(`▶ 단계 이름`)을 지켜보시면 됩니다. 도구별로 이미 설치되어 있으면 `✓`, 새로 설치하면 진행 로그, 일부가 실패해도 `⚠` 표시와 함께 건너뛰고 계속 진행됩니다.
+
+> ⏳ **중간에 한 번 입력을 기다립니다.** 실행 도중 Git 설정 단계(3.2)에서 **커밋에 사용할 회사 이메일**을 물어봅니다. **화면을 켜 두고 가끔 확인해 주세요** — 그 앞의 Xcode 자동 설치가 수십 분까지 걸릴 수 있어서, 질문이 뜨기까지 한참 기다려야 할 수도 있습니다. (이미 설정된 맥이라면 묻지 않고, `s` + Enter로 건너뛸 수도 있습니다.)
 
 > 💡 **이미 세팅한 맥에서 토큰(환경변수)만 다시 받고 싶다면**
 >
 > ```bash
 > ./mac-setup.sh --env-only
+> ```
+>
+> 스크립트 파일이 없다면(한 줄 실행으로 설치한 경우) 아래처럼 옵션을 붙여 그대로 실행해도 됩니다. `--` 는 그 뒤가 옵션이라는 표시라 빼면 안 됩니다.
+>
+> ```bash
+> /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coco-de/co-mac/main/mac-setup.sh)" -- --env-only
 > ```
 >
 > 앱·도구 설치는 전부 건너뛰고, 1Password(`op`)에서 팀 공용 토큰(`ZENHUB_API_TOKEN`·`JIRA_API_TOKEN`·`SLANG_GPT_API_KEY`·`DCM_EMAIL`·`DCM_CI_KEY`·`SLACK_TEAM_ID`·`SLACK_BOT_TOKEN`)만 다시 읽어 `~/.zshrc`에 넣어줍니다. 토큰이 바뀌었거나 설치 때 토큰 주입(8.5~8.9단계)을 건너뛴 경우, 전체 설치를 다시 돌릴 필요 없이 몇 초 만에 끝납니다. 사용법은 `./mac-setup.sh --help`로도 볼 수 있습니다.
@@ -93,6 +110,12 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 >
 > ```bash
 > ./mac-setup.sh --perms-only
+> ```
+>
+> 스크립트 파일이 없다면 `--env-only`와 같은 방식으로 쓰시면 됩니다.
+>
+> ```bash
+> /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coco-de/co-mac/main/mac-setup.sh)" -- --perms-only
 > ```
 >
 > 설치·토큰 주입은 전부 건너뛰고, **Orca의 '전체 디스크 접근 권한'** 상태만 확인해 시스템 설정 창까지 열어 안내해 줍니다(9단계). 이미 켜져 있으면 아무것도 묻지 않고 바로 끝납니다. 자세한 내용은 아래 [🔐 Orca 전체 디스크 접근 권한](#orca-full-disk-access)을 봐주세요.
@@ -104,9 +127,16 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 
 기본적으로는 **팀 공통 터미널 설정**(`.zshrc`·`.p10k.zsh`)이 자동으로 적용됩니다. 저장소에 함께 들어 있고, [빠른 시작](#quickstart)의 한 줄 실행으로 돌리면 스크립트가 저장소에서 알아서 내려받아 씁니다. 따로 하실 일은 없습니다.
 
-예전 맥의 터미널 테마·설정을 **대신** 쓰고 싶다면, 그 맥에서 `~/.zshrc`, `~/.p10k.zsh` 두 파일을 **이 스크립트와 같은 폴더**에 복사해 둔 뒤 실행하세요. 스크립트는 옆에 있는 파일을 우선하므로, 팀 설정 대신 여러분 것이 그대로 적용됩니다(이 경우 저장소에서 따로 내려받지 않습니다).
+예전 맥의 터미널 테마·설정을 **대신** 쓰고 싶다면, 그 맥에서 `~/.zshrc`, `~/.p10k.zsh` 두 파일을 **스크립트가 있는 폴더**에 복사해 둔 뒤 실행하세요. 스크립트는 옆에 있는 파일을 우선하므로, 팀 설정 대신 여러분 것이 그대로 적용됩니다(이 경우 저장소에서 따로 내려받지 않습니다).
 
-⚠️ 예전 `.zshrc`를 가져오실 경우 [보안 안내](#is-it-safe)를 꼭 확인해주세요.
+> ⚠️ 이 방법은 위 `git clone` 방식처럼 **스크립트가 폴더에 실제로 있을 때만** 쓸 수 있습니다. 한 줄 실행에는 "스크립트가 있는 폴더"라는 게 없어서, 항상 팀 설정이 적용됩니다.
+>
+> ⚠️ **두 파일을 함께 두세요.** 하나만 두면 나머지 하나는 팀 것도 여러분 것도 아닌 **기본값**이 적용됩니다(예: `.zshrc`만 두면 프롬프트 테마는 p10k 기본값).
+
+⚠️ 예전 `.zshrc`를 가져오실 경우 아래 두 가지를 함께 확인해주세요.
+
+- [보안 안내](#is-it-safe) — 예전 `.zshrc`에 API 키가 평문으로 들어 있을 수 있습니다
+- 팀 `.zshrc`에만 있는 편의 기능은 따라오지 않습니다 — **`python`·`adb` 경로 설정**(pyenv·Android SDK)과 **`claude` 실행 시 colima 자동 기동**이 대표적입니다. 각각 아래 [🐳 Jira는 docker(colima) 데몬이 필요합니다](#after-install)와 [설치 후 확인할 것](#after-install)을 참고해 직접 추가하시거나, 팀 설정을 쓰시는 편을 권합니다
 
 </details>
 
@@ -116,7 +146,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 
 ## 🧰 우리 팀의 기술 스택
 
-`mac-setup.sh` 하나로 co:code 팀 전체 노트북에 실제로 세팅되는 앱·CLI·언어 런타임을 한눈에 모았습니다. 아이콘은 대부분 [Simple Icons](https://simpleicons.org)에서 받아 이 저장소의 [`assets/icons/`](./assets/icons)에 함께 보관하고 있습니다. Simple Icons에 없는 앱(Slack·Dia·Orca·Lumide·Stats)은 실제 설치되는 앱의 아이콘을 그대로 추출해 사용했습니다. 공식 브랜드 아이콘이 아직 없는 도구는 이름만 표기했습니다.
+`mac-setup.sh` 하나로 co:code 팀 전체 노트북에 실제로 세팅되는 앱·CLI·언어 런타임을 한눈에 모았습니다. 아이콘은 대부분 [Simple Icons](https://simpleicons.org)에서 받아 이 저장소의 [`assets/icons/`](./assets/icons)에 함께 보관하고 있습니다. Simple Icons에 없는 앱·도구는 실제 브랜드 아이콘을 받아 사용했고, 공식 브랜드 아이콘이 아직 없는 도구는 이름만 표기했습니다 (자세한 목록은 아래 표 끝의 각주 참고).
 
 <br>
 
@@ -191,6 +221,14 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 <td align="center" width="100"><img src="assets/icons/mas.svg" width="36" height="36" alt="mas"><br><sub><b>mas</b><br>(App Store CLI)</sub></td>
 <td align="center" width="100"><img src="assets/icons/slack.png" width="36" height="36" alt="Slack CLI"><br><sub><b>slack</b><br>(Slack CLI)</sub></td>
 <td align="center" width="100"><img src="assets/icons/lefthook.svg" width="36" height="36" alt="lefthook"><br><sub><b>lefthook</b><br>(Git 훅)</sub></td>
+<td align="center" width="100"><sub><b>jq</b><br>(JSON 처리)</sub></td>
+</tr>
+<tr>
+<td align="center" width="100"><sub><b>maestro</b><br>(모바일 UI 자동화)</sub></td>
+<td align="center" width="100"></td>
+<td align="center" width="100"></td>
+<td align="center" width="100"></td>
+<td align="center" width="100"></td>
 <td align="center" width="100"></td>
 </tr>
 </table>
@@ -203,6 +241,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 <td align="center" width="100"><img src="assets/icons/dart.svg" width="36" height="36" alt="DCM"><br><sub><b>DCM</b></sub></td>
 <td align="center" width="100"><img src="assets/icons/dart.svg" width="36" height="36" alt="serverpod_cli"><br><sub><b>serverpod_cli</b></sub></td>
 <td align="center" width="100"><img src="assets/icons/dart.svg" width="36" height="36" alt="marionette_mcp"><br><sub><b>marionette_mcp</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/dart.svg" width="36" height="36" alt="mcp_server_dart"><br><sub><b>mcp_server_dart</b></sub></td>
 </tr>
 </table>
 
@@ -230,7 +269,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 
 <br>
 
-<sub>※ Slack · Dia · Orca · Lumide · Stats · codex(OpenAI) · agy(Antigravity)는 Simple Icons에 없어, 실제 브랜드 아이콘(파비콘)을 받아 사용했습니다. awscli, pyenv, colima, direnv, oh-my-zsh, powerlevel10k, MesloLGS NF는 공식 브랜드 아이콘이 없어 텍스트로만 표기했습니다. DCM · serverpod_cli · marionette_mcp는 Dart 생태계 도구라 Dart 아이콘으로 대신 표기했습니다. op(1Password CLI)는 1Password의 커맨드라인 버전이라 1Password 아이콘을 함께 사용했습니다. ccstatusline · awesome-statusline은 둘 다 Claude Code 상태줄 도구라 Claude 아이콘으로 대신 표기했습니다.</sub>
+<sub>※ Slack · Dia · Orca · Lumide · Stats · codex(OpenAI) · agy(Antigravity)는 Simple Icons에 없어, 실제 브랜드 아이콘(파비콘)을 받아 사용했습니다. awscli, pyenv, colima, direnv, jq, maestro, oh-my-zsh, powerlevel10k, MesloLGS NF는 공식 브랜드 아이콘이 없어 텍스트로만 표기했습니다. DCM · serverpod_cli · marionette_mcp · mcp_server_dart는 Dart 생태계 도구라 Dart 아이콘으로 대신 표기했습니다. op(1Password CLI)는 1Password의 커맨드라인 버전이라 1Password 아이콘을 함께 사용했습니다. ccstatusline · awesome-statusline은 둘 다 Claude Code 상태줄 도구라 Claude 아이콘으로 대신 표기했습니다.</sub>
 
 <br>
 
@@ -248,11 +287,11 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 | 🔑 팀 공용 토큰 | 위 `ZENHUB_API_TOKEN`·`JIRA_API_TOKEN`·`SLACK_TEAM_ID`·`SLACK_BOT_TOKEN`에 더해, 다국어 자동 번역 도구 `slang_gpt`가 쓰는 `SLANG_GPT_API_KEY`, DCM을 CI 모드로 인증하는 `DCM_EMAIL`·`DCM_CI_KEY`(1Password 항목 `DCM CI CD`의 이메일+키 한 쌍)도 같은 방식(1Password CLI → `~/.zshrc`)으로 자동 주입 — `SLANG_GPT_API_KEY`·`DCM_EMAIL`·`DCM_CI_KEY`는 MCP가 아니라 명령줄 도구가 직접 읽는 값이라 등록·로그인 과정이 없음 ([설정 방법](#after-install)) |
 | 🧩 cocode-skills 팀 플러그인 | 사설 레포 `coco-de/skills`의 `install.sh`로 cc-* 플러그인 번들(marionette·dart·figma·dev-cycle·coui 등) 자동 동기화 (⚠️ `gh auth login` 인증 필요, 미인증 시 건너뜀) |
 | 📱 Android SDK | cmdline-tools, platform-tools, build-tools, platforms, NDK, 에뮬레이터 시스템 이미지, AVD까지 전부 자동 설치·구성 (Android Studio 첫 실행 마법사 불필요) |
-| 🛠 CLI 도구 | go, pyenv, nvm, git, gh, cocoapods, fastlane, awscli, colima, docker, docker-compose, zsh-syntax-highlighting, direnv, openjdk@17, lefthook(Git 훅 관리자 — 레포별로 최초 1회 `lefthook install` 필요), Claude Code, ccstatusline(Claude Code 상태줄) → 실패 시 awesome-statusline(size: small)으로 자동 대체, codex, agy(Antigravity CLI), slack(Slack CLI), op(1Password CLI), mas(App Store CLI — Xcode 자동 설치용) |
+| 🛠 CLI 도구 | go, pyenv, nvm, git, gh, jq, cocoapods, fastlane, awscli, colima, docker, docker-compose, zsh-syntax-highlighting, direnv, openjdk@17, lefthook(Git 훅 관리자 — 레포별로 최초 1회 `lefthook install` 필요), Claude Code, ccstatusline(Claude Code 상태줄) → 실패 시 awesome-statusline(size: small)으로 자동 대체, codex, agy(Antigravity CLI), slack(Slack CLI), maestro(모바일 UI 자동화 CLI), op(1Password CLI), mas(App Store CLI — **Xcode.app이 없을 때만** 설치, Xcode 자동 설치용) |
 | ✉️ Git 설정 | 커밋에 사용할 회사 이메일을 실행 중에 입력받아 전역 설정(`git config --global user.email`) — 이미 설정돼 있으면 묻지 않고 건너뜀 |
 | 🌐 브라우저 번역 언어 | Chrome·Dia의 번역 대상 언어를 한국어로, "번역 안 함" 목록을 영어로 자동 설정(`dia://settings/languages` = `chrome://settings/languages`를 매번 손으로 누를 필요 없음) — 브라우저가 실행 중이면 건너뛰고 경고만 표시 |
 | 🐦 Flutter | fvm(버전 관리자)으로 Flutter stable 채널 글로벌 설정, DCM(Dart 코드 품질 검사 도구 — CI 인증 키 `DCM_EMAIL`·`DCM_CI_KEY`는 1Password에서 자동 주입) |
-| 🎯 Dart 글로벌 패키지 | serverpod_cli 4.0.0-beta.0, marionette_mcp |
+| 🎯 Dart 글로벌 패키지 | serverpod_cli 4.0.0-beta.0, marionette_mcp, mcp_server_dart |
 | ☁️ 클라우드 | Google Cloud CLI (gcloud) |
 | 🐍 언어 런타임 | Python 최신 3.x (pyenv), Node.js LTS + npm (nvm) |
 | 💻 터미널 환경 | oh-my-zsh, powerlevel10k 테마, zsh-autosuggestions, zsh-syntax-highlighting, MesloLGS NF 폰트 |
@@ -305,7 +344,7 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 | platform-tools | `adb` 등 기기·에뮬레이터와 통신하는 도구 |
 | build-tools | 최신 안정 버전을 자동으로 찾아 설치 |
 | platforms | 최신 안정 Android API 플랫폼을 자동으로 찾아 설치 |
-| NDK | 네이티브(C/C++) 코드가 포함된 안드로이드 빌드에 필요, 최신 안정 버전 자동 설치 |
+| NDK | 네이티브(C/C++) 코드가 포함된 안드로이드 빌드에 필요. 최신이 아니라 **Flutter stable이 요구하는 버전으로 고정 설치**합니다 — 목록상의 최신 NDK는 프리뷰(r30-beta 등)라 그대로 깔면 Gradle 빌드에서 버전 불일치가 납니다 (요구 버전을 못 읽으면 검증된 기본값 사용) |
 | 에뮬레이터 + 시스템 이미지 | Mac 칩 종류(Apple Silicon/Intel)에 맞는 이미지를 자동 선택해 설치. 최신 platform에는 이미지가 아직 없을 수 있어, 실제 배포된 이미지 중 가장 최신 API 버전을 골라 설치합니다 |
 | AVD | 위 시스템 이미지로 `Pixel_6_API_<버전>` 이름의 에뮬레이터를 자동 생성 (이미 있으면 건너뜀) |
 
@@ -328,6 +367,8 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 | <img src="assets/icons/zsh.svg" width="20" height="20"> | zsh-syntax-highlighting | 터미널 명령어에 색을 입혀 오타를 줄여주는 플러그인 |
 | | direnv | 폴더별로 필요한 환경 변수를 자동으로 불러와 주는 도구 |
 | <img src="assets/icons/openjdk.svg" width="20" height="20"> | openjdk@17 | 자바 17 (Android 빌드에 필요) |
+| | jq | JSON 형식의 데이터를 터미널에서 다루는 도구. 눈에 잘 안 띄지만 이 스크립트가 여러 곳에서 씁니다 — 브라우저 번역 언어 자동 설정(3.3단계), 팀 플러그인 설치(3.5단계), 상태줄 등록(6.5단계) |
+| | maestro | 모바일 앱 화면을 자동으로 조작·촬영하는 CLI. Claude Code의 pixel-loop MCP가 이 도구를 통해 실행 중인 앱 화면을 확인합니다 (공식 설치 스크립트 `get.maestro.mobile.dev`로 설치) |
 | <img src="assets/icons/lefthook.svg" width="20" height="20"> | lefthook | 커밋·푸시하기 직전에 코드 정리·검사·테스트를 자동으로 돌려주는 **Git 훅 관리자**([evilmartians/lefthook](https://github.com/evilmartians/lefthook)). 실수로 형식이 어긋나거나 깨진 코드가 올라가는 걸 미리 막아 줍니다. 이 스크립트는 도구만 설치하며, 실제로 켜는 건 레포마다 한 번씩입니다 — `lefthook.yml`이 있는 프로젝트 폴더에서 `lefthook install`을 실행하세요(설정 파일이 없는 레포에서는 할 일 없음) |
 | <img src="assets/icons/claude.svg" width="20" height="20"> | Claude Code | 터미널에서 대화하듯 코드를 작성·수정하는 Claude CLI (공식 설치 스크립트 `claude.ai/install.sh`로 설치, `~/.local/bin`) |
 | <img src="assets/icons/claude.svg" width="20" height="20"> | ccstatusline | Claude Code 하단 상태줄을 모델·세션 비용·컨텍스트 사용량·git 상태까지 보여주는 두 줄짜리 정보 표시줄로 바꿔 주는 대화형 TUI 도구입니다([sirmalloc/ccstatusline](https://github.com/sirmalloc/ccstatusline)). 별도 설치가 필요 없고 `npx -y ccstatusline@latest`로 그때그때 실행하며(Node.js 필요), 뜨는 화면에서 위젯을 고르고 저장하면 `~/.claude/settings.json`에 자동 등록됩니다. 대화형 도구라 이 스크립트에서는 자동 등록되지 않는 경우가 대부분이며, 그때는 아래 awesome-statusline이 자동으로 대신 설치됩니다 |
@@ -336,7 +377,7 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 | <img src="assets/icons/antigravity.png" width="20" height="20"> | agy (Antigravity CLI) | Google의 터미널 AI 코딩 에이전트. 은퇴한 Gemini CLI의 공식 후속 도구로, 단일 실행 파일이라 Claude Code처럼 공식 설치 스크립트(`antigravity.google/cli/install.sh`)로 `~/.local/bin/agy`에 설치합니다(별도 런타임 불필요). 처음 실행할 때 Google 계정으로 로그인합니다 |
 | <img src="assets/icons/slack.png" width="20" height="20"> | slack (Slack CLI) | Slack 앱/워크플로 개발용 공식 CLI. 공식 설치 스크립트(`downloads.slack-edge.com/slack-cli/install.sh`)로 `/usr/local/bin` 또는 `~/.local/bin`에 설치합니다. Slack CLI로 직접 앱을 만들려면 처음 한 번 `slack login`으로 워크스페이스 인증이 필요합니다(별개로, Claude Code의 `slack` MCP는 아래 팀 공용 토큰으로 인증됩니다) |
 | <img src="assets/icons/1password.svg" width="20" height="20"> | op (1Password CLI) | 1Password 금고를 **터미널에서** 열어보는 명령. 1Password 앱과 같은 금고를 보며, 앱에 로그인해 둔 상태를 그대로 빌려 씁니다. 이 스크립트는 팀 공용 ZenHub·Jira·Slack 토큰을 금고에서 읽어 `~/.zshrc`에 자동으로 넣어주는 데 사용합니다 (설정 방법은 아래 [ZenHub·Jira·Slang GPT·DCM·Slack 토큰 · 1Password CLI 설정](#after-install) 참고) |
-| <img src="assets/icons/mas.svg" width="20" height="20"> | mas (App Store CLI) | 터미널에서 Mac App Store 앱을 설치하는 도구. Xcode.app이 없으면 이 스크립트가 `mas install`로 자동 설치를 시도하는 데만 사용합니다 — App Store에 Apple ID로 로그인이 돼 있어야 하며, 로그인 자체는 mas가 대신 해줄 수 없습니다(로그인 안 돼 있으면 건너뛰고 App Store에서 직접 설치하라고 안내) |
+| <img src="assets/icons/mas.svg" width="20" height="20"> | mas (App Store CLI) | 터미널에서 Mac App Store 앱을 설치하는 도구. Xcode.app을 자동으로 깔기 위해서만 쓰기 때문에, **Xcode.app이 이미 있으면 mas 자체를 설치하지 않고 건너뜁니다** — App Store에 Apple ID로 로그인이 돼 있어야 하며, 로그인 자체는 mas가 대신 해줄 수 없습니다(로그인 안 돼 있으면 건너뛰고 App Store에서 직접 설치하라고 안내) |
 
 **Flutter / Dart**
 
@@ -345,7 +386,8 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 | <img src="assets/icons/flutter.svg" width="20" height="20"> | fvm | Flutter 버전 관리자. `fvm global stable`로 stable 채널을 글로벌 설정 |
 | <img src="assets/icons/dart.svg" width="20" height="20"> | DCM (Dart Code Metrics) | Dart 코드 품질 검사 도구. CI/자동화 모드 인증에 쓰는 이메일+키(`DCM_EMAIL`·`DCM_CI_KEY`)는 팀 공용 1Password 항목 `DCM CI CD`에서 자동 주입됩니다 |
 | <img src="assets/icons/dart.svg" width="20" height="20"> | serverpod_cli 4.0.0-beta.0 | Serverpod 백엔드 프레임워크 CLI (`dart pub global activate`로 설치) |
-| <img src="assets/icons/dart.svg" width="20" height="20"> | marionette_mcp | Dart 글로벌 패키지 (`dart pub global activate`로 설치) |
+| <img src="assets/icons/dart.svg" width="20" height="20"> | marionette_mcp | Claude Code의 `marionette` MCP 서버 — 실행 중인 Flutter 앱을 위젯 단위로 조작합니다 (`dart pub global activate`로 설치) |
+| <img src="assets/icons/dart.svg" width="20" height="20"> | mcp_server_dart | Claude Code의 `dart` MCP 서버 — 코드 분석·핫 리로드·패키지 탐색을 Claude가 직접 하게 해줍니다 (`dart pub global activate`로 설치) |
 
 **클라우드 / 언어 런타임**
 
@@ -438,9 +480,11 @@ Orca 전체 디스크 접근: ...
 5. Android Studio 실행 후 `flutter doctor`로 최종 확인 — SDK/NDK/에뮬레이터/AVD는 스크립트가 이미 자동으로 설치·구성해 두었으므로 첫 실행 설치 마법사를 따로 진행할 필요는 없습니다
 6. **(선택) `colima start` 미리 실행 — Jira(Atlassian) MCP를 쓰려면 필요합니다** (아래 🐳 안내 참고). Jira MCP는 docker 컨테이너로 뜨는데, colima가 그 docker 데몬입니다. 이제 `claude`/`cld` 실행 시 꺼져 있으면 자동으로 켜주지만, 최초 기동엔 수십 초가 걸릴 수 있어 미리 켜두면 더 빠릅니다
 7. `claude` 실행 후 Claude Code 로그인 (함께 설치된 `codex`는 ChatGPT 계정, `agy`(Antigravity)는 Google 계정으로 각각 처음 실행할 때 한 번 로그인). Claude Code 하단 상태줄(모델·비용·컨텍스트·git 상태)은 6.5단계에서 이미 자동으로 설정됐을 겁니다 — `ccstatusline`이 대화형이라 등록에 실패하면 `awesome-statusline`(size: small)이 자동으로 대신 등록됩니다. 직접 위젯을 골라 커스터마이징하고 싶다면 `npx -y ccstatusline@latest`를, 다른 크기로 바꾸고 싶다면 `curl -fsSL https://raw.githubusercontent.com/AwesomeJun/CC-statusline/main/install.sh | bash -s -- <크기>`를 실행하면 됩니다(크기: xs/s/m/l/xl). 되돌리려면 `~/.claude/settings.json`의 `statusLine` 키만 지우면 됩니다
-8. Slack CLI로 직접 앱/워크플로를 개발하려면 `slack login`으로 워크스페이스 인증(최초 1회) — Claude Code의 `slack` MCP는 이 로그인과 무관하게 아래 팀 공용 토큰으로 별도 인증됩니다
-9. **Git 훅(lefthook)은 레포마다 한 번씩 켜기** — `lefthook.yml`이 있는 프로젝트 폴더에서 `lefthook install`을 실행하면, 그 레포에서 커밋·푸시할 때 포맷/린트/테스트가 자동으로 돌아갑니다 (설정 파일이 없는 레포에서는 할 일 없음)
-10. **Stats(시스템 모니터)를 최초 1회 실행** — `open -a Stats`. 설치만으로는 메뉴막대에 나타나지 않고, 한 번 실행해야 CPU·메모리·디스크·네트워크 사용량이 메뉴막대에 표시됩니다. 실행 후 Stats 설정에서 **"로그인 시 시작"**을 켜 두면 다음부터는 자동으로 떠 있습니다
+8. **Claude Code에서 `/mcp` 실행 → figma를 팀 계정으로 OAuth 로그인 (최초 1회)** — 이걸 하지 않으면 figma MCP가 동작하지 않습니다. zenhub·jira·slack MCP는 아래 팀 공용 토큰으로 인증되므로 별도 로그인이 필요 없습니다
+9. **설치 검증에 `cocode-skills: ❌`가 찍혔다면** — GitHub 인증이 안 된 상태입니다. `gh auth login`으로 로그인한 뒤 스크립트를 다시 실행하면 팀 플러그인이 설치됩니다
+10. Slack CLI로 직접 앱/워크플로를 개발하려면 `slack login`으로 워크스페이스 인증(최초 1회) — Claude Code의 `slack` MCP는 이 로그인과 무관하게 아래 팀 공용 토큰으로 별도 인증됩니다
+11. **Git 훅(lefthook)은 레포마다 한 번씩 켜기** — `lefthook.yml`이 있는 프로젝트 폴더에서 `lefthook install`을 실행하면, 그 레포에서 커밋·푸시할 때 포맷/린트/테스트가 자동으로 돌아갑니다 (설정 파일이 없는 레포에서는 할 일 없음)
+12. **Stats(시스템 모니터)를 최초 1회 실행** — `open -a Stats`. 설치만으로는 메뉴막대에 나타나지 않고, 한 번 실행해야 CPU·메모리·디스크·네트워크 사용량이 메뉴막대에 표시됩니다. 실행 후 Stats 설정에서 **"로그인 시 시작"** 을 켜 두면 다음부터는 자동으로 떠 있습니다
 
 > ✉️ **Git 이메일 (실행 중 입력)**: 스크립트 실행 도중 Git 설정 단계(3.2)에서 커밋에 사용할 회사 이메일을 물어봅니다. 입력하면 `git config --global user.email`에 저장되고, 이미 설정된 맥이라면 묻지 않고 건너뜁니다. `s` + Enter로 건너뛸 수도 있으며, 그 경우 나중에 터미널에서 `git config --global user.email <이메일>`을 직접 실행하면 됩니다.
 
@@ -483,6 +527,8 @@ Orca 전체 디스크 접근: ...
 >
 > **Jira MCP는 docker 컨테이너로 뜨고, colima가 그 docker 데몬입니다.** 예전엔 `claude` 실행 전에 `colima start`를 매번 손으로 켜야 했지만, 이제 `~/.zshrc`의 `claude`/`cld` 함수가 실행 직전에 docker 데몬 상태를 확인해 **꺼져 있으면 자동으로 `colima start`를 실행**합니다.
 >
+> ⚠️ 이 자동 기동은 **팀 `.zshrc`를 쓸 때만** 동작합니다. [예전 맥의 `.zshrc`를 가져오신 경우](#quickstart)에는 그 함수가 없으므로 `colima start`를 직접 실행하셔야 합니다.
+>
 > ```bash
 > claude    # 또는 cld — colima(docker)가 꺼져 있으면 자동으로 켠 뒤 이어서 실행됩니다
 > ```
@@ -502,7 +548,7 @@ Orca 전체 디스크 접근: ...
 >
 > 1. **1Password 앱**을 열고 팀 계정(`team-cocodeinc.1password.com`)으로 로그인
 > 2. 앱 → **설정(⌘,) → "개발자" 탭 → "1Password CLI와 통합"** 체크
->    - **"개발자" 탭이 안 보이면**: **설정 → 보안 → "Touch ID로 잠금 해제"**를 먼저 켜세요
+>    - **"개발자" 탭이 안 보이면**: **설정 → 보안 → "Touch ID로 잠금 해제"** 를 먼저 켜세요
 >    - 앱 통합을 켜면 CLI 계정이 자동 등록되므로 `op account add`를 직접 하실 필요는 없습니다
 >
 > **잘 됐는지 확인하려면** — 새 터미널 창에서:
@@ -558,9 +604,9 @@ Orca 전체 디스크 접근: ...
 
 네, 안전하게 다시 실행할 수 있도록 설계되어 있습니다.
 
-- **이미 설치된 건 다시 건드리지 않습니다.** 앱/도구별로 설치 여부를 먼저 확인하고, 이미 있으면 `✓ 이미 설치됨`을 출력하고 건너뜁니다. 스크립트를 여러 번 실행해도 문제없습니다.
+- **이미 설치된 건 다시 건드리지 않습니다.** 앱/도구별로 설치 여부를 먼저 확인하고, 이미 있으면 `✓ 이미 설치됨`을 출력하고 건너뜁니다. 스크립트를 여러 번 실행해도 문제없습니다. 다만 두 가지는 예외입니다 — **팀 표준에서 빠진 항목**(예전 atlassian OAuth 플러그인, flutter-mcp-toolkit 플러그인)은 재실행 시 **자동으로 정리(제거)** 되고, **zenhub·jira·slack MCP 등록**은 설정이 최신으로 유지되도록 매번 지웠다가 다시 등록합니다.
 - **일부가 실패해도 전체가 멈추지 않습니다.** 개별 항목 설치가 실패하면 `⚠` 표시와 함께 건너뛰고 나머지를 계속 진행합니다.
-- **설치 중 y/n 질문에 자동으로 답합니다.** (`NONINTERACTIVE=1`, `CI=true` 설정) 터미널 앞에서 계속 기다리지 않아도 되도록 하기 위함입니다. 단 세 곳, **Git 이메일 입력(3.2)** · **ZenHub 토큰 주입(8.5)** · **Orca 권한 안내(9)** 에서만 잠깐 멈춰 입력을 기다립니다 — 각각 `s`로 건너뛸 수 있고, 이미 설정된 맥이라면 묻지 않습니다. (Jira 토큰 주입(8.6)·Slang GPT 키 주입(8.7)·DCM 키 주입(8.8)·Slack 토큰 주입(8.9)은 ZenHub에서 켠 op 설정을 그대로 재사용하므로 따로 멈추지 않습니다.) (터미널이 아닌 파이프 실행이면 멈추지 않고 건너뜁니다.)
+- **설치 중 y/n 질문에 자동으로 답합니다.** (`NONINTERACTIVE=1`, `CI=true` 설정) 터미널 앞에서 계속 기다리지 않아도 되도록 하기 위함입니다. 사람 입력을 기다리는 곳은 두 종류뿐입니다 — ① **관리자(맥 로그인) 암호**: Homebrew 설치(0) · Xcode 전환(1.5) · 브라우저 확장 등록(1.6), ② **직접 답해야 하는 질문**: **Git 이메일 입력(3.2)** · **ZenHub 토큰 주입(8.5)** · **Orca 권한 안내(9)** 에서만 잠깐 멈춥니다 — 각각 `s`로 건너뛸 수 있고, 이미 설정된 맥이라면 묻지 않습니다. (Jira 토큰 주입(8.6)·Slang GPT 키 주입(8.7)·DCM 키 주입(8.8)·Slack 토큰 주입(8.9)은 ZenHub에서 켠 op 설정을 그대로 재사용하므로 따로 멈추지 않습니다.) (터미널이 아닌 파이프 실행이면 멈추지 않고 건너뜁니다.)
 - **Homebrew 자동 설치(0단계)에서 관리자 암호를 한 번 물어볼 수 있습니다.** Homebrew는 이미 있으면 건드리지 않고, 없을 때만 [공식 설치 스크립트](https://brew.sh)를 그대로 실행합니다(비공식 경로를 쓰지 않습니다). **여기만은 실패하면 `⚠` 후 계속이 아니라 스크립트가 멈춥니다** — 이후 단계 대부분이 Homebrew로 설치되기 때문에, 계속 진행하면 전부 실패해서 원인을 알아보기 어려워지기 때문입니다.
 - **Xcode 전환(1.5단계)에서 sudo 암호를 한 번 물어볼 수 있습니다.** `xcode-select`가 Command Line Tools를 가리키고 있으면 Xcode.app으로 전환하는데, 이 작업엔 관리자 암호가 필요합니다. 이미 Xcode.app을 가리키고 있다면 묻지 않고 건너뜁니다. (터미널이 아닌 파이프 실행이면 시도하지 않고 건너뜁니다.)
 - **Terminal.app 폰트 자동 적용(7.5단계)은 macOS 기본 Terminal.app에서 실행 중일 때만 동작합니다.** 지금 실행 중인 터미널이 Terminal.app이 아니면(예: iTerm2) 건드리지 않고 건너뛰므로, 다른 터미널 앱에서 예상치 못한 창이 뜨는 일은 없습니다.
@@ -569,9 +615,15 @@ Orca 전체 디스크 접근: ...
 - **코드가 전부 공개돼 있습니다.** 이 저장소의 [`mac-setup.sh`](./mac-setup.sh) 파일이 스크립트의 전부이며, 실행 전에 직접 열어서 읽어보실 수 있습니다. [빠른 시작](#quickstart)의 한 줄 실행은 이 저장소의 파일을 그대로 받아 실행하는 것이라 내용이 같지만, **읽어보고 실행하고 싶다면** 같은 섹션의 `git clone` 방식을 쓰시거나 아래처럼 먼저 내려받아 열어보셔도 됩니다.
 
   ```bash
-  curl -fsSL https://raw.githubusercontent.com/coco-de/co-mac/main/mac-setup.sh -o mac-setup.sh
-  open -e mac-setup.sh    # 내용을 확인한 뒤
-  bash mac-setup.sh
+  mkdir -p ~/co-mac
+  curl -fsSL https://raw.githubusercontent.com/coco-de/co-mac/main/mac-setup.sh -o ~/co-mac/mac-setup.sh
+  open -e ~/co-mac/mac-setup.sh
+  ```
+
+  텍스트 편집기가 열리면 내용을 확인하시고, **다 읽으신 뒤에** 아래를 실행하세요.
+
+  ```bash
+  bash ~/co-mac/mac-setup.sh
   ```
 
 <details>
@@ -586,6 +638,12 @@ Orca 전체 디스크 접근: ...
 - `direnv hook zsh`를 무조건 실행하던 줄 → direnv가 설치돼 있을 때만 실행되도록 가드 추가
 - **PATH 중복 제거(`typeset -U path`) 설정을 맨 위에 추가** — 이게 없으면 터미널을 중첩해서 열 때마다(tmux, claude, 서브셸 등) 같은 경로가 계속 쌓입니다. 3단계만 겹쳐도 PATH 항목이 40개 가까이 늘어나 명령 찾는 속도가 느려집니다
 - 기존 `.zshrc`가 `~/powerlevel10k` 경로를 직접 참조하는 경우를 위해, 같은 위치에도 powerlevel10k를 추가로 내려받아 둠
+
+**반대로, 자동으로 따라오지 *않는* 것도 있습니다.** 아래는 팀 `.zshrc`에만 들어 있는 설정이라, 예전 `.zshrc`를 가져오시면 직접 추가하셔야 합니다.
+
+- `pyenv init` — 없으면 새 터미널에서 `python`이 "command not found"로 뜹니다 (설치는 돼 있어도 경로가 안 잡힘)
+- `ANDROID_HOME` / SDK PATH — 없으면 `adb`·`sdkmanager`·`emulator`를 터미널에서 부를 수 없고, Gradle이 SDK를 못 찾습니다
+- `claude`/`cld` 실행 시 colima 자동 기동 함수 — 없으면 Jira MCP를 쓰기 전에 `colima start`를 직접 실행해야 합니다
 
 </details>
 

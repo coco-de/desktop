@@ -98,6 +98,27 @@ export PATH="$HOME/.rbenv/bin:$PATH"
 # zsh에서는 which보다 command -v 가 정확하다(별칭·함수에 속지 않음).
 command -v rbenv >/dev/null && eval "$(rbenv init -)"
 
+## [Python — pyenv]
+# mac-setup.sh 5단계가 pyenv로 최신 3.x를 깔고 `pyenv global`로 기본 버전을 지정하지만,
+# 그건 ~/.pyenv/version 파일에 기록만 할 뿐이다. 실제로 그 파이썬을 쓰려면 pyenv의
+# shims 폴더가 PATH에 있어야 하는데, 이 설정이 없으면 새 터미널에서 `python`이
+# "command not found"로 뜬다 (macOS에는 python 명령 자체가 없다).
+export PYENV_ROOT="$HOME/.pyenv"
+[[ -d "$PYENV_ROOT/bin" ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+command -v pyenv >/dev/null && eval "$(pyenv init -)"
+
+## [Android SDK]
+# mac-setup.sh 4-e단계가 SDK·NDK·에뮬레이터·AVD를 이 경로에 설치·구성한다.
+# 이 설정이 없으면 설치는 돼 있어도 터미널에서 adb·sdkmanager·emulator를 부를 수 없고,
+# Gradle이 SDK 위치를 못 찾아 안드로이드 빌드가 실패한다.
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+export ANDROID_SDK_ROOT="$ANDROID_HOME"
+if [[ -d "$ANDROID_HOME" ]]; then
+  export PATH="$ANDROID_HOME/platform-tools:$PATH"
+  export PATH="$ANDROID_HOME/emulator:$PATH"
+  export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$PATH"
+fi
+
 # FVM 설정 개선
 export PATH="$HOME/fvm/default/bin:$PATH"
 export PUB_CACHE="$HOME/.pub-cache"
