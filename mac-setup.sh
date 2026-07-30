@@ -933,13 +933,14 @@ yes | fvm global stable --force 2>/dev/null || yes | fvm global stable \
   || echo "  ⚠ Flutter stable 글로벌 설정 실패 → 건너뜀 (수동 설정: fvm global stable)"
 export PATH="$HOME/fvm/default/bin:$PATH"
 
-# 4-b. Dart 글로벌 패키지 (serverpod_cli, marionette_mcp, mcp_server_dart)
+# 4-b. Dart 글로벌 패키지 (serverpod_cli, marionette_mcp, mcp_server_dart, cob/co-bricks)
 log "Dart 글로벌 패키지 설치"
 export PUB_CACHE="$HOME/.pub-cache"
 export PATH="$PUB_CACHE/bin:$PATH"
 dart pub global activate serverpod_cli 4.0.0-beta.0 || echo "  ⚠ serverpod_cli 설치 실패 → 건너뜀"
 dart pub global activate marionette_mcp || echo "  ⚠ marionette_mcp 설치 실패 → 건너뜀"
 dart pub global activate mcp_server_dart || echo "  ⚠ mcp_server_dart 설치 실패 → 건너뜀"
+dart pub global activate --source git https://github.com/coco-de/co-bricks.git || echo "  ⚠ cob(co-bricks) 설치 실패 → 건너뜀"
 
 # 4-c. Google Cloud CLI (gcloud)
 log "Google Cloud CLI 설치"
@@ -1915,6 +1916,7 @@ echo "  mcp:slack: $(claude mcp list 2>/dev/null | grep -q '^slack' \
   || echo '❌')"
 echo "  marionette: $([[ -x "$PUB_CACHE/bin/marionette_mcp" ]] && echo '✓' || echo '❌')"
 echo "  mcp_server_dart: $(dart pub global list 2>/dev/null | grep -q '^mcp_server_dart ' && echo '✓' || echo '❌')"
+echo "  cob(co-bricks): $(dart pub global list 2>/dev/null | grep -q '^cob ' && echo '✓' || echo '❌')"
 CS_COUNT=$(ls -d "$HOME/.claude/plugins/marketplaces/cocode-skills/plugins"/*/ 2>/dev/null | grep -c .)
 echo "  cocode-skills: $([[ "$CS_COUNT" -gt 0 ]] && echo "✓ ${CS_COUNT}개 플러그인" || echo '❌ (gh auth login 후 재실행)')"
 echo "  android : $([[ -x "$ANDROID_HOME/platform-tools/adb" ]] && echo "✓ $ANDROID_HOME" || echo '❌')"
