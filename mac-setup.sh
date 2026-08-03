@@ -108,6 +108,19 @@ fi
 log()  { echo ""; echo "▶ $1"; }
 have() { command -v "$1" >/dev/null 2>&1; }
 
+# 1Password 관련 여러 단계(3.4 GitHub 인증 자동화 · 8.5~8.9 팀 토큰 주입)가 공유하는
+# 팀 계정 식별자와 계정 확인 함수. 가장 먼저 쓰는 단계(3.4)보다 앞에 두어야 해서 여기 둔다.
+TEAM_OP_ACCOUNT="team-cocodeinc.1password.com"   # 팀 1Password 계정 (비밀 아님)
+
+# op에 쓸 수 있는 계정이 등록돼 있는지 확인. 등록됨 0, 아니면 1.
+#   ⚠ `op account list`는 계정이 하나도 없어도 종료코드 0에 빈 목록('[]')만 출력한다.
+#     따라서 종료코드가 아니라 '출력 내용'으로 판단해야 한다.
+op_has_account() {
+  local accounts
+  accounts="$(op account list --format=json 2>/dev/null </dev/null)" || return 1
+  [[ -n "$accounts" && "$accounts" != "[]" ]]
+}
+
 # 모든 y/n 확인 프롬프트 자동 통과
 #   아래 0단계(Homebrew 자동 설치)보다 반드시 먼저 내보내야 한다 — Homebrew 공식 설치
 #   스크립트가 이 값을 보고 "계속하려면 Enter를 누르세요" 대기를 생략하기 때문이다.
@@ -236,8 +249,11 @@ fi
 #   3.   CLI 도구 (brew formulae: go·gh·jq·docker 등)
 #   3.2. Git 사용자 이메일 (git config --global user.email, TTY면 입력·s로 건너뜀)
 #   3.3. 브라우저 번역 언어 자동 설정 (Chrome·Dia → 한국어로 자동 번역, 영어는 번역 안 함)
-#   3.5. cocode-skills 팀 플러그인 (사설 레포 install.sh, gh 인증 필요)
+#   3.4. GitHub 인증 자동화 (1Password 팀 공용 토큰 → gh auth login + gh auth setup-git,
+#        이미 인증돼 있으면 건너뜀 · 아래 3.5·4단계 cob 설치가 이 인증을 그대로 사용)
+#   3.5. cocode-skills 팀 플러그인 (사설 레포 install.sh, gh 인증 필요 — 보통 3.4에서 자동 완료)
 #   4.   Flutter/Dart(FVM) · Dart 글로벌 · gcloud · DCM · Android SDK/AVD
+#        └ cob(co-bricks)도 비공개 레포라 gh 인증 필요 (3.4에서 자동 완료, 안 되면 건너뜀)
 #   5.   Python (pyenv)
 #   6.   Node.js (nvm)
 #   6.5. Claude Code 상태줄 (ccstatusline 먼저 시도 → 대화형이라 자동 등록에 보통 실패 →
@@ -896,10 +912,54 @@ set_translate_ko "Google Chrome" "Google Chrome" "$HOME/Library/Application Supp
 set_translate_ko "Dia"           "Dia"           "$HOME/Library/Application Support/Dia/User Data"
 
 # ------------------------------------------------------------
+# 3.4. GitHub 인증 자동화 (1Password 팀 공용 토큰 → gh auth login)
+#
+#   [이 단계가 하는 일 — 비개발자용 설명]
+#   coco-de 조직의 co-bricks·skills 레포는 비공개라서, 바로 아래 3.5단계(cocode-skills)와
+#   4단계의 cob(co-bricks) 설치가 GitHub 로그인 없이는 실패한다. 예전에는 사람이 직접
+#   'gh auth login'을 실행해야 했는데, 이 단계가 팀 공용 1Password 토큰으로 대신
+#   로그인해준다 — ZenHub·Jira 토큰 자동 주입(8.5·8.6단계)과 같은 방식이다.
+#
+#   [동작 전제]
+#   1) op(1password-cli) 설치 + 팀 계정 연결(TEAM_OP_ACCOUNT, 8.5단계와 공유) — 준비가
+#      안 됐다면 8.5단계 안내를 먼저 따라 하면 이 단계도 함께 준비된다.
+#   2) 1Password 팀 공용 항목: "API Token" 볼트 > "GitHub API Token" > credential 필드
+#      (레포 최소 read 권한이면 충분한 Personal Access Token)
+#
+#   [멱등성]
+#   'gh auth login'을 이미 마친 사람(수동이든 이 단계든)은 매번 다시 로그인하지 않고 건너뛴다.
+#
+#   [준비가 안 됐거나 실패해도]
+#   ⚠ 후 계속 진행한다 — 아래 3.5단계와 4단계 cob 설치가 각자 gh 인증 상태를 다시 확인해
+#   알맞게 건너뛰므로 전체 설치가 멈추지 않는다.
+# ------------------------------------------------------------
+log "GitHub 인증 자동화 (1Password → gh auth login)"
+GITHUB_TOKEN_OP_REF="op://API Token/GitHub API Token/credential"  # 팀 공용 항목 경로 (토큰 값은 1Password에만 존재)
+if have gh && gh auth status >/dev/null 2>&1; then
+  echo "  ✓ gh 이미 인증됨 (건너뜀)"
+elif have gh && op_has_account; then
+  gh_token="$(op read --account "$TEAM_OP_ACCOUNT" "$GITHUB_TOKEN_OP_REF" 2>/dev/null </dev/null)" || gh_token=""
+  if [[ -n "$gh_token" ]] \
+     && printf '%s' "$gh_token" | gh auth login --hostname github.com --with-token >/dev/null 2>&1 \
+     && gh auth setup-git >/dev/null 2>&1; then
+    echo "  ✓ 1Password 토큰으로 gh 자동 로그인 완료 (git도 이 인증을 그대로 사용)"
+  else
+    echo "  ⚠ 1Password에서 GitHub 토큰을 읽지 못했습니다 → 건너뜀 (수동: gh auth login)"
+    echo "     ※ 팀 공용 항목이 없다면 1Password 'API Token' 볼트에 'GitHub API Token'(credential 필드,"
+    echo "       레포 read 권한 PAT)을 만들어 주세요."
+  fi
+  unset gh_token
+else
+  echo "  ⚠ gh 미설치 또는 1Password 계정 미연결 → GitHub 인증 건너뜀 (수동: gh auth login)"
+fi
+
+# ------------------------------------------------------------
 # 3.5. cocode-skills 팀 플러그인 설치 (사설 레포 coco-de/skills)
 #   marionette·dart·figma(serve)·dev-cycle·coui 등 cc-* 플러그인 번들을 설치한다.
 #   private 레포라 `claude plugin marketplace add`가 안 되므로 팀 install.sh로 동기화.
 #   전제: gh 인증(gh auth login) + jq(위 3단계에서 설치). rsync는 macOS 기본 제공.
+#   바로 위 3.4단계가 1Password 토큰으로 gh 자동 로그인을 먼저 시도하므로, 보통은 이
+#   단계에 오기 전에 이미 인증돼 있다. 3.4가 실패했거나 건너뛴 경우에만 아래 else로 빠진다.
 # ------------------------------------------------------------
 log "cocode-skills 팀 플러그인 설치 (coco-de/skills install.sh)"
 if have gh && gh auth status >/dev/null 2>&1; then
@@ -914,7 +974,8 @@ if have gh && gh auth status >/dev/null 2>&1; then
   fi
   rm -f "$cs_installer"
 else
-  echo "  ⚠ gh 인증 필요 → 'gh auth login' 후 재실행하면 cocode-skills 팀 플러그인이 설치됩니다"
+  echo "  ⚠ gh 인증 필요 → 위 3.4단계(1Password 자동 로그인) 확인 또는 'gh auth login' 수동 실행 후"
+  echo "     재실행하면 cocode-skills 팀 플러그인이 설치됩니다"
 fi
 
 # ------------------------------------------------------------
@@ -940,7 +1001,16 @@ export PATH="$PUB_CACHE/bin:$PATH"
 dart pub global activate serverpod_cli 4.0.0-beta.0 || echo "  ⚠ serverpod_cli 설치 실패 → 건너뜀"
 dart pub global activate marionette_mcp || echo "  ⚠ marionette_mcp 설치 실패 → 건너뜀"
 dart pub global activate mcp_server_dart || echo "  ⚠ mcp_server_dart 설치 실패 → 건너뜀"
-dart pub global activate --source git https://github.com/coco-de/co-bricks.git || echo "  ⚠ cob(co-bricks) 설치 실패 → 건너뜀"
+# cob(co-bricks)는 비공개 레포라 순수 git 인증이 필요하다 — gh 인증(위 3.4단계에서 1Password로
+# 자동 로그인 시도) 상태를 먼저 확인해, 안 돼 있으면 원인을 알 수 있는 안내로 대신한다.
+# (인증 없이 그대로 시도하면 git이 사용자 이름/암호를 물어보다 알아보기 어려운 원문 에러로 실패한다.)
+if have gh && gh auth status >/dev/null 2>&1; then
+  dart pub global activate --source git https://github.com/coco-de/co-bricks.git \
+    || echo "  ⚠ cob(co-bricks) 설치 실패 → 건너뜀"
+else
+  echo "  ⚠ GitHub 인증이 안 돼 있어 cob(co-bricks) 설치를 건너뜁니다"
+  echo "     (위 3.4단계 1Password 자동 로그인 실패 또는 gh 미설치 — 수동: gh auth login 후 재실행)"
+fi
 
 # 4-c. Google Cloud CLI (gcloud)
 log "Google Cloud CLI 설치"
@@ -1354,12 +1424,13 @@ fi
 #        (안 켜면 op는 등록된 계정이 없어 실패한다. 'op account add'를 직접 할 필요는 없다.)
 #   ※ 팀 공용 1Password 항목: "API Token" 볼트 > "ZenHub API Token" > credential 필드
 #     (계정이 여러 개인 사용자도 동작하도록 --account로 팀 계정을 명시)
+#   ※ 팀 계정 식별자(TEAM_OP_ACCOUNT)와 op_has_account()는 3.4단계보다 앞서 있어야 해서
+#     맨 위(have() 바로 아래)에 정의돼 있다 — 이 단계는 그걸 그대로 재사용한다.
 #
 #   [준비가 안 됐을 때]
 #   터미널(TTY)이면 여기서 멈춰 한글 안내를 띄우고, 1Password 설정을 마친 뒤 Enter로 재시도한다.
 #   파이프 실행(TTY 없음)이면 멈추지 않고 건너뜀(설정 후 스크립트 재실행 시 자동 주입).
 # ------------------------------------------------------------
-ZENHUB_TOKEN_OP_ACCOUNT="team-cocodeinc.1password.com"                # 팀 1Password 계정 (비밀 아님)
 ZENHUB_TOKEN_OP_REF="op://API Token/ZenHub API Token/credential"      # 팀 공용 항목 경로 (값은 1Password에만 존재)
 # jira MCP(mcp-atlassian)도 같은 팀 계정·같은 볼트의 토큰을 쓴다 (아래 8.6단계에서 주입).
 #   자격증명은 개발팀 공용 계정(dev@cocode.im)의 Jira 개인 API 토큰(ATATT…)이며,
@@ -1404,15 +1475,6 @@ zenhub_token_line_is_empty() {
   [[ -z "$val" ]]
 }
 
-# op에 쓸 수 있는 계정이 등록돼 있는지 확인. 등록됨 0, 아니면 1.
-#   ⚠ `op account list`는 계정이 하나도 없어도 종료코드 0에 빈 목록('[]')만 출력한다.
-#     따라서 종료코드가 아니라 '출력 내용'으로 판단해야 한다.
-op_has_account() {
-  local accounts
-  accounts="$(op account list --format=json 2>/dev/null </dev/null)" || return 1
-  [[ -n "$accounts" && "$accounts" != "[]" ]]
-}
-
 # op read → ~/.zshrc의 ZENHUB_API_TOKEN 주입. 성공 시 0, 실패 시 1 반환.
 #   ⚠ op 호출에는 반드시 stdin을 </dev/null로 막는다.
 #     계정이 등록되지 않은 상태의 op는 "Do you want to add an account manually now? [Y/n]"
@@ -1422,7 +1484,7 @@ op_has_account() {
 inject_zenhub_token() {
   local tok
   op_has_account || return 1
-  tok="$(op read --account "$ZENHUB_TOKEN_OP_ACCOUNT" "$ZENHUB_TOKEN_OP_REF" 2>/dev/null </dev/null)" || return 1
+  tok="$(op read --account "$TEAM_OP_ACCOUNT" "$ZENHUB_TOKEN_OP_REF" 2>/dev/null </dev/null)" || return 1
   [[ -n "$tok" ]] || return 1
   strip_zenhub_token_lines
   printf 'export ZENHUB_API_TOKEN=%q\n' "$tok" >> "$HOME/.zshrc"
@@ -1451,7 +1513,7 @@ jira_token_line_is_empty() {
 inject_jira_token() {
   local tok
   op_has_account || return 1
-  tok="$(op read --account "$ZENHUB_TOKEN_OP_ACCOUNT" "$JIRA_TOKEN_OP_REF" 2>/dev/null </dev/null)" || return 1
+  tok="$(op read --account "$TEAM_OP_ACCOUNT" "$JIRA_TOKEN_OP_REF" 2>/dev/null </dev/null)" || return 1
   [[ -n "$tok" ]] || return 1
   strip_jira_token_lines
   printf 'export JIRA_API_TOKEN=%q\n' "$tok" >> "$HOME/.zshrc"
@@ -1479,7 +1541,7 @@ slang_gpt_token_line_is_empty() {
 inject_slang_gpt_token() {
   local tok
   op_has_account || return 1
-  tok="$(op read --account "$ZENHUB_TOKEN_OP_ACCOUNT" "$SLANG_GPT_TOKEN_OP_REF" 2>/dev/null </dev/null)" || return 1
+  tok="$(op read --account "$TEAM_OP_ACCOUNT" "$SLANG_GPT_TOKEN_OP_REF" 2>/dev/null </dev/null)" || return 1
   [[ -n "$tok" ]] || return 1
   strip_slang_gpt_token_lines
   printf 'export SLANG_GPT_API_KEY=%q\n' "$tok" >> "$HOME/.zshrc"
@@ -1514,8 +1576,8 @@ dcm_token_line_is_empty() {
 inject_dcm_token() {
   local email key
   op_has_account || return 1
-  email="$(op read --account "$ZENHUB_TOKEN_OP_ACCOUNT" "$DCM_EMAIL_OP_REF" 2>/dev/null </dev/null)" || return 1
-  key="$(op read --account "$ZENHUB_TOKEN_OP_ACCOUNT" "$DCM_CI_KEY_OP_REF" 2>/dev/null </dev/null)" || return 1
+  email="$(op read --account "$TEAM_OP_ACCOUNT" "$DCM_EMAIL_OP_REF" 2>/dev/null </dev/null)" || return 1
+  key="$(op read --account "$TEAM_OP_ACCOUNT" "$DCM_CI_KEY_OP_REF" 2>/dev/null </dev/null)" || return 1
   [[ -n "$email" && -n "$key" ]] || return 1   # 둘 다 있어야 주입 (반쪽 인증 방지)
   strip_dcm_token_lines
   printf 'export DCM_EMAIL=%q\n' "$email" >> "$HOME/.zshrc"
@@ -1547,8 +1609,8 @@ slack_token_line_is_empty() {
 inject_slack_token() {
   local team_id bot_token
   op_has_account || return 1
-  team_id="$(op read --account "$ZENHUB_TOKEN_OP_ACCOUNT" "$SLACK_TEAM_ID_OP_REF" 2>/dev/null </dev/null)" || return 1
-  bot_token="$(op read --account "$ZENHUB_TOKEN_OP_ACCOUNT" "$SLACK_BOT_TOKEN_OP_REF" 2>/dev/null </dev/null)" || return 1
+  team_id="$(op read --account "$TEAM_OP_ACCOUNT" "$SLACK_TEAM_ID_OP_REF" 2>/dev/null </dev/null)" || return 1
+  bot_token="$(op read --account "$TEAM_OP_ACCOUNT" "$SLACK_BOT_TOKEN_OP_REF" 2>/dev/null </dev/null)" || return 1
   [[ -n "$team_id" && -n "$bot_token" ]] || return 1   # 둘 다 있어야 주입 (반쪽 인증 방지)
   strip_slack_token_lines
   printf 'export SLACK_TEAM_ID=%q\n' "$team_id" >> "$HOME/.zshrc"
@@ -1576,13 +1638,13 @@ print_1password_cli_guide() {
   echo "     (토큰 값은 1Password에만 저장되고, 이 저장소(git)에는 절대 들어가지 않습니다.)"
   echo ""
   echo "     [설정 방법 — 1Password 앱에서]"
-  echo "       1) 1Password 앱을 열고 팀 계정($ZENHUB_TOKEN_OP_ACCOUNT)으로 로그인"
+  echo "       1) 1Password 앱을 열고 팀 계정($TEAM_OP_ACCOUNT)으로 로그인"
   echo "       2) 앱 메뉴 > 설정(⌘,) > '개발자' 탭 > '1Password CLI와 통합' 체크"
   echo "          · '개발자' 탭이 안 보이면: 설정 > 보안 > 'Touch ID로 잠금 해제'를 먼저 켜세요"
   echo "          · 터미널을 이미 열어둔 상태였다면 체크 후 이 창에서 Enter만 누르면 됩니다"
   echo ""
   echo "     [잘 됐는지 확인하려면 — 새 터미널 창에서]"
-  echo "       op account list   ← 팀 계정($ZENHUB_TOKEN_OP_ACCOUNT)이 목록에 보이면 성공"
+  echo "       op account list   ← 팀 계정($TEAM_OP_ACCOUNT)이 목록에 보이면 성공"
   echo "                            · 목록이 비어 있거나 '계정을 추가할까요?'라고 물으면"
   echo "                              위 2번 체크가 아직 안 된 것입니다 (질문에는 n으로 답하세요)"
   echo "                            · 몇 초~수십 초 멈추면 1Password 앱이 잠금 해제(Touch ID)를"
@@ -1624,7 +1686,7 @@ elif [[ -t 0 ]]; then
     # 어느 단계에서 막혔는지 짚어준다 — 계정 자체가 없으면 앱 통합이, 있으면 금고 권한이 원인이다.
     if op_has_account; then
       echo "  ✗ 계정은 등록됐지만 토큰을 읽지 못했습니다."
-      echo "     → 팀 계정($ZENHUB_TOKEN_OP_ACCOUNT)으로 로그인된 상태인지, 'API Token' 금고에"
+      echo "     → 팀 계정($TEAM_OP_ACCOUNT)으로 로그인된 상태인지, 'API Token' 금고에"
       echo "       접근 권한이 있는지 확인한 뒤 다시 Enter를 누르세요."
     else
       echo "  ✗ 아직 op에 등록된 1Password 계정이 없습니다."
@@ -1635,7 +1697,7 @@ else
   # 비대화형(TTY 없음): 멈추지 않고 건너뜀
   OP_STATUS="not-ready"
   echo "  ⚠ op read 실패(비대화형) → 아래 1Password CLI 설정을 마친 뒤 './mac-setup.sh --env-only' 를 실행하면 토큰만 자동 주입됩니다"
-  echo "     1) 1Password 앱에 팀 계정($ZENHUB_TOKEN_OP_ACCOUNT)으로 로그인"
+  echo "     1) 1Password 앱에 팀 계정($TEAM_OP_ACCOUNT)으로 로그인"
   echo "     2) 앱 > 설정(⌘,) > 개발자 > '1Password CLI와 통합' 체크"
   echo "     3) 확인: op account list  (팀 계정이 보이면 성공)"
 fi
@@ -1871,6 +1933,11 @@ echo "  상태줄(statusline): $(grep -q '\"statusLine\"' "$HOME/.claude/setting
   && echo '✓ 등록됨 (Claude Code에서 적용)' \
   || echo '❌ 미등록 (수동 설정: npx -y ccstatusline@latest 또는 curl -fsSL https://raw.githubusercontent.com/AwesomeJun/CC-statusline/main/install.sh | bash -s -- small)')"
 echo "  git email: $(git config --global user.email 2>/dev/null || echo '❌ (git config --global user.email <이메일> 로 설정)')"
+# GitHub 인증(gh): 3.4단계에서 1Password 토큰으로 자동 로그인을 시도한 결과 — 이게 돼 있어야
+# 아래 cocode-skills·cob(co-bricks) 둘 다 설치된다.
+echo "  GitHub 인증(gh): $(have gh && gh auth status >/dev/null 2>&1 \
+  && echo '✓ 인증됨' \
+  || echo '❌ (1Password "API Token" 볼트의 "GitHub API Token" 항목 확인 또는 gh auth login 후 재실행)')"
 echo "  mcp:figma: $(claude plugin list 2>/dev/null | grep -q 'figma@claude-plugins-official' && echo '✓ 설치됨 (/mcp 로그인 필요)' || echo '❌')"
 # op는 '설치됨'과 '설정됨(1Password 앱 CLI 통합)'이 다르다 — 설치만 되고 통합이 꺼져 있으면 토큰을 못 읽는다.
 # 8.5단계에서 이미 판정한 OP_STATUS를 그대로 쓴다 (여기서 op를 다시 부르면 앱 승인 대기로 멈출 수 있음).
@@ -1916,9 +1983,9 @@ echo "  mcp:slack: $(claude mcp list 2>/dev/null | grep -q '^slack' \
   || echo '❌')"
 echo "  marionette: $([[ -x "$PUB_CACHE/bin/marionette_mcp" ]] && echo '✓' || echo '❌')"
 echo "  mcp_server_dart: $(dart pub global list 2>/dev/null | grep -q '^mcp_server_dart ' && echo '✓' || echo '❌')"
-echo "  cob(co-bricks): $(dart pub global list 2>/dev/null | grep -q '^cob ' && echo '✓' || echo '❌')"
+echo "  cob(co-bricks): $(dart pub global list 2>/dev/null | grep -q '^cob ' && echo '✓' || echo '❌ (위 GitHub 인증(gh) 확인 후 재실행)')"
 CS_COUNT=$(ls -d "$HOME/.claude/plugins/marketplaces/cocode-skills/plugins"/*/ 2>/dev/null | grep -c .)
-echo "  cocode-skills: $([[ "$CS_COUNT" -gt 0 ]] && echo "✓ ${CS_COUNT}개 플러그인" || echo '❌ (gh auth login 후 재실행)')"
+echo "  cocode-skills: $([[ "$CS_COUNT" -gt 0 ]] && echo "✓ ${CS_COUNT}개 플러그인" || echo '❌ (위 GitHub 인증(gh) 확인 후 재실행)')"
 echo "  android : $([[ -x "$ANDROID_HOME/platform-tools/adb" ]] && echo "✓ $ANDROID_HOME" || echo '❌')"
 echo "  ndk     : $([[ -n "${ANDROID_NDK_HOME:-}" && -d "${ANDROID_NDK_HOME:-}" ]] && echo "✓ $ANDROID_NDK_HOME" || echo '❌')"
 echo "  avd     : $([[ -n "${AVD_NAME:-}" ]] && "$AVDMANAGER" list avd 2>/dev/null | grep -q "$AVD_NAME" && echo "✓ $AVD_NAME" || echo '❌')"
@@ -1962,7 +2029,10 @@ echo "       두 필드에서 읽어 주입됩니다. slack MCP는 @modelcontext
 echo "     ↳ 주입 후에는 반드시 '새 터미널'에서 claude를 실행하세요."
 echo "       claude 실행 시점의 환경변수에서 토큰을 읽으므로, 예전 터미널에서 띄운 claude는 토큰을 못 읽습니다."
 echo "       (jira MCP가 docker로 뜨는데, colima가 꺼져 있으면 새 .zshrc의 claude/cld 함수가 자동으로 'colima start'를 시도합니다 — 최초 콜드 스타트는 수십 초 걸릴 수 있으니 미리 켜두면 더 빠릅니다)"
-echo "  8. cocode-skills 팀 플러그인이 '❌'이면: gh auth login 후 스크립트 재실행 (사설 레포 접근에 gh 인증 필요)"
+echo "  8. GitHub 인증(gh)이 '❌'이면 cocode-skills·cob(co-bricks) 둘 다 설치되지 않습니다 (3.4단계에서 시도)"
+echo "     ↳ 자동 로그인은 팀 'API Token' 볼트 > 'GitHub API Token' > 'credential' 필드(레포 read 권한 PAT)에서"
+echo "       읽어 처리됩니다 — 항목이 없다면 팀 관리자에게 생성을 요청한 뒤 스크립트를 재실행하세요"
+echo "     ↳ 그래도 안 되면 수동으로: gh auth login 후 스크립트 재실행"
 echo "  9. lefthook(Git 훅)은 레포마다 한 번씩 켜야 합니다 — lefthook.yml 이 있는 프로젝트 폴더에서: lefthook install"
 echo "     ↳ 이걸 해야 커밋·푸시할 때 포맷/린트/테스트가 자동으로 돌아갑니다 (설정 파일이 없는 레포에서는 할 일 없음)"
 echo " 10. Stats(시스템 모니터)는 최초 1회 직접 실행해야 메뉴막대에 나타납니다: open -a Stats"

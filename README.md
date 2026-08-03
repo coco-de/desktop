@@ -286,13 +286,14 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 | 🧩 브라우저 확장 프로그램 | Chrome·Dia에 [ZenHub for GitHub](https://chromewebstore.google.com/detail/zenhub-for-github/ogcgkffhplmphkaahpmffcafajaocjbd) 확장을 자동 등록(External Extensions 드롭인 방식, sudo 암호 입력 필요) — Dia는 동작이 보장되지 않아 실패해도 경고만 남기고 계속 진행 |
 | 🔌 Claude MCP | figma 플러그인 자동 설치 + marionette·dart MCP, zenhub·jira·slack MCP 자동 등록. `ZENHUB_API_TOKEN`·`JIRA_API_TOKEN`·`SLACK_TEAM_ID`·`SLACK_BOT_TOKEN`(팀 공용 토큰)은 1Password CLI(`op`)로 `~/.zshrc`에 자동 주입 — git에 커밋 안 됨 (⚠️ figma는 최초 1회 `/mcp` OAuth 로그인. zenhub·jira·slack은 OAuth 대신 1Password 팀 공용 토큰으로 인증 — 1Password 앱의 CLI 통합만 되면 자동 주입. jira는 `sooperset/mcp-atlassian`(Docker)로 **Jira REST API에 직접** 붙어(개발팀 공용 계정 토큰) 조직 Rovo 권한이 필요 없음 — 런타임에 colima/docker 데몬 필요. slack은 `@modelcontextprotocol/server-slack`(npx)로 뜨며 팀 ID+봇 토큰 두 값이 모두 있어야 인증됨 — [설정 방법](#after-install)) |
 | 🔑 팀 공용 토큰 | 위 `ZENHUB_API_TOKEN`·`JIRA_API_TOKEN`·`SLACK_TEAM_ID`·`SLACK_BOT_TOKEN`에 더해, 다국어 자동 번역 도구 `slang_gpt`가 쓰는 `SLANG_GPT_API_KEY`, DCM을 CI 모드로 인증하는 `DCM_EMAIL`·`DCM_CI_KEY`(1Password 항목 `DCM CI CD`의 이메일+키 한 쌍)도 같은 방식(1Password CLI → `~/.zshrc`)으로 자동 주입 — `SLANG_GPT_API_KEY`·`DCM_EMAIL`·`DCM_CI_KEY`는 MCP가 아니라 명령줄 도구가 직접 읽는 값이라 등록·로그인 과정이 없음 ([설정 방법](#after-install)) |
-| 🧩 cocode-skills 팀 플러그인 | 사설 레포 `coco-de/skills`의 `install.sh`로 cc-* 플러그인 번들(marionette·dart·figma·dev-cycle·coui 등) 자동 동기화 (⚠️ `gh auth login` 인증 필요, 미인증 시 건너뜀) |
+| 🔑 GitHub 인증(gh) | coco-de 조직의 비공개 레포(`co-bricks`·`skills`) 접근용 GitHub 로그인을 팀 공용 1Password 토큰으로 자동 처리(`gh auth login` + `gh auth setup-git`) — 이미 인증돼 있으면 건너뜀. 실패해도 계속 진행하며, 아래 cocode-skills·cob(co-bricks)가 각자 인증 상태를 다시 확인해 건너뜀([설정 방법](#after-install)) |
+| 🧩 cocode-skills 팀 플러그인 | 사설 레포 `coco-de/skills`의 `install.sh`로 cc-* 플러그인 번들(marionette·dart·figma·dev-cycle·coui 등) 자동 동기화 (⚠️ GitHub 인증 필요 — 보통 위 단계에서 1Password로 자동 처리되며, 안 됐다면 `gh auth login` 수동 실행 후 재실행) |
 | 📱 Android SDK | cmdline-tools, platform-tools, build-tools, platforms, NDK, 에뮬레이터 시스템 이미지, AVD까지 전부 자동 설치·구성 (Android Studio 첫 실행 마법사 불필요) |
 | 🛠 CLI 도구 | go, pyenv, nvm, git, gh, jq, cocoapods, fastlane, awscli, colima, docker, docker-compose, zsh-syntax-highlighting, direnv, openjdk@17, lefthook(Git 훅 관리자 — 레포별로 최초 1회 `lefthook install` 필요), Claude Code, ccstatusline(Claude Code 상태줄) → 실패 시 awesome-statusline(size: small)으로 자동 대체, codex, agy(Antigravity CLI), slack(Slack CLI), maestro(모바일 UI 자동화 CLI), op(1Password CLI), mas(App Store CLI — **Xcode.app이 없을 때만** 설치, Xcode 자동 설치용) |
 | ✉️ Git 설정 | 커밋에 사용할 회사 이메일을 실행 중에 입력받아 전역 설정(`git config --global user.email`) — 이미 설정돼 있으면 묻지 않고 건너뜀 |
 | 🌐 브라우저 번역 언어 | Chrome·Dia의 번역 대상 언어를 한국어로, "번역 안 함" 목록을 영어로 자동 설정(`dia://settings/languages` = `chrome://settings/languages`를 매번 손으로 누를 필요 없음) — 브라우저가 실행 중이면 건너뛰고 경고만 표시 |
 | 🐦 Flutter | fvm(버전 관리자)으로 Flutter stable 채널 글로벌 설정, DCM(Dart 코드 품질 검사 도구 — CI 인증 키 `DCM_EMAIL`·`DCM_CI_KEY`는 1Password에서 자동 주입) |
-| 🎯 Dart 글로벌 패키지 | serverpod_cli 4.0.0-beta.0, marionette_mcp, mcp_server_dart, cob(co-bricks) |
+| 🎯 Dart 글로벌 패키지 | serverpod_cli 4.0.0-beta.0, marionette_mcp, mcp_server_dart, cob(co-bricks) (⚠️ cob은 비공개 레포라 GitHub 인증 필요 — 보통 위 단계에서 1Password로 자동 처리되며, 안 됐다면 `gh auth login` 수동 실행 후 재실행) |
 | ☁️ 클라우드 | Google Cloud CLI (gcloud) |
 | 🐍 언어 런타임 | Python 최신 3.x (pyenv), Node.js LTS + npm (nvm) |
 | 💻 터미널 환경 | oh-my-zsh, powerlevel10k 테마, zsh-autosuggestions, zsh-syntax-highlighting, MesloLGS NF 폰트 |
@@ -359,7 +360,7 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 | | pyenv | 여러 Python 버전을 관리하는 도구 |
 | <img src="assets/icons/nvm.svg" width="20" height="20"> | nvm | 여러 Node.js 버전을 관리하는 도구 |
 | <img src="assets/icons/git.svg" width="20" height="20"> | git | 버전 관리 시스템 |
-| <img src="assets/icons/github.svg" width="20" height="20"> | gh | GitHub를 터미널에서 다루는 도구 |
+| <img src="assets/icons/github.svg" width="20" height="20"> | gh | GitHub를 터미널에서 다루는 도구. coco-de 비공개 레포(co-bricks·skills) 접근에 필요한 로그인은 팀 공용 1Password 토큰으로 자동 처리됩니다(`gh auth login` + `gh auth setup-git`) — 안 되면 `gh auth login`으로 직접 로그인 |
 | <img src="assets/icons/cocoapods.svg" width="20" height="20"> | cocoapods | iOS 라이브러리 의존성 관리자 |
 | <img src="assets/icons/fastlane.svg" width="20" height="20"> | fastlane | 앱 빌드·배포 자동화 도구 |
 | | awscli | AWS(아마존 클라우드)를 터미널에서 다루는 도구 |
@@ -377,7 +378,7 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 | <img src="assets/icons/codex.png" width="20" height="20"> | codex | OpenAI의 터미널 AI 코딩 에이전트. `brew install --cask codex`로 설치하며, 처음 실행할 때 ChatGPT 계정으로 로그인합니다 |
 | <img src="assets/icons/antigravity.png" width="20" height="20"> | agy (Antigravity CLI) | Google의 터미널 AI 코딩 에이전트. 은퇴한 Gemini CLI의 공식 후속 도구로, 단일 실행 파일이라 Claude Code처럼 공식 설치 스크립트(`antigravity.google/cli/install.sh`)로 `~/.local/bin/agy`에 설치합니다(별도 런타임 불필요). 처음 실행할 때 Google 계정으로 로그인합니다 |
 | <img src="assets/icons/slack.png" width="20" height="20"> | slack (Slack CLI) | Slack 앱/워크플로 개발용 공식 CLI. 공식 설치 스크립트(`downloads.slack-edge.com/slack-cli/install.sh`)로 `/usr/local/bin` 또는 `~/.local/bin`에 설치합니다. Slack CLI로 직접 앱을 만들려면 처음 한 번 `slack login`으로 워크스페이스 인증이 필요합니다(별개로, Claude Code의 `slack` MCP는 아래 팀 공용 토큰으로 인증됩니다) |
-| <img src="assets/icons/1password.svg" width="20" height="20"> | op (1Password CLI) | 1Password 금고를 **터미널에서** 열어보는 명령. 1Password 앱과 같은 금고를 보며, 앱에 로그인해 둔 상태를 그대로 빌려 씁니다. 이 스크립트는 팀 공용 ZenHub·Jira·Slack 토큰을 금고에서 읽어 `~/.zshrc`에 자동으로 넣어주는 데 사용합니다 (설정 방법은 아래 [ZenHub·Jira·Slang GPT·DCM·Slack 토큰 · 1Password CLI 설정](#after-install) 참고) |
+| <img src="assets/icons/1password.svg" width="20" height="20"> | op (1Password CLI) | 1Password 금고를 **터미널에서** 열어보는 명령. 1Password 앱과 같은 금고를 보며, 앱에 로그인해 둔 상태를 그대로 빌려 씁니다. 이 스크립트는 팀 공용 ZenHub·Jira·Slack 토큰을 금고에서 읽어 `~/.zshrc`에 자동으로 넣어주고, GitHub PAT로 `gh auth login`까지 대신 처리하는 데 사용합니다 (설정 방법은 아래 [ZenHub·Jira·Slang GPT·DCM·Slack 토큰 · 1Password CLI 설정](#after-install) 참고) |
 | <img src="assets/icons/mas.svg" width="20" height="20"> | mas (App Store CLI) | 터미널에서 Mac App Store 앱을 설치하는 도구. Xcode.app을 자동으로 깔기 위해서만 쓰기 때문에, **Xcode.app이 이미 있으면 mas 자체를 설치하지 않고 건너뜁니다** — App Store에 Apple ID로 로그인이 돼 있어야 하며, 로그인 자체는 mas가 대신 해줄 수 없습니다(로그인 안 돼 있으면 건너뛰고 App Store에서 직접 설치하라고 안내) |
 
 **Flutter / Dart**
@@ -389,7 +390,7 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 | <img src="assets/icons/dart.svg" width="20" height="20"> | serverpod_cli 4.0.0-beta.0 | Serverpod 백엔드 프레임워크 CLI (`dart pub global activate`로 설치) |
 | <img src="assets/icons/dart.svg" width="20" height="20"> | marionette_mcp | Claude Code의 `marionette` MCP 서버 — 실행 중인 Flutter 앱을 위젯 단위로 조작합니다 (`dart pub global activate`로 설치) |
 | <img src="assets/icons/dart.svg" width="20" height="20"> | mcp_server_dart | Claude Code의 `dart` MCP 서버 — 코드 분석·핫 리로드·패키지 탐색을 Claude가 직접 하게 해줍니다 (`dart pub global activate`로 설치) |
-| <img src="assets/icons/dart.svg" width="20" height="20"> | cob (co-bricks) | Mason bricks(코드 스캐폴딩 템플릿) 동기화·관리 CLI. `cc-bricks` 플러그인이 Feature/프로젝트를 빠르게 생성할 때 사용합니다 (`dart pub global activate --source git`로 설치) |
+| <img src="assets/icons/dart.svg" width="20" height="20"> | cob (co-bricks) | Mason bricks(코드 스캐폴딩 템플릿) 동기화·관리 CLI. `cc-bricks` 플러그인이 Feature/프로젝트를 빠르게 생성할 때 사용합니다 (`dart pub global activate --source git`로 설치 — 비공개 레포라 GitHub 인증 필요, 보통 위 `gh`에서 1Password로 자동 처리됨) |
 
 **클라우드 / 언어 런타임**
 
@@ -438,6 +439,7 @@ slack   : ...
 lefthook: ...
 상태줄(statusline): ...
 git email: ...
+GitHub 인증(gh): ...
 mcp:figma: ...
 op(1Password CLI): ...
 mcp:zenhub: ...
@@ -461,6 +463,8 @@ Orca 전체 디스크 접근: ...
 
 > `lefthook`은 커밋·푸시 직전에 검사를 자동으로 돌려주는 Git 훅 관리자입니다. 여기 버전이 찍히면 도구는 준비된 것이고, **실제로 켜는 건 레포마다 한 번씩**입니다 — `lefthook.yml`이 있는 프로젝트 폴더에서 `lefthook install`을 실행하세요(설정 파일이 없는 레포에서는 할 일 없음).
 
+> `GitHub 인증(gh)`이 `❌`이면 바로 아래 `cob(co-bricks)`·`cocode-skills` 둘 다 설치되지 않습니다 — 둘 다 coco-de의 비공개 레포라 GitHub 로그인이 필요하기 때문입니다. 보통은 팀 공용 1Password 항목("API Token" 볼트 > "GitHub API Token" > credential 필드)으로 자동 로그인되며, 항목이 없거나 실패했다면 `gh auth login`을 직접 실행한 뒤 스크립트를 다시 실행하세요.
+>
 > `op(1Password CLI)`는 **설치 여부와 설정 여부를 따로** 보여줍니다. `⚠ 설치됨 (설정 미완료 — 토큰을 읽지 못했습니다)`라면 CLI는 깔렸지만 금고에서 토큰을 읽지 못한 상태입니다. 원인은 두 가지이고, 스크립트가 화면에 확인 순서(① 앱 CLI 통합 체크 → ② 금고 접근 권한)를 함께 출력해 줍니다 — 아래 **ZenHub·Jira·Slang GPT·DCM·Slack 토큰 · 1Password CLI 설정**을 참고해 주세요.
 
 > `mcp:zenhub`·`mcp:mcp-atlassian`·`mcp:slack`이 `✓ 등록됨`인데 뒤에 `(⚠ 토큰 미주입)`이 붙어 있다면, MCP 서버는 등록됐지만 인증 토큰이 없는 상태입니다. 아래 **ZenHub·Jira·Slang GPT·DCM·Slack 토큰** 안내대로 1Password(앱 CLI 통합 + 팀 'API Token' 볼트 권한)를 준비한 뒤 스크립트를 다시 실행해 주세요.
@@ -483,7 +487,7 @@ Orca 전체 디스크 접근: ...
 6. **(선택) `colima start` 미리 실행 — Jira(Atlassian) MCP를 쓰려면 필요합니다** (아래 🐳 안내 참고). Jira MCP는 docker 컨테이너로 뜨는데, colima가 그 docker 데몬입니다. 이제 `claude`/`cld` 실행 시 꺼져 있으면 자동으로 켜주지만, 최초 기동엔 수십 초가 걸릴 수 있어 미리 켜두면 더 빠릅니다
 7. `claude` 실행 후 Claude Code 로그인 (함께 설치된 `codex`는 ChatGPT 계정, `agy`(Antigravity)는 Google 계정으로 각각 처음 실행할 때 한 번 로그인). Claude Code 하단 상태줄(모델·비용·컨텍스트·git 상태)은 6.5단계에서 이미 자동으로 설정됐을 겁니다 — `ccstatusline`이 대화형이라 등록에 실패하면 `awesome-statusline`(size: small)이 자동으로 대신 등록됩니다. 직접 위젯을 골라 커스터마이징하고 싶다면 `npx -y ccstatusline@latest`를, 다른 크기로 바꾸고 싶다면 `curl -fsSL https://raw.githubusercontent.com/AwesomeJun/CC-statusline/main/install.sh | bash -s -- <크기>`를 실행하면 됩니다(크기: xs/s/m/l/xl). 되돌리려면 `~/.claude/settings.json`의 `statusLine` 키만 지우면 됩니다
 8. **Claude Code에서 `/mcp` 실행 → figma를 팀 계정으로 OAuth 로그인 (최초 1회)** — 이걸 하지 않으면 figma MCP가 동작하지 않습니다. zenhub·jira·slack MCP는 아래 팀 공용 토큰으로 인증되므로 별도 로그인이 필요 없습니다
-9. **설치 검증에 `cocode-skills: ❌`가 찍혔다면** — GitHub 인증이 안 된 상태입니다. `gh auth login`으로 로그인한 뒤 스크립트를 다시 실행하면 팀 플러그인이 설치됩니다
+9. **설치 검증에 `GitHub 인증(gh): ❌`가 찍혔다면** — `cob(co-bricks)`·`cocode-skills` 둘 다 설치되지 않습니다. 팀 공용 1Password 항목("API Token" 볼트 > "GitHub API Token")으로 자동 로그인을 시도하니, 항목이 없다면 팀 관리자에게 생성을 요청하세요. 그래도 안 되면 `gh auth login`으로 직접 로그인한 뒤 스크립트를 다시 실행하면 됩니다
 10. Slack CLI로 직접 앱/워크플로를 개발하려면 `slack login`으로 워크스페이스 인증(최초 1회) — Claude Code의 `slack` MCP는 이 로그인과 무관하게 아래 팀 공용 토큰으로 별도 인증됩니다
 11. **Git 훅(lefthook)은 레포마다 한 번씩 켜기** — `lefthook.yml`이 있는 프로젝트 폴더에서 `lefthook install`을 실행하면, 그 레포에서 커밋·푸시할 때 포맷/린트/테스트가 자동으로 돌아갑니다 (설정 파일이 없는 레포에서는 할 일 없음)
 12. **Stats(시스템 모니터)를 최초 1회 실행** — `open -a Stats`. 설치만으로는 메뉴막대에 나타나지 않고, 한 번 실행해야 CPU·메모리·디스크·네트워크 사용량이 메뉴막대에 표시됩니다. 실행 후 Stats 설정에서 **"로그인 시 시작"** 을 켜 두면 다음부터는 자동으로 떠 있습니다
@@ -540,7 +544,7 @@ Orca 전체 디스크 접근: ...
 > - **그래도 안 될 때**: `claude` 안에서 `/mcp`를 보면 `mcp-atlassian`이 연결 실패로 뜨거나 Jira를 물어보면 "연결할 수 없다"는 답이 옵니다 → `colima start`를 직접 실행한 뒤(`docker info`가 에러 없이 나오면 데몬이 켜진 것, `colima status`로도 확인 가능) **새 터미널**에서 `claude`를 다시 켜세요. (자동 기동 함수는 `.zshrc`를 반영한 새 터미널에서만 동작합니다 — `mac-setup.sh`를 처음 돌렸거나 갱신했다면 `source ~/.zshrc` 또는 새 터미널이 필요합니다.)
 > - 참고: ZenHub·figma·slack 등 다른 MCP는 docker가 필요 없습니다. **Jira MCP만** docker로 뜹니다.
 
-> 🔑 **ZenHub·Jira·Slang GPT·DCM·Slack 토큰 · 1Password CLI 설정 (실행 중 안내됨)**
+> 🔑 **ZenHub·Jira·Slang GPT·DCM·Slack·GitHub 토큰 · 1Password CLI 설정 (실행 중 안내됨)**
 >
 > **이게 무슨 단계인가요?** ZenHub(이슈 보드)·Jira·Slack을 Claude Code에서 쓰거나, 다국어 문구를 자동 번역하는 `slang_gpt`, 코드 품질 검사 도구 `DCM`을 CI 모드로 인증하려면 비밀번호 같은 **토큰/키** 값이 필요합니다. 이 값은 사람마다 복사해 붙여넣지 않도록 **팀 공용 1Password 금고**에 넣어 두었고, **1Password CLI(`op`)** 가 그 금고를 대신 열어 읽어옵니다. `op`는 1Password의 터미널 버전이라고 보시면 되고, 아래 설정은 `op`에게 **"1Password 앱에 이미 로그인해 둔 상태를 그대로 써도 된다"** 고 허락해 주는 과정입니다. (Jira는 예전엔 `/mcp` OAuth 로그인을 매번 해야 했지만, ZenHub처럼 팀 공용 토큰 방식으로 통일했습니다.)
 >
@@ -575,6 +579,7 @@ Orca 전체 디스크 접근: ...
 > | 설치 검증에 `SLANG_GPT_API_KEY: ❌ 미주입` | op는 되지만 팀 'API Token' 볼트의 'Slang GPT API Token > credential'을 못 읽는 경우입니다 → 볼트 접근 권한을 팀 관리자에게 요청 후 `./mac-setup.sh --env-only` 실행 |
 > | 설치 검증에 `DCM_EMAIL/DCM_CI_KEY: ❌ 미주입` | op는 되지만 팀 'API Token' 볼트의 'DCM CI CD' 항목(사용자명·자격 증명 필드)을 못 읽는 경우입니다 → 볼트 접근 권한을 팀 관리자에게 요청 후 `./mac-setup.sh --env-only` 실행 (이메일·키 중 하나만 읽혀도 미주입으로 표시됩니다) |
 > | `mcp:slack: ✓ 등록됨 (⚠ 토큰 미주입 …)` | op는 되지만 팀 'API Token' 볼트의 'Cocode Slack' 항목(SLACK_TEAM_ID·SLACK_BOT_TOKEN 필드)을 못 읽는 경우입니다 → 볼트 접근 권한을 팀 관리자에게 요청 후 `./mac-setup.sh --env-only` 실행 (두 필드 중 하나만 읽혀도 미주입으로 표시됩니다) |
+> | 설치 검증에 `GitHub 인증(gh): ❌`이거나 `cob(co-bricks)`/`cocode-skills`가 `❌` | op는 되지만 팀 'API Token' 볼트의 'GitHub API Token > credential'을 못 읽거나 항목이 없는 경우입니다 → 항목이 없다면 팀 관리자에게 생성(레포 read 권한 PAT)을 요청하고, 있다면 볼트 접근 권한을 요청한 뒤 스크립트를 다시 실행하세요. 이 단계는 `--env-only`에는 포함되지 않으므로 전체 스크립트(`./mac-setup.sh`)를 다시 실행해야 합니다 (또는 직접 `gh auth login`) |
 >
 > **Jira는 어떻게 인증하나요 (Rovo 안 거침)**
 >
@@ -597,6 +602,10 @@ Orca 전체 디스크 접근: ...
 > `SLACK_TEAM_ID`·`SLACK_BOT_TOKEN`은 Claude Code에 등록되는 **`slack` MCP**(`@modelcontextprotocol/server-slack`, npx로 실행)가 Slack 워크스페이스에 접속할 때 쓰는 **팀 ID + 봇 토큰** 한 쌍입니다. zenhub·jira처럼 MCP 인증용 토큰이라 `claude mcp add slack`에는 `${SLACK_BOT_TOKEN}`·`${SLACK_TEAM_ID}` 리터럴만 등록되고, 실제 값은 `~/.zshrc`에서 런타임에 채워집니다. 두 값은 팀 공용 1Password **"API Token" 볼트 > "Cocode Slack" 항목**의 **SLACK_TEAM_ID · SLACK_BOT_TOKEN** 필드에 있고, op 설정만 되어 있으면 8.9단계에서 자동으로 주입됩니다 (화면을 멈추지 않고, 실패하면 경고만 남기고 넘어갑니다). DCM과 마찬가지로 **두 값이 모두 읽혀야** 주입되며, 하나라도 못 읽으면 반쪽 인증을 막기 위해 아무것도 넣지 않습니다. (Slack CLI로 직접 앱을 개발할 때 쓰는 `slack login`은 이 토큰과 별개입니다.)
 >
 > ⚠️ **주입 후에는 반드시 새 터미널에서 `claude`를 실행하세요(그리고 docker 데몬이 떠 있어야 합니다).** zenhub·jira·slack MCP는 `claude`를 실행한 시점의 환경변수에서 토큰을 읽습니다. 토큰을 넣기 전에 열어 둔 터미널에서 계속 쓰면 토큰이 전달되지 않습니다. 이때 `/mcp` 화면에는 `Connected`로 보여도 실제 호출은 인증 오류가 납니다.
+>
+> **GitHub 인증(gh)은 위 토큰들과 뭐가 다른가요**
+>
+> coco-de 조직의 `co-bricks`·`skills` 레포는 비공개라서, `cob(co-bricks)` 설치(4단계)와 `cocode-skills` 팀 플러그인 설치(3.5단계)에는 GitHub 로그인이 필요합니다. 위 토큰들처럼 `~/.zshrc`에 환경변수로 주입되는 대신, 같은 팀 공용 1Password **"API Token" 볼트 > "GitHub API Token" 항목 > "credential" 필드**(레포 read 권한이면 충분한 Personal Access Token)에서 읽은 값으로 `gh auth login` + `gh auth setup-git`을 대신 실행해 둡니다(3.4단계) — 이후 `git`이 github.com에 접근할 때도 이 인증을 그대로 씁니다. **이미 `gh auth login`이 돼 있다면 건너뜁니다(멱등)**. 위 8.5~8.9 토큰과 달리 이 단계는 준비가 안 돼 있어도 화면을 멈추지 않고 경고만 남긴 뒤 계속 진행하며, `--env-only`로는 재실행되지 않으므로(설치 단계에 속함) 안 됐다면 전체 스크립트를 다시 실행하거나 `gh auth login`을 직접 실행하세요.
 
 <br>
 
