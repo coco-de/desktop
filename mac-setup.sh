@@ -994,13 +994,15 @@ yes | fvm global stable --force 2>/dev/null || yes | fvm global stable \
   || echo "  ⚠ Flutter stable 글로벌 설정 실패 → 건너뜀 (수동 설정: fvm global stable)"
 export PATH="$HOME/fvm/default/bin:$PATH"
 
-# 4-b. Dart 글로벌 패키지 (serverpod_cli, marionette_mcp, mcp_server_dart, cob/co-bricks)
+# 4-b. Dart 글로벌 패키지 (serverpod_cli, marionette_mcp, mcp_server_dart, flutterfire_cli, cob/co-bricks)
 log "Dart 글로벌 패키지 설치"
 export PUB_CACHE="$HOME/.pub-cache"
 export PATH="$PUB_CACHE/bin:$PATH"
 dart pub global activate serverpod_cli 4.0.0-beta.0 || echo "  ⚠ serverpod_cli 설치 실패 → 건너뜀"
 dart pub global activate marionette_mcp || echo "  ⚠ marionette_mcp 설치 실패 → 건너뜀"
 dart pub global activate mcp_server_dart || echo "  ⚠ mcp_server_dart 설치 실패 → 건너뜀"
+# flutterfire_cli: pub.dev 공개 패키지라 cob과 달리 GitHub 인증 없이 바로 설치된다
+dart pub global activate flutterfire_cli || echo "  ⚠ flutterfire_cli 설치 실패 → 건너뜀"
 # cob(co-bricks)는 비공개 레포라 순수 git 인증이 필요하다 — gh 인증(위 3.4단계에서 1Password로
 # 자동 로그인 시도) 상태를 먼저 확인해, 안 돼 있으면 원인을 알 수 있는 안내로 대신한다.
 # (인증 없이 그대로 시도하면 git이 사용자 이름/암호를 물어보다 알아보기 어려운 원문 에러로 실패한다.)
@@ -1983,6 +1985,7 @@ echo "  mcp:slack: $(claude mcp list 2>/dev/null | grep -q '^slack' \
   || echo '❌')"
 echo "  marionette: $([[ -x "$PUB_CACHE/bin/marionette_mcp" ]] && echo '✓' || echo '❌')"
 echo "  mcp_server_dart: $(dart pub global list 2>/dev/null | grep -q '^mcp_server_dart ' && echo '✓' || echo '❌')"
+echo "  flutterfire_cli: $(dart pub global list 2>/dev/null | grep -q '^flutterfire_cli ' && echo '✓' || echo '❌')"
 echo "  cob(co-bricks): $(dart pub global list 2>/dev/null | grep -q '^cob ' && echo '✓' || echo '❌ (위 GitHub 인증(gh) 확인 후 재실행)')"
 CS_COUNT=$(ls -d "$HOME/.claude/plugins/marketplaces/cocode-skills/plugins"/*/ 2>/dev/null | grep -c .)
 echo "  cocode-skills: $([[ "$CS_COUNT" -gt 0 ]] && echo "✓ ${CS_COUNT}개 플러그인" || echo '❌ (위 GitHub 인증(gh) 확인 후 재실행)')"
