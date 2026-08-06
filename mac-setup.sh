@@ -608,6 +608,20 @@ install_external_extension "Chrome" "Google Chrome.app" "Google/Chrome" ogcgkffh
 install_external_extension "Dia"    "Dia.app"           "Dia"           ogcgkffhplmphkaahpmffcafajaocjbd
 
 # ------------------------------------------------------------
+# 1.7. Pretendard 폰트 설치 (9개 스타일)
+#   Figma 시안 등 디자인 작업에서 널리 쓰이는 한글 폰트 — 로컬에 없으면 시안과
+#   다른 폰트로 대체 렌더링되어 깨져 보인다. brew cask 하나로 9개 굵기
+#   (Thin/ExtraLight/Light/Regular/Medium/SemiBold/Bold/ExtraBold/Black)가
+#   한 번에 설치된다.
+# ------------------------------------------------------------
+log "Pretendard 폰트 설치 (9개 스타일: Thin~Black)"
+if brew list --cask font-pretendard >/dev/null 2>&1; then
+  echo "  ✓ font-pretendard 이미 설치됨 (brew)"
+else
+  brew install --cask font-pretendard || echo "  ⚠ font-pretendard 설치 실패 → 건너뜀 (수동 설치: brew install --cask font-pretendard)"
+fi
+
+# ------------------------------------------------------------
 # 2. Claude Code CLI
 #   공식 설치 스크립트(https://claude.ai/install.sh)로 설치한다 — brew cask 대신
 #   공식 홈페이지 권장 방식(자동 업데이트 내장). 바이너리가 ~/.local/bin/claude에
