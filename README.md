@@ -106,6 +106,20 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 >
 > 앱·도구 설치는 전부 건너뛰고, 1Password(`op`)에서 팀 공용 토큰(`ZENHUB_API_TOKEN`·`JIRA_API_TOKEN`·`SLANG_GPT_API_KEY`·`DCM_EMAIL`·`DCM_CI_KEY`·`SLACK_TEAM_ID`·`SLACK_BOT_TOKEN`)만 다시 읽어 `~/.zshrc`에 넣어줍니다. 토큰이 바뀌었거나 설치 때 토큰 주입(8.5~8.9단계)을 건너뛴 경우, 전체 설치를 다시 돌릴 필요 없이 몇 초 만에 끝납니다. 사용법은 `./mac-setup.sh --help`로도 볼 수 있습니다.
 
+> 🎯 **팀 Dart 패키지 목록이 바뀌었거나, 패키지만 최신으로 올리고 싶다면**
+>
+> ```bash
+> ./mac-setup.sh --dart-only
+> ```
+>
+> 스크립트 파일이 없다면 `--env-only`와 같은 방식으로 쓰시면 됩니다.
+>
+> ```bash
+> /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coco-de/co-mac/main/mac-setup.sh)" -- --dart-only
+> ```
+>
+> 앱 설치·토큰 주입·권한 단계는 전부 건너뛰고 **Dart 글로벌 패키지**(`coverage`·`melos`·`mason_cli`·`flutter_gen`·`jaspr_cli`·`serverpod_cli`·`flutterfire_cli`·`marionette_mcp`·`mcp_server_dart`·`cob`)만 다시 설치합니다(4-b단계). 이미 깔린 패키지는 최신으로 다시 활성화되므로 몇 번을 실행해도 안전하고, 끝나면 무엇이 깔렸는지 요약해서 보여줍니다. 단 **Flutter/Dart(fvm)는 이미 설치돼 있어야 합니다** — 없으면 전체 설치를 먼저 하라고 안내하고 멈춥니다. `cob(co-bricks)`은 비공개 레포라 **GitHub 인증이 돼 있을 때만** 설치되고(안 돼 있으면 그 항목만 건너뜁니다), GitHub에서 받아 직접 빌드하므로 이 단계에서만 몇 분 걸릴 수 있습니다(멈춘 게 아니니 기다려 주세요).
+
 > 🔐 **Orca가 폴더 접근 허용 창을 계속 띄운다면**
 >
 > ```bash
@@ -301,7 +315,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 | ✉️ Git 설정 | 커밋에 사용할 회사 이메일을 실행 중에 입력받아 전역 설정(`git config --global user.email`) — 이미 설정돼 있으면 묻지 않고 건너뜀 |
 | 🌐 브라우저 번역 언어 | Chrome·Dia의 번역 대상 언어를 한국어로, "번역 안 함" 목록을 영어로 자동 설정(`dia://settings/languages` = `chrome://settings/languages`를 매번 손으로 누를 필요 없음) — 브라우저가 실행 중이면 건너뛰고 경고만 표시 |
 | 🐦 Flutter | fvm(버전 관리자)으로 Flutter stable 채널 글로벌 설정, DCM(Dart 코드 품질 검사 도구 — CI 인증 키 `DCM_EMAIL`·`DCM_CI_KEY`는 1Password에서 자동 주입) |
-| 🎯 Dart 글로벌 패키지 | coverage, melos, mason_cli, flutter_gen, jaspr_cli, serverpod_cli ^4.0.0-beta.4, flutterfire_cli, marionette_mcp, mcp_server_dart, cob(co-bricks) (⚠️ cob은 비공개 레포라 GitHub 인증 필요 — 보통 위 단계에서 1Password로 자동 처리되며, 안 됐다면 `gh auth login` 수동 실행 후 재실행) |
+| 🎯 Dart 글로벌 패키지 | coverage, melos, mason_cli, flutter_gen, jaspr_cli, serverpod_cli ^4.0.0-beta.4, flutterfire_cli, marionette_mcp, mcp_server_dart, cob(co-bricks) (⚠️ cob은 비공개 레포라 GitHub 인증 필요 — 보통 위 단계에서 1Password로 자동 처리되며, 안 됐다면 `gh auth login` 수동 실행 후 재실행) · 나중에 이 목록만 다시 깔려면 `./mac-setup.sh --dart-only` |
 | ☁️ 클라우드 | Google Cloud CLI (gcloud) |
 | 🐍 언어 런타임 | Python 최신 3.x (pyenv), Node.js LTS + npm (nvm) |
 | 💻 터미널 환경 | oh-my-zsh, powerlevel10k 테마, zsh-autosuggestions, zsh-syntax-highlighting, MesloLGS NF 폰트 |
@@ -465,6 +479,7 @@ mcp:slack: ...
 dart 기본 패키지: ...
 marionette: ...
 mcp_server_dart: ...
+flutterfire_cli: ...
 cob(co-bricks): ...
 cocode-skills: ...
 android : ...
@@ -503,7 +518,7 @@ Orca 전체 디스크 접근: ...
 6. **(선택) `colima start` 미리 실행 — Jira(Atlassian) MCP를 쓰려면 필요합니다** (아래 🐳 안내 참고). Jira MCP는 docker 컨테이너로 뜨는데, colima가 그 docker 데몬입니다. 이제 `claude`/`cld` 실행 시 꺼져 있으면 자동으로 켜주지만, 최초 기동엔 수십 초가 걸릴 수 있어 미리 켜두면 더 빠릅니다
 7. `claude` 실행 후 Claude Code 로그인 (함께 설치된 `codex`는 ChatGPT 계정, `agy`(Antigravity)는 Google 계정으로 각각 처음 실행할 때 한 번 로그인). Claude Code 하단 상태줄(모델·비용·컨텍스트·git 상태)은 6.5단계에서 이미 자동으로 설정됐을 겁니다 — `ccstatusline`이 대화형이라 등록에 실패하면 `awesome-statusline`(size: small)이 자동으로 대신 등록됩니다. 직접 위젯을 골라 커스터마이징하고 싶다면 `npx -y ccstatusline@latest`를, 다른 크기로 바꾸고 싶다면 `curl -fsSL https://raw.githubusercontent.com/AwesomeJun/CC-statusline/main/install.sh | bash -s -- <크기>`를 실행하면 됩니다(크기: xs/s/m/l/xl). 되돌리려면 `~/.claude/settings.json`의 `statusLine` 키만 지우면 됩니다
 8. **Claude Code에서 `/mcp` 실행 → figma를 팀 계정으로 OAuth 로그인 (최초 1회)** — 이걸 하지 않으면 figma MCP가 동작하지 않습니다. zenhub·jira·slack MCP는 아래 팀 공용 토큰으로 인증되므로 별도 로그인이 필요 없습니다
-9. **설치 검증에 `GitHub 인증(gh): ❌`가 찍혔다면** — `cob(co-bricks)`·`cocode-skills` 둘 다 설치되지 않습니다. 팀 공용 1Password 항목("API Token" 볼트 > "GitHub API Token")으로 자동 로그인을 시도하니, 항목이 없다면 팀 관리자에게 생성을 요청하세요. 그래도 안 되면 `gh auth login`으로 직접 로그인한 뒤 스크립트를 다시 실행하면 됩니다
+9. **설치 검증에 `GitHub 인증(gh): ❌`가 찍혔다면** — `cob(co-bricks)`·`cocode-skills` 둘 다 설치되지 않습니다. 팀 공용 1Password 항목("API Token" 볼트 > "GitHub API Token")으로 자동 로그인을 시도하니, 항목이 없다면 팀 관리자에게 생성을 요청하세요. 그래도 안 되면 `gh auth login`으로 직접 로그인한 뒤 스크립트를 다시 실행하면 됩니다 (`cob(co-bricks)`만 다시 깔면 되는 상황이라면 `./mac-setup.sh --dart-only`가 더 빠릅니다 — `cocode-skills`는 전체 재실행이 필요합니다)
 10. Slack CLI로 직접 앱/워크플로를 개발하려면 `slack login`으로 워크스페이스 인증(최초 1회) — Claude Code의 `slack` MCP는 이 로그인과 무관하게 아래 팀 공용 토큰으로 별도 인증됩니다
 11. **Git 훅(lefthook)은 레포마다 한 번씩 켜기** — `lefthook.yml`이 있는 프로젝트 폴더에서 `lefthook install`을 실행하면, 그 레포에서 커밋·푸시할 때 포맷/린트/테스트가 자동으로 돌아갑니다 (설정 파일이 없는 레포에서는 할 일 없음)
 12. **Stats(시스템 모니터)를 최초 1회 실행** — `open -a Stats`. 설치만으로는 메뉴막대에 나타나지 않고, 한 번 실행해야 CPU·메모리·디스크·네트워크 사용량이 메뉴막대에 표시됩니다. 실행 후 Stats 설정에서 **"로그인 시 시작"** 을 켜 두면 다음부터는 자동으로 떠 있습니다
@@ -595,7 +610,7 @@ Orca 전체 디스크 접근: ...
 > | 설치 검증에 `SLANG_GPT_API_KEY: ❌ 미주입` | op는 되지만 팀 'API Token' 볼트의 'Slang GPT API Token > credential'을 못 읽는 경우입니다 → 볼트 접근 권한을 팀 관리자에게 요청 후 `./mac-setup.sh --env-only` 실행 |
 > | 설치 검증에 `DCM_EMAIL/DCM_CI_KEY: ❌ 미주입` | op는 되지만 팀 'API Token' 볼트의 'DCM CI CD' 항목(사용자명·자격 증명 필드)을 못 읽는 경우입니다 → 볼트 접근 권한을 팀 관리자에게 요청 후 `./mac-setup.sh --env-only` 실행 (이메일·키 중 하나만 읽혀도 미주입으로 표시됩니다) |
 > | `mcp:slack: ✓ 등록됨 (⚠ 토큰 미주입 …)` | op는 되지만 팀 'API Token' 볼트의 'Cocode Slack' 항목(SLACK_TEAM_ID·SLACK_BOT_TOKEN 필드)을 못 읽는 경우입니다 → 볼트 접근 권한을 팀 관리자에게 요청 후 `./mac-setup.sh --env-only` 실행 (두 필드 중 하나만 읽혀도 미주입으로 표시됩니다) |
-> | 설치 검증에 `GitHub 인증(gh): ❌`이거나 `cob(co-bricks)`/`cocode-skills`가 `❌` | op는 되지만 팀 'API Token' 볼트의 'GitHub API Token > credential'을 못 읽거나 항목이 없는 경우입니다 → 항목이 없다면 팀 관리자에게 생성(레포 read 권한 PAT)을 요청하고, 있다면 볼트 접근 권한을 요청한 뒤 스크립트를 다시 실행하세요. 이 단계는 `--env-only`에는 포함되지 않으므로 전체 스크립트(`./mac-setup.sh`)를 다시 실행해야 합니다 (또는 직접 `gh auth login`) |
+> | 설치 검증에 `GitHub 인증(gh): ❌`이거나 `cob(co-bricks)`/`cocode-skills`가 `❌` | op는 되지만 팀 'API Token' 볼트의 'GitHub API Token > credential'을 못 읽거나 항목이 없는 경우입니다 → 항목이 없다면 팀 관리자에게 생성(레포 read 권한 PAT)을 요청하고, 있다면 볼트 접근 권한을 요청한 뒤 스크립트를 다시 실행하세요. 이 단계는 `--env-only`에는 포함되지 않으므로 전체 스크립트(`./mac-setup.sh`)를 다시 실행해야 합니다 (또는 직접 `gh auth login`). 인증만 고친 뒤 `cob(co-bricks)`만 다시 깔면 될 때는 `./mac-setup.sh --dart-only`가 더 빠릅니다 |
 >
 > **Jira는 어떻게 인증하나요 (Rovo 안 거침)**
 >
@@ -621,7 +636,7 @@ Orca 전체 디스크 접근: ...
 >
 > **GitHub 인증(gh)은 위 토큰들과 뭐가 다른가요**
 >
-> coco-de 조직의 `co-bricks`·`skills` 레포는 비공개라서, `cob(co-bricks)` 설치(4단계)와 `cocode-skills` 팀 플러그인 설치(3.5단계)에는 GitHub 로그인이 필요합니다. 위 토큰들처럼 `~/.zshrc`에 환경변수로 주입되는 대신, 같은 팀 공용 1Password **"API Token" 볼트 > "GitHub API Token" 항목 > "credential" 필드**(레포 read 권한이면 충분한 Personal Access Token)에서 읽은 값으로 `gh auth login` + `gh auth setup-git`을 대신 실행해 둡니다(3.4단계) — 이후 `git`이 github.com에 접근할 때도 이 인증을 그대로 씁니다. **이미 `gh auth login`이 돼 있다면 건너뜁니다(멱등)**. 위 8.5~8.9 토큰과 달리 이 단계는 준비가 안 돼 있어도 화면을 멈추지 않고 경고만 남긴 뒤 계속 진행하며, `--env-only`로는 재실행되지 않으므로(설치 단계에 속함) 안 됐다면 전체 스크립트를 다시 실행하거나 `gh auth login`을 직접 실행하세요.
+> coco-de 조직의 `co-bricks`·`skills` 레포는 비공개라서, `cob(co-bricks)` 설치(4단계)와 `cocode-skills` 팀 플러그인 설치(3.5단계)에는 GitHub 로그인이 필요합니다. 위 토큰들처럼 `~/.zshrc`에 환경변수로 주입되는 대신, 같은 팀 공용 1Password **"API Token" 볼트 > "GitHub API Token" 항목 > "credential" 필드**(레포 read 권한이면 충분한 Personal Access Token)에서 읽은 값으로 `gh auth login` + `gh auth setup-git`을 대신 실행해 둡니다(3.4단계) — 이후 `git`이 github.com에 접근할 때도 이 인증을 그대로 씁니다. **이미 `gh auth login`이 돼 있다면 건너뜁니다(멱등)**. 위 8.5~8.9 토큰과 달리 이 단계는 준비가 안 돼 있어도 화면을 멈추지 않고 경고만 남긴 뒤 계속 진행하며, `--env-only`로는 재실행되지 않으므로(설치 단계에 속함) 안 됐다면 전체 스크립트를 다시 실행하거나 `gh auth login`을 직접 실행하세요. (`gh auth login`을 마친 뒤 `cob(co-bricks)`만 다시 깔면 되는 상황이라면 `./mac-setup.sh --dart-only`로 그 단계만 다시 돌릴 수 있습니다.)
 
 <br>
 
@@ -631,7 +646,7 @@ Orca 전체 디스크 접근: ...
 
 네, 안전하게 다시 실행할 수 있도록 설계되어 있습니다.
 
-- **이미 설치된 건 다시 건드리지 않습니다.** 앱/도구별로 설치 여부를 먼저 확인하고, 이미 있으면 `✓ 이미 설치됨`을 출력하고 건너뜁니다. 스크립트를 여러 번 실행해도 문제없습니다. 다만 두 가지는 예외입니다 — **팀 표준에서 빠진 항목**(예전 atlassian OAuth 플러그인, flutter-mcp-toolkit 플러그인)은 재실행 시 **자동으로 정리(제거)** 되고, **zenhub·jira·slack MCP 등록**은 설정이 최신으로 유지되도록 매번 지웠다가 다시 등록합니다.
+- **이미 설치된 건 다시 건드리지 않습니다.** 앱/도구별로 설치 여부를 먼저 확인하고, 이미 있으면 `✓ 이미 설치됨`을 출력하고 건너뜁니다. 스크립트를 여러 번 실행해도 문제없습니다. 다만 두 가지는 예외입니다 — **팀 표준에서 빠진 항목**(예전 atlassian OAuth 플러그인, flutter-mcp-toolkit 플러그인)은 재실행 시 **자동으로 정리(제거)** 되고, **zenhub·jira·slack MCP 등록**은 설정이 최신으로 유지되도록 매번 지웠다가 다시 등록합니다. **Dart 글로벌 패키지**(`melos`·`mason_cli` 등)도 매번 최신으로 다시 활성화되는데, 이건 의도된 동작입니다 — 그래서 `./mac-setup.sh --dart-only`가 재설치이자 **업데이트** 역할을 합니다.
 - **일부가 실패해도 전체가 멈추지 않습니다.** 개별 항목 설치가 실패하면 `⚠` 표시와 함께 건너뛰고 나머지를 계속 진행합니다.
 - **설치 중 y/n 질문에 자동으로 답합니다.** (`NONINTERACTIVE=1`, `CI=true` 설정) 터미널 앞에서 계속 기다리지 않아도 되도록 하기 위함입니다. 사람 입력을 기다리는 곳은 두 종류뿐입니다 — ① **관리자(맥 로그인) 암호**: Homebrew 설치(0) · Xcode 전환(1.5) · 브라우저 확장 등록(1.6), ② **직접 답해야 하는 질문**: **Git 이메일 입력(3.2)** · **ZenHub 토큰 주입(8.5)** · **Orca 권한 안내(9)** 에서만 잠깐 멈춥니다 — 각각 `s`로 건너뛸 수 있고, 이미 설정된 맥이라면 묻지 않습니다. (Jira 토큰 주입(8.6)·Slang GPT 키 주입(8.7)·DCM 키 주입(8.8)·Slack 토큰 주입(8.9)은 ZenHub에서 켠 op 설정을 그대로 재사용하므로 따로 멈추지 않습니다.) (터미널이 아닌 파이프 실행이면 멈추지 않고 건너뜁니다.)
 - **Homebrew 자동 설치(0단계)에서 관리자 암호를 한 번 물어볼 수 있습니다.** Homebrew는 이미 있으면 건드리지 않고, 없을 때만 [공식 설치 스크립트](https://brew.sh)를 그대로 실행합니다(비공식 경로를 쓰지 않습니다). **여기만은 실패하면 `⚠` 후 계속이 아니라 스크립트가 멈춥니다** — 이후 단계 대부분이 Homebrew로 설치되기 때문에, 계속 진행하면 전부 실패해서 원인을 알아보기 어려워지기 때문입니다.
@@ -765,6 +780,26 @@ sudo xcodebuild -runFirstLaunch
 </details>
 
 <details>
+<summary>팀에 새 Dart 패키지가 추가됐다는데 제 맥에는 없어요</summary>
+
+<br>
+
+`mac-setup.sh`가 설치하는 **Dart 글로벌 패키지 목록이 바뀐 경우**입니다. 전체 설치를 다시 돌릴 필요 없이 그 단계만 다시 실행하면 됩니다.
+
+```bash
+./mac-setup.sh --dart-only
+```
+
+이미 깔려 있던 패키지는 최신으로 다시 활성화되고, 빠진 것만 새로 깔립니다(몇 번을 실행해도 안전합니다). 끝나면 `dart 기본 패키지: ✓ …` 처럼 결과를 요약해 주고, 빠진 게 있으면 그 이름을 알려줍니다.
+
+`❌ dart 명령을 찾지 못했습니다` 가 뜬다면 Flutter/Dart가 아직 준비되지 않은 것입니다. 화면에 뜨는 안내가 두 가지로 갈립니다.
+
+- **fvm도 없는 맥** — 옵션 없이 `./mac-setup.sh`로 전체 설치를 먼저 해주세요.
+- **fvm은 있는데 기본 버전이 안 잡힌 맥** — 안내대로 `fvm global stable`을 먼저 실행한 뒤 `./mac-setup.sh --dart-only`를 다시 실행하면 됩니다.
+
+</details>
+
+<details>
 <summary>Orca가 다른 앱 폴더에 접근하겠다는 창을 계속 띄워요</summary>
 
 <br>
@@ -796,6 +831,8 @@ macOS 개인정보 보호(TCC) 창이라 **"항상 허용"이 없고**, 허용�
 <br>
 
 아니요. 스크립트는 각 항목마다 설치 여부를 먼저 확인하고, 이미 있으면 `✓ 이미 설치됨`을 표시하며 건너뜁니다. 그래서 몇 번을 다시 실행해도 안전합니다.
+
+예외는 **Dart 글로벌 패키지**입니다 — 이쪽은 일부러 매번 최신으로 다시 활성화합니다. 팀 패키지를 최신으로 올리고 싶을 때 `./mac-setup.sh --dart-only`만 돌리면 되는 이유입니다.
 
 </details>
 

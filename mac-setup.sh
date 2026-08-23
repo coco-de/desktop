@@ -10,6 +10,7 @@
 #   └ 이 경우 스크립트 파일 하나만 내려오므로, 팀 셸 설정(.zshrc·.p10k.zsh)은
 #     0.5단계에서 같은 레포에서 따로 내려받는다.
 #   └ 이미 세팅한 맥에서 토큰(환경변수)만 다시 주입하려면: ./mac-setup.sh --env-only
+#   └ Dart 글로벌 패키지만 다시 설치/업데이트하려면:    ./mac-setup.sh --dart-only
 #
 # 기존 맥의 테마/설정을 그대로 가져오려면, 기존 맥에서
 #   ~/.zshrc, ~/.p10k.zsh
@@ -60,6 +61,7 @@ copy_dotfile() {
 #   (옵션 없음)  : 전체 설치 (0~10단계)
 #   --env-only   : 1Password(op)에서 팀 공용 토큰만 다시 읽어 ~/.zshrc에 주입 (8.5~8.9단계만)
 #   --perms-only : Orca 전체 디스크 접근 권한 점검·안내만 다시 실행 (9단계만)
+#   --dart-only  : Dart 글로벌 패키지만 다시 설치/업데이트 (4-b단계만)
 #   -h, --help   : 사용법 출력
 #   모르는 옵션은 즉시 에러 종료한다 — 오탈자(예: --env-onyl)가 조용히
 #   수 분짜리 전체 설치로 이어지는 사고를 막기 위함이다.
@@ -78,16 +80,24 @@ usage() {
   --perms-only  Orca의 '전체 디스크 접근 권한'만 다시 점검하고 안내합니다.
                 설치·토큰 주입 단계는 전부 건너뜁니다.
                 (설치 때 권한 설정을 건너뛰었거나, 권한 창이 계속 뜰 때 사용)
+  --dart-only   Dart 글로벌 패키지(coverage·melos·mason_cli·flutter_gen·
+                jaspr_cli·serverpod_cli·flutterfire_cli·marionette_mcp·
+                mcp_server_dart·cob)만 다시 설치/업데이트합니다.
+                앱 설치·토큰 주입·권한 단계는 전부 건너뜁니다.
+                (팀 패키지 목록이 바뀌었거나, 패키지만 최신으로 올리고 싶을 때 사용
+                 — Flutter/Dart(fvm)는 이미 설치돼 있어야 합니다)
   -h, --help    이 도움말을 표시합니다
 USAGE
 }
 
 ENV_ONLY=0
 PERMS_ONLY=0
+DART_ONLY=0
 for arg in "$@"; do
   case "$arg" in
     --env-only)   ENV_ONLY=1 ;;
     --perms-only) PERMS_ONLY=1 ;;
+    --dart-only)  DART_ONLY=1 ;;
     -h|--help)    usage; exit 0 ;;
     *)
       echo "❌ 알 수 없는 옵션: $arg"
@@ -98,10 +108,26 @@ for arg in "$@"; do
   esac
 done
 
-# 두 모드 옵션은 하는 일이 서로 달라 함께 쓰면 어느 쪽을 원한 건지 알 수 없다 — 조용히
+# curl 한 줄 실행에서 `--` 를 빠뜨리면 bash -c 가 첫 인자를 $0(스크립트 이름)으로 먹어
+#   옵션이 통째로 사라진다. 예: /bin/bash -c "$(curl …)" --dart-only → $0=--dart-only, $#=0
+#   → 파싱 루프가 아무 옵션도 못 보고 **수십 분짜리 전체 설치가 조용히 시작된다.**
+#   $0 가 옵션처럼 생겼다면 그 사고가 확실하므로, 설치를 시작하기 전에 멈추고 바른 형태를 보여준다.
+#   ⚠ 바르게 `--` 를 붙여 실행하면 $0 는 `--` 자체가 된다(정상 경로) — 그건 걸러내면 안 되므로
+#     `--?*`(-- 뒤에 글자가 더 있는 경우)와 `-h` 만 사고로 본다.
+if [[ "$0" == --?* || "$0" == "-h" ]]; then
+  echo "❌ 옵션이 스크립트에 전달되지 않았습니다: $0"
+  echo ""
+  echo "   curl 한 줄로 실행할 때는 옵션 앞에 '--' 가 필요합니다:"
+  echo "   /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/coco-de/co-mac/main/mac-setup.sh)\" -- $0"
+  exit 1
+fi
+
+# 모드 옵션들은 하는 일이 서로 달라 함께 쓰면 어느 쪽을 원한 건지 알 수 없다 — 조용히
 # 한쪽만 실행하지 말고 무엇을 골라야 하는지 알려주고 멈춘다.
-if (( ENV_ONLY && PERMS_ONLY )); then
-  echo "❌ --env-only 와 --perms-only 는 함께 쓸 수 없습니다 (하나씩 따로 실행해 주세요)"
+#   (옵션이 하나 늘 때마다 조건을 새로 조합하지 않도록 개수로 센다)
+MODE_COUNT=$(( ENV_ONLY + PERMS_ONLY + DART_ONLY ))
+if (( MODE_COUNT > 1 )); then
+  echo "❌ --env-only · --perms-only · --dart-only 는 함께 쓸 수 없습니다 (하나씩 따로 실행해 주세요)"
   exit 1
 fi
 
@@ -162,9 +188,10 @@ brew_shellenv() {
 
 if brew_shellenv; then
   :   # 이미 설치돼 있으면 경로만 잡고 넘어간다 (멱등)
-elif (( ENV_ONLY || PERMS_ONLY )); then
-  # --env-only는 op만, --perms-only는 macOS 기본 명령(sqlite3·open)만 쓰므로
-  # 둘 다 아무것도 설치하지 않는다 — Homebrew가 없어도 계속 진행한다
+elif (( ENV_ONLY || PERMS_ONLY || DART_ONLY )); then
+  # --env-only는 op만, --perms-only는 macOS 기본 명령(sqlite3·open)만,
+  # --dart-only는 이미 깔려 있는 dart만 쓰므로 셋 다 brew로 설치하는 것이 없다 —
+  # Homebrew가 없어도 계속 진행한다 (dart가 없으면 아래 --dart-only 블록이 따로 안내한다)
   :
 else
   log "0. Homebrew 설치"
@@ -213,7 +240,7 @@ REPO_RAW_BASE="https://raw.githubusercontent.com/coco-de/co-mac/main"
 # 8단계가 참조할 dotfile 위치. 기본은 스크립트 옆이고, 원라이너 실행이면 임시 폴더로 바뀐다.
 DOTFILE_DIR="$SCRIPT_DIR"
 
-if (( ! ENV_ONLY && ! PERMS_ONLY )) \
+if (( ! ENV_ONLY && ! PERMS_ONLY && ! DART_ONLY )) \
    && { (( STANDALONE )) || [[ ! -f "$SCRIPT_DIR/.zshrc" && ! -f "$SCRIPT_DIR/.p10k.zsh" ]]; }; then
   log "0.5. 팀 셸 설정(.zshrc · .p10k.zsh) 내려받기"
   echo "  · 스크립트 옆에 설정 파일이 없습니다 (clone 없이 한 줄로 실행한 경우) → 레포에서 직접 받습니다"
@@ -272,7 +299,8 @@ fi
 #   10.  설치 검증 + 다음 단계 안내
 # 공통 규칙: 모든 단계 멱등(이미 설치 시 스킵) · 실패해도 ⚠ 후 계속 · 시크릿 미커밋
 # 실행 옵션: 옵션 없음=전체 실행 · --env-only=8.5~8.9(토큰 주입)만 재실행 ·
-#            --perms-only=9(앱 권한)만 재실행 · -h/--help=사용법
+#            --perms-only=9(앱 권한)만 재실행 · --dart-only=4-b(Dart 글로벌 패키지)만 재실행 ·
+#            -h/--help=사용법
 # ============================================================
 
 # ============================================================
@@ -470,6 +498,133 @@ run_orca_permission_step() {
   return 0
 }
 
+# 이 경로를 PATH **맨 앞**으로 보낸다. 이미 뒤쪽에 들어 있으면 거기서 빼서 앞으로 끌어올린다.
+#   ⚠ "이미 있으면 그냥 둔다"로 만들면 안 된다 — 팀 .zshrc는 fvm 경로를 넣은 뒤에도 다른 경로들을
+#     계속 앞에 덧붙이므로(.zshrc 123행 vs 164~226행), 그중 하나에 다른 dart가 있으면 그쪽이 계속 이긴다.
+#     같은 이유로 중복 항목도 남기지 않는다.
+path_force_front() {
+  local dir="$1" rest
+  rest=":$PATH:"
+  rest="${rest//:$dir:/:}"   # 기존 항목 제거
+  rest="${rest#:}"           # 앞뒤 구분자 정리
+  rest="${rest%:}"
+  export PATH="$dir${rest:+:$rest}"
+}
+
+# ============================================================
+# 4-b단계(Dart 글로벌 패키지) 본체
+#
+#   [이 단계가 하는 일 — 비개발자용 설명]
+#   Flutter/Dart로 일할 때 터미널에서 바로 부르는 도구들(테스트 커버리지 측정, 모노레포
+#   관리, 코드 템플릿 생성 등)을 컴퓨터 전체에서 쓸 수 있게 깔아 둔다. 프로젝트마다
+#   따로 까는 게 아니라 맥에 한 번 깔아 두고 모든 프로젝트에서 함께 쓰는 도구들이다.
+#
+#   기본 패키지 — 팀 Makefile의 `make pub_global`과 같은 목록이라, 프로젝트를 받자마자
+#     바로 빌드·코드생성·테스트를 돌릴 수 있다:
+#     coverage · melos · mason_cli · flutter_gen · jaspr_cli · serverpod_cli · flutterfire_cli
+#   co:code 추가분 — Claude Code가 쓰는 MCP 서버와 사내 스캐폴딩 CLI:
+#     marionette_mcp · mcp_server_dart · cob(co-bricks)
+#
+#   [정의를 여기 둔 이유]
+#   --dart-only 는 설치 단계를 전부 건너뛰고 이 단계만 실행하므로, 설치 블록보다 앞에서
+#   정의돼 있어야 한다 (바로 위 9단계 run_orca_permission_step 과 같은 이유).
+#   실제 호출은 (전체 실행 시) 아래 4-b 위치에서 한다.
+# ============================================================
+
+# dart 와 전역 패키지 실행 파일을 찾을 수 있게 PATH를 잡는다. 여러 번 불러도 안전하다.
+dart_prepare_path() {
+  export PUB_CACHE="$HOME/.pub-cache"
+  # fvm 기본 버전(4-a에서 지정)의 dart 를 PATH 앞에 둔다.
+  #   ⚠ "dart 가 없을 때만" 얹으면 안 된다 — brew dart·Android Studio 번들처럼 **다른** dart가
+  #     앞에 있으면 Flutter SDK가 딸리지 않은 그 dart로 패키지를 깔게 되고, flutter_gen·
+  #     flutterfire_cli 같은 Flutter 의존 패키지가 알아보기 어려운 에러로 실패한다.
+  #     전체 실행의 4-a도 같은 경로를 그대로 앞에 얹으므로 동작이 서로 어긋나지 않는다.
+  if [[ -d "$HOME/fvm/default/bin" ]]; then
+    path_force_front "$HOME/fvm/default/bin"
+  fi
+  path_force_front "$PUB_CACHE/bin"
+}
+
+run_dart_packages_step() {
+  dart_prepare_path
+  log "Dart 글로벌 패키지 설치 (coverage, melos, mason_cli, flutter_gen, jaspr_cli, serverpod_cli, flutterfire_cli + marionette_mcp, mcp_server_dart, cob)"
+  # 버전을 고정하지 않는 기본 패키지들은 한 번에 돌린다.
+  #   dart pub global activate는 이미 설치돼 있어도 최신으로 다시 활성화만 하므로 여러 번 실행해도 안전하다.
+  for pkg in coverage melos mason_cli flutter_gen jaspr_cli; do
+    dart pub global activate "$pkg" || echo "  ⚠ $pkg 설치 실패 → 건너뜀"
+  done
+  # serverpod_cli만 버전 제약이 붙는다 — ^4.0.0-beta.4는 "4.0.0-beta.4 이상 5.0.0 미만"이라
+  # 4.x 베타 안에서는 최신을 따라가되 5.0 메이저로는 자동으로 넘어가지 않는다.
+  dart pub global activate serverpod_cli '^4.0.0-beta.4' || echo "  ⚠ serverpod_cli 설치 실패 → 건너뜀"
+  # flutterfire_cli: pub.dev 공개 패키지라 cob과 달리 GitHub 인증 없이 바로 설치된다
+  dart pub global activate flutterfire_cli || echo "  ⚠ flutterfire_cli 설치 실패 → 건너뜀"
+  # 여기부터는 co:code 추가분 (위 기본 목록에는 없다)
+  dart pub global activate marionette_mcp || echo "  ⚠ marionette_mcp 설치 실패 → 건너뜀"
+  dart pub global activate mcp_server_dart || echo "  ⚠ mcp_server_dart 설치 실패 → 건너뜀"
+  # cob(co-bricks)는 비공개 레포라 순수 git 인증이 필요하다 — gh 인증(전체 실행이면 3.4단계에서
+  # 1Password로 자동 로그인 시도) 상태를 먼저 확인해, 안 돼 있으면 원인을 알 수 있는 안내로 대신한다.
+  # (인증 없이 그대로 시도하면 git이 사용자 이름/암호를 물어보다 알아보기 어려운 원문 에러로 실패한다.)
+  if have gh && gh auth status >/dev/null 2>&1; then
+    # GIT_TERMINAL_PROMPT=0: git 이 자격증명을 못 찾아도 사용자 이름/암호를 물어보며 멈추지
+    #   않게 한다. gh 로그인은 돼 있지만 `gh auth setup-git`(3.4단계)이 안 된 맥에서 실제로
+    #   입력 대기에 걸려 스크립트가 멈춘 것처럼 보이는 일이 있다 — 물어보는 대신 바로 실패시킨다.
+    GIT_TERMINAL_PROMPT=0 dart pub global activate --source git https://github.com/coco-de/co-bricks.git \
+      || { echo "  ⚠ cob(co-bricks) 설치 실패 → 건너뜀"
+           echo "     (git 자격증명이 없을 수 있습니다 — 'gh auth setup-git' 실행 후 다시 시도해 주세요)"; }
+  else
+    echo "  ⚠ GitHub 인증이 안 돼 있어 cob(co-bricks) 설치를 건너뜁니다"
+    echo "     (gh가 없거나 아직 로그인 전입니다 — 'gh auth login' 을 마친 뒤 다시 실행해 주세요."
+    echo "      전체 설치라면 3.4단계가 1Password로 자동 로그인을 시도합니다)"
+  fi
+  return 0
+}
+
+# 10단계 검증과 --dart-only 마무리가 같이 쓰는 Dart 패키지 확인 출력.
+#   두 곳에서 같은 기준으로 판정해야 해서 한 군데(여기)만 고치면 되도록 함수로 뽑아 두었다.
+#   판정 결과(빠진 패키지 이름들)는 DART_PACKAGES_MISSING 에 남겨, 부른 쪽이 마무리 문구를
+#   고를 수 있게 한다 — 하나도 못 깔았는데 '완료'라고 말하지 않기 위함이다.
+print_dart_packages_verification() {
+  dart_prepare_path
+  local dart_list base_missing="" pkg
+  dart_list=$(dart pub global list 2>/dev/null || true)
+
+  # 기본 패키지는 개수가 많아 한 줄로 묶고, 빠진 것만 이름으로 알려준다
+  #   (목록 조회는 한 번만 하고 그 결과를 재사용한다 — 패키지마다 다시 부르면 그만큼 느려진다)
+  for pkg in coverage melos mason_cli flutter_gen jaspr_cli serverpod_cli; do
+    echo "$dart_list" | grep -q "^$pkg " || base_missing="$base_missing $pkg"
+  done
+  echo "  dart 기본 패키지: $([[ -z "$base_missing" ]] \
+    && echo '✓ coverage, melos, mason_cli, flutter_gen, jaspr_cli, serverpod_cli' \
+    || echo "❌ 누락:$base_missing ('./mac-setup.sh --dart-only' 로 이 단계만 다시 실행할 수 있습니다)")"
+  DART_PACKAGES_MISSING="$base_missing"
+
+  # marionette_mcp 는 pub 목록이 아니라 실행 파일 존재로 판정한다 (기존 검증과 같은 기준)
+  if [[ -x "$PUB_CACHE/bin/marionette_mcp" ]]; then
+    echo "  marionette: ✓"
+  else
+    echo "  marionette: ❌"
+    DART_PACKAGES_MISSING="$DART_PACKAGES_MISSING marionette_mcp"
+  fi
+  if echo "$dart_list" | grep -q '^mcp_server_dart '; then
+    echo "  mcp_server_dart: ✓"
+  else
+    echo "  mcp_server_dart: ❌"
+    DART_PACKAGES_MISSING="$DART_PACKAGES_MISSING mcp_server_dart"
+  fi
+  if echo "$dart_list" | grep -q '^flutterfire_cli '; then
+    echo "  flutterfire_cli: ✓"
+  else
+    echo "  flutterfire_cli: ❌"
+    DART_PACKAGES_MISSING="$DART_PACKAGES_MISSING flutterfire_cli"
+  fi
+  if echo "$dart_list" | grep -q '^cob '; then
+    echo "  cob(co-bricks): ✓"
+  else
+    echo "  cob(co-bricks): ❌ (위 GitHub 인증(gh) 확인 후 재실행)"
+    DART_PACKAGES_MISSING="$DART_PACKAGES_MISSING cob"
+  fi
+}
+
 # --perms-only: 설치·토큰 주입을 전부 건너뛰고 9단계(앱 권한)만 실행하고 끝낸다.
 if (( PERMS_ONLY )); then
   run_orca_permission_step
@@ -478,9 +633,51 @@ if (( PERMS_ONLY )); then
   exit 0
 fi
 
+# --dart-only: 설치·토큰 주입·권한 점검을 전부 건너뛰고 4-b(Dart 글로벌 패키지)만 실행한다.
+#   Flutter/Dart(fvm)까지 대신 깔아주지는 않는다 — 그건 전체 설치가 할 일이고, 여기서 함께
+#   하면 "패키지만 업데이트"라는 이 옵션의 약속이 깨진다. dart가 없으면 안내하고 멈춘다.
+if (( DART_ONLY )); then
+  dart_prepare_path
+  if ! have dart; then
+    echo ""
+    if have fvm; then
+      # fvm 은 있는데 기본 버전이 지정되지 않은 맥 — 4-a의 `fvm global stable` 이 예전 실행에서
+      # ⚠ 로 건너뛰어진 경우다. 여기서 대신 깔아주지 않고 복붙할 명령을 그대로 알려준다.
+      echo "❌ dart 명령을 찾지 못했습니다 — fvm은 있지만 기본 Flutter 버전이 지정돼 있지 않습니다."
+      echo "   → 아래를 먼저 실행한 뒤 다시 시도해 주세요:"
+      echo "        fvm global stable"
+      echo "        ./mac-setup.sh --dart-only"
+    else
+      echo "❌ dart 명령을 찾지 못했습니다 — Flutter/Dart(fvm)가 아직 준비되지 않은 맥으로 보입니다."
+      echo "   이 옵션은 이미 세팅을 마친 맥에서 '패키지만' 다시 까는 용도라 전체 설치가 먼저입니다."
+      echo "   → 옵션 없이 실행해 주세요: ./mac-setup.sh"
+    fi
+    exit 1
+  fi
+  # 어떤 dart 로 깔고 있는지 한 줄 남긴다 — brew dart·Android Studio 번들이 섞여 있을 때
+  # "왜 어떤 패키지만 실패하지?" 를 이 한 줄로 바로 알 수 있다.
+  echo "  · 사용 중인 dart: $(command -v dart)"
+  run_dart_packages_step
+  log "Dart 글로벌 패키지 업데이트 결과 (--dart-only)"
+  print_dart_packages_verification
+  echo ""
+  if [[ -z "$DART_PACKAGES_MISSING" ]]; then
+    echo "✅ 완료! (전체 설치는 옵션 없이 './mac-setup.sh' 실행)"
+    echo "   방금 깔린 명령들은 ~/.pub-cache/bin 에 있습니다 — 새 터미널에서 바로 쓸 수 있습니다."
+  else
+    # 하나라도 빠졌으면 '완료' 배너 대신 다음 행동을 알려준다 (--env-only 8.10과 같은 원칙).
+    #   종료코드는 전체 설치와 같은 '경고 후 계속' 철학으로 0을 유지한다.
+    echo "⚠ 설치되지 않은 패키지가 있습니다:$DART_PACKAGES_MISSING"
+    echo "   위 ⚠ 메시지와 네트워크 상태를 확인한 뒤 './mac-setup.sh --dart-only' 를 다시 실행해 주세요."
+    echo "   (cob(co-bricks)은 GitHub 인증이 필요합니다 — 'gh auth login' 후 재시도)"
+  fi
+  exit 0
+fi
+
 # ============================================================
 # 설치 단계 시작 (1~8단계) — --env-only 실행 시 이 블록 전체를 건너뛴다
-#   (--perms-only 는 위에서 9단계만 실행하고 이미 종료했으므로 여기까지 오지 않는다)
+#   (--perms-only 는 9단계만, --dart-only 는 4-b단계만 위에서 실행하고 이미 종료했으므로
+#    둘 다 여기까지 오지 않는다)
 #   기존 코드를 옮기지 않고 그대로 감싸기만 했으므로, 블록 안쪽 본문은
 #   들여쓰기 없이 유지된다 (짝이 되는 fi는 8.5단계 직전에 있다)
 # ============================================================
@@ -1009,37 +1206,9 @@ yes | fvm global stable --force 2>/dev/null || yes | fvm global stable \
 export PATH="$HOME/fvm/default/bin:$PATH"
 
 # 4-b. Dart 글로벌 패키지
-#   기본 패키지 — 팀 Makefile의 `make pub_global`과 같은 목록이라, 프로젝트를 받자마자
-#     바로 빌드·코드생성·테스트를 돌릴 수 있다:
-#     coverage · melos · mason_cli · flutter_gen · jaspr_cli · serverpod_cli · flutterfire_cli
-#   co:code 추가분 — Claude Code가 쓰는 MCP 서버와 사내 스캐폴딩 CLI:
-#     marionette_mcp · mcp_server_dart · cob(co-bricks)
-log "Dart 글로벌 패키지 설치 (coverage, melos, mason_cli, flutter_gen, jaspr_cli, serverpod_cli, flutterfire_cli + marionette_mcp, mcp_server_dart, cob)"
-export PUB_CACHE="$HOME/.pub-cache"
-export PATH="$PUB_CACHE/bin:$PATH"
-# 버전을 고정하지 않는 기본 패키지들은 한 번에 돌린다.
-#   dart pub global activate는 이미 설치돼 있어도 최신으로 다시 활성화만 하므로 여러 번 실행해도 안전하다.
-for pkg in coverage melos mason_cli flutter_gen jaspr_cli; do
-  dart pub global activate "$pkg" || echo "  ⚠ $pkg 설치 실패 → 건너뜀"
-done
-# serverpod_cli만 버전 제약이 붙는다 — ^4.0.0-beta.4는 "4.0.0-beta.4 이상 5.0.0 미만"이라
-# 4.x 베타 안에서는 최신을 따라가되 5.0 메이저로는 자동으로 넘어가지 않는다.
-dart pub global activate serverpod_cli '^4.0.0-beta.4' || echo "  ⚠ serverpod_cli 설치 실패 → 건너뜀"
-# flutterfire_cli: pub.dev 공개 패키지라 cob과 달리 GitHub 인증 없이 바로 설치된다
-dart pub global activate flutterfire_cli || echo "  ⚠ flutterfire_cli 설치 실패 → 건너뜀"
-# 여기부터는 co:code 추가분 (위 기본 목록에는 없다)
-dart pub global activate marionette_mcp || echo "  ⚠ marionette_mcp 설치 실패 → 건너뜀"
-dart pub global activate mcp_server_dart || echo "  ⚠ mcp_server_dart 설치 실패 → 건너뜀"
-# cob(co-bricks)는 비공개 레포라 순수 git 인증이 필요하다 — gh 인증(위 3.4단계에서 1Password로
-# 자동 로그인 시도) 상태를 먼저 확인해, 안 돼 있으면 원인을 알 수 있는 안내로 대신한다.
-# (인증 없이 그대로 시도하면 git이 사용자 이름/암호를 물어보다 알아보기 어려운 원문 에러로 실패한다.)
-if have gh && gh auth status >/dev/null 2>&1; then
-  dart pub global activate --source git https://github.com/coco-de/co-bricks.git \
-    || echo "  ⚠ cob(co-bricks) 설치 실패 → 건너뜀"
-else
-  echo "  ⚠ GitHub 인증이 안 돼 있어 cob(co-bricks) 설치를 건너뜁니다"
-  echo "     (위 3.4단계 1Password 자동 로그인 실패 또는 gh 미설치 — 수동: gh auth login 후 재실행)"
-fi
+#   본체(run_dart_packages_step)는 파일 앞부분에 정의돼 있다 — --dart-only 가 설치 단계를
+#   건너뛰고 이 단계만 실행할 수 있어야 하기 때문이다 (9단계와 같은 이유).
+run_dart_packages_step
 
 # 4-c. Google Cloud CLI (gcloud)
 log "Google Cloud CLI 설치"
@@ -2010,20 +2179,9 @@ SLACK_BOT_TOKEN_VAL=$(grep '^export SLACK_BOT_TOKEN=' "$HOME/.zshrc" 2>/dev/null
 echo "  mcp:slack: $(claude mcp list 2>/dev/null | grep -q '^slack' \
   && echo "✓ 등록됨$([[ -n "$SLACK_TEAM_ID_VAL" && -n "$SLACK_BOT_TOKEN_VAL" ]] && echo ' + 토큰 주입됨 (새 터미널에서 적용)' || echo ' (⚠ 토큰 미주입 — 1Password 앱 CLI 통합/볼트 권한 확인 후 --env-only 재실행)')" \
   || echo '❌')"
-# Dart 기본 글로벌 패키지: 개수가 많아 한 줄로 묶고, 빠진 것만 이름으로 알려준다
-#   (목록 조회는 한 번만 하고 그 결과를 재사용한다 — 패키지마다 다시 부르면 그만큼 느려진다)
-DART_GLOBAL_LIST=$(dart pub global list 2>/dev/null || true)
-DART_BASE_MISSING=""
-for pkg in coverage melos mason_cli flutter_gen jaspr_cli serverpod_cli; do
-  echo "$DART_GLOBAL_LIST" | grep -q "^$pkg " || DART_BASE_MISSING="$DART_BASE_MISSING $pkg"
-done
-echo "  dart 기본 패키지: $([[ -z "$DART_BASE_MISSING" ]] \
-  && echo '✓ coverage, melos, mason_cli, flutter_gen, jaspr_cli, serverpod_cli' \
-  || echo "❌ 누락:$DART_BASE_MISSING (스크립트를 다시 실행하면 재시도합니다)")"
-echo "  marionette: $([[ -x "$PUB_CACHE/bin/marionette_mcp" ]] && echo '✓' || echo '❌')"
-echo "  mcp_server_dart: $(dart pub global list 2>/dev/null | grep -q '^mcp_server_dart ' && echo '✓' || echo '❌')"
-echo "  flutterfire_cli: $(dart pub global list 2>/dev/null | grep -q '^flutterfire_cli ' && echo '✓' || echo '❌')"
-echo "  cob(co-bricks): $(dart pub global list 2>/dev/null | grep -q '^cob ' && echo '✓' || echo '❌ (위 GitHub 인증(gh) 확인 후 재실행)')"
+# Dart 글로벌 패키지 5줄 — 본체는 파일 앞부분의 print_dart_packages_verification 에 있다
+#   (--dart-only 마무리에서도 같은 출력을 써야 해서 함수로 뽑아 두었다)
+print_dart_packages_verification
 CS_COUNT=$(ls -d "$HOME/.claude/plugins/marketplaces/cocode-skills/plugins"/*/ 2>/dev/null | grep -c .)
 echo "  cocode-skills: $([[ "$CS_COUNT" -gt 0 ]] && echo "✓ ${CS_COUNT}개 플러그인" || echo '❌ (위 GitHub 인증(gh) 확인 후 재실행)')"
 echo "  android : $([[ -x "$ANDROID_HOME/platform-tools/adb" ]] && echo "✓ $ANDROID_HOME" || echo '❌')"
@@ -2073,6 +2231,7 @@ echo "  8. GitHub 인증(gh)이 '❌'이면 cocode-skills·cob(co-bricks) 둘 �
 echo "     ↳ 자동 로그인은 팀 'API Token' 볼트 > 'GitHub API Token' > 'credential' 필드(레포 read 권한 PAT)에서"
 echo "       읽어 처리됩니다 — 항목이 없다면 팀 관리자에게 생성을 요청한 뒤 스크립트를 재실행하세요"
 echo "     ↳ 그래도 안 되면 수동으로: gh auth login 후 스크립트 재실행"
+echo "       (cob만 다시 깔면 되는 상황이면 './mac-setup.sh --dart-only' 가 더 빠릅니다 — cocode-skills는 전체 재실행이 필요)"
 echo "  9. lefthook(Git 훅)은 레포마다 한 번씩 켜야 합니다 — lefthook.yml 이 있는 프로젝트 폴더에서: lefthook install"
 echo "     ↳ 이걸 해야 커밋·푸시할 때 포맷/린트/테스트가 자동으로 돌아갑니다 (설정 파일이 없는 레포에서는 할 일 없음)"
 echo " 10. Stats(시스템 모니터)는 최초 1회 직접 실행해야 메뉴막대에 나타납니다: open -a Stats"
