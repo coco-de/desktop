@@ -246,11 +246,11 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 </tr>
 <tr>
 <td align="center" width="100"><img src="assets/icons/firebase.svg" width="36" height="36" alt="flutterfire_cli"><br><sub><b>flutterfire_cli</b></sub></td>
-<td align="center" width="100"></td>
-<td align="center" width="100"></td>
-<td align="center" width="100"></td>
-<td align="center" width="100"></td>
-<td align="center" width="100"></td>
+<td align="center" width="100"><img src="assets/icons/dart.svg" width="36" height="36" alt="coverage"><br><sub><b>coverage</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/dart.svg" width="36" height="36" alt="melos"><br><sub><b>melos</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/dart.svg" width="36" height="36" alt="mason_cli"><br><sub><b>mason_cli</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/dart.svg" width="36" height="36" alt="flutter_gen"><br><sub><b>flutter_gen</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/dart.svg" width="36" height="36" alt="jaspr_cli"><br><sub><b>jaspr_cli</b></sub></td>
 </tr>
 </table>
 
@@ -278,7 +278,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 
 <br>
 
-<sub>※ Slack · Dia · Orca · Lumide · Stats · codex(OpenAI) · agy(Antigravity)는 Simple Icons에 없어, 실제 브랜드 아이콘(파비콘)을 받아 사용했습니다. awscli, pyenv, colima, direnv, jq, maestro, oh-my-zsh, powerlevel10k, MesloLGS NF, Pretendard는 공식 브랜드 아이콘이 없어 텍스트로만 표기했습니다. DCM · serverpod_cli · marionette_mcp · mcp_server_dart · cob(co-bricks)는 Dart 생태계 도구라 Dart 아이콘으로 대신 표기했습니다. op(1Password CLI)는 1Password의 커맨드라인 버전이라 1Password 아이콘을 함께 사용했습니다. ccstatusline · awesome-statusline은 둘 다 Claude Code 상태줄 도구라 Claude 아이콘으로 대신 표기했습니다.</sub>
+<sub>※ Slack · Dia · Orca · Lumide · Stats · codex(OpenAI) · agy(Antigravity)는 Simple Icons에 없어, 실제 브랜드 아이콘(파비콘)을 받아 사용했습니다. awscli, pyenv, colima, direnv, jq, maestro, oh-my-zsh, powerlevel10k, MesloLGS NF, Pretendard는 공식 브랜드 아이콘이 없어 텍스트로만 표기했습니다. DCM · coverage · melos · mason_cli · flutter_gen · jaspr_cli · serverpod_cli · marionette_mcp · mcp_server_dart · cob(co-bricks)는 Dart 생태계 도구라 Dart 아이콘으로 대신 표기했습니다. op(1Password CLI)는 1Password의 커맨드라인 버전이라 1Password 아이콘을 함께 사용했습니다. ccstatusline · awesome-statusline은 둘 다 Claude Code 상태줄 도구라 Claude 아이콘으로 대신 표기했습니다.</sub>
 
 <br>
 
@@ -301,7 +301,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 | ✉️ Git 설정 | 커밋에 사용할 회사 이메일을 실행 중에 입력받아 전역 설정(`git config --global user.email`) — 이미 설정돼 있으면 묻지 않고 건너뜀 |
 | 🌐 브라우저 번역 언어 | Chrome·Dia의 번역 대상 언어를 한국어로, "번역 안 함" 목록을 영어로 자동 설정(`dia://settings/languages` = `chrome://settings/languages`를 매번 손으로 누를 필요 없음) — 브라우저가 실행 중이면 건너뛰고 경고만 표시 |
 | 🐦 Flutter | fvm(버전 관리자)으로 Flutter stable 채널 글로벌 설정, DCM(Dart 코드 품질 검사 도구 — CI 인증 키 `DCM_EMAIL`·`DCM_CI_KEY`는 1Password에서 자동 주입) |
-| 🎯 Dart 글로벌 패키지 | serverpod_cli 4.0.0-beta.0, marionette_mcp, mcp_server_dart, flutterfire_cli, cob(co-bricks) (⚠️ cob은 비공개 레포라 GitHub 인증 필요 — 보통 위 단계에서 1Password로 자동 처리되며, 안 됐다면 `gh auth login` 수동 실행 후 재실행) |
+| 🎯 Dart 글로벌 패키지 | coverage, melos, mason_cli, flutter_gen, jaspr_cli, serverpod_cli ^4.0.0-beta.4, flutterfire_cli, marionette_mcp, mcp_server_dart, cob(co-bricks) (⚠️ cob은 비공개 레포라 GitHub 인증 필요 — 보통 위 단계에서 1Password로 자동 처리되며, 안 됐다면 `gh auth login` 수동 실행 후 재실행) |
 | ☁️ 클라우드 | Google Cloud CLI (gcloud) |
 | 🐍 언어 런타임 | Python 최신 3.x (pyenv), Node.js LTS + npm (nvm) |
 | 💻 터미널 환경 | oh-my-zsh, powerlevel10k 테마, zsh-autosuggestions, zsh-syntax-highlighting, MesloLGS NF 폰트 |
@@ -396,7 +396,12 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 |---|---|---|
 | <img src="assets/icons/flutter.svg" width="20" height="20"> | fvm | Flutter 버전 관리자. `fvm global stable`로 stable 채널을 글로벌 설정 |
 | <img src="assets/icons/dart.svg" width="20" height="20"> | DCM (Dart Code Metrics) | Dart 코드 품질 검사 도구. CI/자동화 모드 인증에 쓰는 이메일+키(`DCM_EMAIL`·`DCM_CI_KEY`)는 팀 공용 1Password 항목 `DCM CI CD`에서 자동 주입됩니다 |
-| <img src="assets/icons/dart.svg" width="20" height="20"> | serverpod_cli 4.0.0-beta.0 | Serverpod 백엔드 프레임워크 CLI (`dart pub global activate`로 설치) |
+| <img src="assets/icons/dart.svg" width="20" height="20"> | coverage | 테스트가 코드의 어느 부분까지 확인했는지(커버리지)를 측정해 리포트로 만들어 줍니다 (`dart pub global activate`로 설치) |
+| <img src="assets/icons/dart.svg" width="20" height="20"> | melos | 여러 패키지를 한 레포에 담은 프로젝트(모노레포)의 의존성 설치·스크립트 실행을 한 번에 처리해 줍니다 (`dart pub global activate`로 설치) |
+| <img src="assets/icons/dart.svg" width="20" height="20"> | mason_cli | 미리 만들어 둔 코드 템플릿(brick)으로 새 화면·기능의 뼈대를 찍어내는 도구. 아래 `cob(co-bricks)`이 이 위에서 동작합니다 (`dart pub global activate`로 설치) |
+| <img src="assets/icons/dart.svg" width="20" height="20"> | flutter_gen | 이미지·폰트 같은 파일과 색상을 코드에서 오타 없이 쓰도록 Dart 코드로 자동 생성해 줍니다 (`dart pub global activate`로 설치) |
+| <img src="assets/icons/dart.svg" width="20" height="20"> | jaspr_cli | Dart로 웹사이트를 만드는 Jaspr 프레임워크의 CLI(개발 서버 실행·빌드) (`dart pub global activate`로 설치) |
+| <img src="assets/icons/dart.svg" width="20" height="20"> | serverpod_cli ^4.0.0-beta.4 | Serverpod 백엔드 프레임워크 CLI. `^4.0.0-beta.4`는 "4.0.0-beta.4 이상 5.0.0 미만"이라 4.x 베타 안에서는 최신을 따라가고 5.0으로는 자동으로 넘어가지 않습니다 (`dart pub global activate`로 설치) |
 | <img src="assets/icons/dart.svg" width="20" height="20"> | marionette_mcp | Claude Code의 `marionette` MCP 서버 — 실행 중인 Flutter 앱을 위젯 단위로 조작합니다 (`dart pub global activate`로 설치) |
 | <img src="assets/icons/dart.svg" width="20" height="20"> | mcp_server_dart | Claude Code의 `dart` MCP 서버 — 코드 분석·핫 리로드·패키지 탐색을 Claude가 직접 하게 해줍니다 (`dart pub global activate`로 설치) |
 | <img src="assets/icons/firebase.svg" width="20" height="20"> | flutterfire_cli | Flutter 프로젝트를 Firebase 프로젝트와 연동해주는 CLI(`flutterfire configure` 등). pub.dev 공개 패키지라 GitHub 인증 없이 설치됩니다 (`dart pub global activate`로 설치) |
@@ -457,6 +462,7 @@ mcp:mcp-atlassian(jira): ...
 SLANG_GPT_API_KEY: ...
 DCM_EMAIL/DCM_CI_KEY: ...
 mcp:slack: ...
+dart 기본 패키지: ...
 marionette: ...
 mcp_server_dart: ...
 cob(co-bricks): ...

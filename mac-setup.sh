@@ -1008,15 +1008,28 @@ yes | fvm global stable --force 2>/dev/null || yes | fvm global stable \
   || echo "  ⚠ Flutter stable 글로벌 설정 실패 → 건너뜀 (수동 설정: fvm global stable)"
 export PATH="$HOME/fvm/default/bin:$PATH"
 
-# 4-b. Dart 글로벌 패키지 (serverpod_cli, marionette_mcp, mcp_server_dart, flutterfire_cli, cob/co-bricks)
-log "Dart 글로벌 패키지 설치"
+# 4-b. Dart 글로벌 패키지
+#   기본 패키지 — 팀 Makefile의 `make pub_global`과 같은 목록이라, 프로젝트를 받자마자
+#     바로 빌드·코드생성·테스트를 돌릴 수 있다:
+#     coverage · melos · mason_cli · flutter_gen · jaspr_cli · serverpod_cli · flutterfire_cli
+#   co:code 추가분 — Claude Code가 쓰는 MCP 서버와 사내 스캐폴딩 CLI:
+#     marionette_mcp · mcp_server_dart · cob(co-bricks)
+log "Dart 글로벌 패키지 설치 (coverage, melos, mason_cli, flutter_gen, jaspr_cli, serverpod_cli, flutterfire_cli + marionette_mcp, mcp_server_dart, cob)"
 export PUB_CACHE="$HOME/.pub-cache"
 export PATH="$PUB_CACHE/bin:$PATH"
-dart pub global activate serverpod_cli 4.0.0-beta.0 || echo "  ⚠ serverpod_cli 설치 실패 → 건너뜀"
-dart pub global activate marionette_mcp || echo "  ⚠ marionette_mcp 설치 실패 → 건너뜀"
-dart pub global activate mcp_server_dart || echo "  ⚠ mcp_server_dart 설치 실패 → 건너뜀"
+# 버전을 고정하지 않는 기본 패키지들은 한 번에 돌린다.
+#   dart pub global activate는 이미 설치돼 있어도 최신으로 다시 활성화만 하므로 여러 번 실행해도 안전하다.
+for pkg in coverage melos mason_cli flutter_gen jaspr_cli; do
+  dart pub global activate "$pkg" || echo "  ⚠ $pkg 설치 실패 → 건너뜀"
+done
+# serverpod_cli만 버전 제약이 붙는다 — ^4.0.0-beta.4는 "4.0.0-beta.4 이상 5.0.0 미만"이라
+# 4.x 베타 안에서는 최신을 따라가되 5.0 메이저로는 자동으로 넘어가지 않는다.
+dart pub global activate serverpod_cli '^4.0.0-beta.4' || echo "  ⚠ serverpod_cli 설치 실패 → 건너뜀"
 # flutterfire_cli: pub.dev 공개 패키지라 cob과 달리 GitHub 인증 없이 바로 설치된다
 dart pub global activate flutterfire_cli || echo "  ⚠ flutterfire_cli 설치 실패 → 건너뜀"
+# 여기부터는 co:code 추가분 (위 기본 목록에는 없다)
+dart pub global activate marionette_mcp || echo "  ⚠ marionette_mcp 설치 실패 → 건너뜀"
+dart pub global activate mcp_server_dart || echo "  ⚠ mcp_server_dart 설치 실패 → 건너뜀"
 # cob(co-bricks)는 비공개 레포라 순수 git 인증이 필요하다 — gh 인증(위 3.4단계에서 1Password로
 # 자동 로그인 시도) 상태를 먼저 확인해, 안 돼 있으면 원인을 알 수 있는 안내로 대신한다.
 # (인증 없이 그대로 시도하면 git이 사용자 이름/암호를 물어보다 알아보기 어려운 원문 에러로 실패한다.)
@@ -1997,6 +2010,16 @@ SLACK_BOT_TOKEN_VAL=$(grep '^export SLACK_BOT_TOKEN=' "$HOME/.zshrc" 2>/dev/null
 echo "  mcp:slack: $(claude mcp list 2>/dev/null | grep -q '^slack' \
   && echo "✓ 등록됨$([[ -n "$SLACK_TEAM_ID_VAL" && -n "$SLACK_BOT_TOKEN_VAL" ]] && echo ' + 토큰 주입됨 (새 터미널에서 적용)' || echo ' (⚠ 토큰 미주입 — 1Password 앱 CLI 통합/볼트 권한 확인 후 --env-only 재실행)')" \
   || echo '❌')"
+# Dart 기본 글로벌 패키지: 개수가 많아 한 줄로 묶고, 빠진 것만 이름으로 알려준다
+#   (목록 조회는 한 번만 하고 그 결과를 재사용한다 — 패키지마다 다시 부르면 그만큼 느려진다)
+DART_GLOBAL_LIST=$(dart pub global list 2>/dev/null || true)
+DART_BASE_MISSING=""
+for pkg in coverage melos mason_cli flutter_gen jaspr_cli serverpod_cli; do
+  echo "$DART_GLOBAL_LIST" | grep -q "^$pkg " || DART_BASE_MISSING="$DART_BASE_MISSING $pkg"
+done
+echo "  dart 기본 패키지: $([[ -z "$DART_BASE_MISSING" ]] \
+  && echo '✓ coverage, melos, mason_cli, flutter_gen, jaspr_cli, serverpod_cli' \
+  || echo "❌ 누락:$DART_BASE_MISSING (스크립트를 다시 실행하면 재시도합니다)")"
 echo "  marionette: $([[ -x "$PUB_CACHE/bin/marionette_mcp" ]] && echo '✓' || echo '❌')"
 echo "  mcp_server_dart: $(dart pub global list 2>/dev/null | grep -q '^mcp_server_dart ' && echo '✓' || echo '❌')"
 echo "  flutterfire_cli: $(dart pub global list 2>/dev/null | grep -q '^flutterfire_cli ' && echo '✓' || echo '❌')"
