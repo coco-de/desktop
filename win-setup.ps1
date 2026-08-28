@@ -3452,10 +3452,24 @@ if (-not (Test-Cmd 'dart')) {
     Invoke-DartGlobalActivate -Package $pkg
   }
 
-  # serverpod_cli 만 버전 제약이 붙는다 — '^4.0.0-beta.4' 는 "4.0.0-beta.4 이상 5.0.0 미만"이라
-  # 4.x 베타 안에서는 최신을 따라가되 5.0 으로는 자동으로 넘어가지 않는다.
-  # ⚠ 따옴표를 빼면 안 된다 — Windows 명령 창에서 ^ 는 특수문자라 조건이 다르게 해석된다.
-  Invoke-DartGlobalActivate -Package 'serverpod_cli' -Constraint '^4.0.0-beta.4'
+  # serverpod_cli 는 팀이 항상 베타/RC 최신판을 쓴다 — 버전 없이 설치하면 dart pub 이
+  # 안정판(예: 3.4.13)만 골라 베타를 건너뛰므로, pub.dev 에서 실제 최신 버전을 조회해
+  # 명시 설치한다. versions 배열은 semver 오름차순으로 내려오므로 마지막 항목이 지금
+  # 시점 가장 높은 버전 — major 가 올라가도(4→5 등) 손대지 않아도 그대로 따라간다.
+  $serverpodLatest = $null
+  try {
+    $serverpodPkgInfo = Invoke-RestMethod -Uri 'https://pub.dev/api/packages/serverpod_cli' -TimeoutSec 10
+    $serverpodLatest = $serverpodPkgInfo.versions[-1].version
+  } catch {
+    $serverpodLatest = $null
+  }
+  if ([string]::IsNullOrWhiteSpace($serverpodLatest)) {
+    Write-Warn "pub.dev 최신 버전 조회 실패 → serverpod_cli 안정판으로 설치"
+    Invoke-DartGlobalActivate -Package 'serverpod_cli'
+  } else {
+    # 조회한 버전은 순수 숫자(예: 4.0.0-rc.1)라 ^ 같은 특수문자가 없어 따옴표 이슈가 없다.
+    Invoke-DartGlobalActivate -Package 'serverpod_cli' -Constraint $serverpodLatest
+  }
 
   # flutterfire_cli: 공개 패키지라 GitHub 인증 없이 바로 깔린다
   #   (실제 'flutterfire configure' 를 쓰려면 Firebase CLI 도 따로 필요하다)
