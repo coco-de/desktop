@@ -553,9 +553,22 @@ run_dart_packages_step() {
   for pkg in coverage melos mason_cli flutter_gen jaspr_cli; do
     dart pub global activate "$pkg" || echo "  ⚠ $pkg 설치 실패 → 건너뜀"
   done
-  # serverpod_cli만 버전 제약이 붙는다 — ^4.0.0-beta.4는 "4.0.0-beta.4 이상 5.0.0 미만"이라
-  # 4.x 베타 안에서는 최신을 따라가되 5.0 메이저로는 자동으로 넘어가지 않는다.
-  dart pub global activate serverpod_cli '^4.0.0-beta.4' || echo "  ⚠ serverpod_cli 설치 실패 → 건너뜀"
+  # serverpod_cli는 팀이 항상 베타/RC 최신판을 쓴다 — 버전 없이 설치하면 dart pub이
+  # 안정판(예: 3.4.13)만 골라 베타를 건너뛰므로, pub.dev에서 실제 최신 버전을 조회해
+  # 명시 설치한다. versions 배열은 semver 오름차순으로 내려오므로 마지막 항목이 지금
+  # 시점 가장 높은 버전 — major가 올라가도(4→5 등) 손대지 않아도 그대로 따라간다.
+  local serverpod_latest=""
+  if have jq && have curl; then
+    serverpod_latest="$(curl -fsSL --max-time 10 'https://pub.dev/api/packages/serverpod_cli' 2>/dev/null \
+      | jq -r '.versions[-1].version // empty' 2>/dev/null || true)"
+  fi
+  if [[ -n "$serverpod_latest" ]]; then
+    dart pub global activate serverpod_cli "$serverpod_latest" \
+      || echo "  ⚠ serverpod_cli($serverpod_latest) 설치 실패 → 건너뜀"
+  else
+    echo "  ⚠ pub.dev 최신 버전 조회 실패(jq/curl 확인 필요) → serverpod_cli 안정판으로 설치"
+    dart pub global activate serverpod_cli || echo "  ⚠ serverpod_cli 설치 실패 → 건너뜀"
+  fi
   # flutterfire_cli: pub.dev 공개 패키지라 cob과 달리 GitHub 인증 없이 바로 설치된다
   dart pub global activate flutterfire_cli || echo "  ⚠ flutterfire_cli 설치 실패 → 건너뜀"
   # 여기부터는 co:code 추가분 (위 기본 목록에는 없다)
