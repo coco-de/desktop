@@ -1,12 +1,14 @@
-# 🍎 co-mac
+# 🍎 macOS
 
 > 새로 받은 맥북 한 대를 명령어 한 줄로 co:code 팀 전체와 똑같은 개발환경으로 만들어주는 스크립트입니다.
+
+이 안내는 [coco-de/desktop](../README.md) 저장소의 macOS 부분입니다. 윈도우·리눅스는 [windows/](../windows/) · [linux/](../linux/) 를 보세요.
 
 [![Platform](https://img.shields.io/badge/platform-macOS-000000?logo=apple&logoColor=white)](https://www.apple.com/macos/)
 [![Script](https://img.shields.io/badge/script-Bash-4EAA25?logo=gnubash&logoColor=white)](./mac-setup.sh)
 [![Package Manager](https://img.shields.io/badge/package_manager-Homebrew-FBB040?logo=homebrew&logoColor=white)](https://brew.sh)
 
-이 저장소에서 보실 파일은 딱 두 개입니다.
+이 폴더에서 보실 파일은 딱 두 개입니다.
 
 - [`mac-setup.sh`](./mac-setup.sh) — 개발환경을 자동으로 설치해주는 스크립트
 - `README.md` — 지금 보고 계신 이 문서
@@ -59,7 +61,7 @@ co:code는 엔지니어뿐 아니라 디자이너, PM도 하나의 엔지니어�
 터미널을 열고 아래 한 줄을 붙여넣은 뒤 Enter를 누르세요.
 
 ```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coco-de/co-mac/main/mac-setup.sh)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coco-de/desktop/main/macos/mac-setup.sh)"
 ```
 
 레포를 내려받거나 Homebrew를 미리 설치할 필요 없이, 이 한 줄로 전부 진행됩니다.
@@ -67,7 +69,7 @@ co:code는 엔지니어뿐 아니라 디자이너, PM도 하나의 엔지니어�
 > 💾 **나중에 `--env-only` 같은 옵션을 쓰실 분은** 스크립트를 파일로 받아 두시면 편합니다. 위 한 줄은 스크립트를 내려받아 바로 실행하고 **파일을 남기지 않기 때문**입니다.
 >
 > ```bash
-> mkdir -p ~/co-mac && curl -fsSL https://raw.githubusercontent.com/coco-de/co-mac/main/mac-setup.sh -o ~/co-mac/mac-setup.sh && chmod +x ~/co-mac/mac-setup.sh
+> mkdir -p ~/co-mac && curl -fsSL https://raw.githubusercontent.com/coco-de/desktop/main/macos/mac-setup.sh -o ~/co-mac/mac-setup.sh && chmod +x ~/co-mac/mac-setup.sh
 > ~/co-mac/mac-setup.sh
 > ```
 >
@@ -79,8 +81,8 @@ co:code는 엔지니어뿐 아니라 디자이너, PM도 하나의 엔지니어�
 <br>
 
 ```bash
-git clone https://github.com/coco-de/co-mac.git
-cd co-mac
+git clone https://github.com/coco-de/desktop.git
+cd desktop/macos
 chmod +x mac-setup.sh && ./mac-setup.sh
 ```
 
@@ -101,7 +103,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 > 스크립트 파일이 없다면(한 줄 실행으로 설치한 경우) 아래처럼 옵션을 붙여 그대로 실행해도 됩니다. `--` 는 그 뒤가 옵션이라는 표시라 빼면 안 됩니다.
 >
 > ```bash
-> /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coco-de/co-mac/main/mac-setup.sh)" -- --env-only
+> /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coco-de/desktop/main/macos/mac-setup.sh)" -- --env-only
 > ```
 >
 > 앱·도구 설치는 전부 건너뛰고, 1Password(`op`)에서 팀 공용 토큰(`ZENHUB_API_TOKEN`·`JIRA_API_TOKEN`·`SLANG_GPT_API_KEY`·`DCM_EMAIL`·`DCM_CI_KEY`·`SLACK_TEAM_ID`·`SLACK_BOT_TOKEN`)만 다시 읽어 `~/.zshrc`에 넣어줍니다. 토큰이 바뀌었거나 설치 때 토큰 주입(8.5~8.9단계)을 건너뛴 경우, 전체 설치를 다시 돌릴 필요 없이 몇 초 만에 끝납니다. 사용법은 `./mac-setup.sh --help`로도 볼 수 있습니다.
@@ -115,7 +117,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 > 스크립트 파일이 없다면 `--env-only`와 같은 방식으로 쓰시면 됩니다.
 >
 > ```bash
-> /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coco-de/co-mac/main/mac-setup.sh)" -- --dart-only
+> /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coco-de/desktop/main/macos/mac-setup.sh)" -- --dart-only
 > ```
 >
 > 앱 설치·토큰 주입·권한 단계는 전부 건너뛰고 **Dart 글로벌 패키지**(`coverage`·`melos`·`mason_cli`·`flutter_gen`·`jaspr_cli`·`serverpod_cli`·`flutterfire_cli`·`marionette_mcp`·`mcp_server_dart`·`cob`)만 다시 설치합니다(4-b단계). 이미 깔린 패키지는 최신으로 다시 활성화되므로 몇 번을 실행해도 안전하고, 끝나면 무엇이 깔렸는지 요약해서 보여줍니다. 단 **Flutter/Dart(fvm)는 이미 설치돼 있어야 합니다** — 없으면 전체 설치를 먼저 하라고 안내하고 멈춥니다. `cob(co-bricks)`은 비공개 레포라 **GitHub 인증이 돼 있을 때만** 설치되고(안 돼 있으면 그 항목만 건너뜁니다), GitHub에서 받아 직접 빌드하므로 이 단계에서만 몇 분 걸릴 수 있습니다(멈춘 게 아니니 기다려 주세요).
@@ -129,7 +131,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 > 스크립트 파일이 없다면 `--env-only`와 같은 방식으로 쓰시면 됩니다.
 >
 > ```bash
-> /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coco-de/co-mac/main/mac-setup.sh)" -- --perms-only
+> /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coco-de/desktop/main/macos/mac-setup.sh)" -- --perms-only
 > ```
 >
 > 설치·토큰 주입은 전부 건너뛰고, **Orca의 '전체 디스크 접근 권한'** 상태만 확인해 시스템 설정 창까지 열어 안내해 줍니다(9단계). 이미 켜져 있으면 아무것도 묻지 않고 바로 끝납니다. 자세한 내용은 아래 [🔐 Orca 전체 디스크 접근 권한](#orca-full-disk-access)을 봐주세요.
@@ -658,7 +660,7 @@ Orca 전체 디스크 접근: ...
 
   ```bash
   mkdir -p ~/co-mac
-  curl -fsSL https://raw.githubusercontent.com/coco-de/co-mac/main/mac-setup.sh -o ~/co-mac/mac-setup.sh
+  curl -fsSL https://raw.githubusercontent.com/coco-de/desktop/main/macos/mac-setup.sh -o ~/co-mac/mac-setup.sh
   open -e ~/co-mac/mac-setup.sh
   ```
 

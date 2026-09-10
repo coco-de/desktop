@@ -2,7 +2,7 @@
 # 윈도우 초기 개발환경 세팅 스크립트 (co:code 팀 표준)
 #
 # 전제: 없음 — winget(앱 설치 관리자)과 Scoop은 이 스크립트가 0단계에서 자동으로 설치한다.
-#       맥 스크립트(co-mac/mac-setup.sh)와 같은 도구를 같은 순서로 깔며,
+#       맥 스크립트(macos/mac-setup.sh)와 같은 도구를 같은 순서로 깔며,
 #       윈도우에 없는 항목(Xcode·CocoaPods 등)만 빠지고 윈도우 전용 항목이 대신 들어간다.
 #
 # 실행 (레포를 clone한 경우):
@@ -11,7 +11,7 @@
 #     .\win-setup.ps1
 #
 # 실행 (clone 없이 한 줄로):
-#   Set-ExecutionPolicy -Scope Process Bypass -Force; $s="$env:TEMP\win-setup.ps1"; iwr -UseBasicParsing https://raw.githubusercontent.com/coco-de/co-win/main/win-setup.ps1 -OutFile $s; Unblock-File $s; & $s
+#   Set-ExecutionPolicy -Scope Process Bypass -Force; $s="$env:TEMP\win-setup.ps1"; iwr -UseBasicParsing https://raw.githubusercontent.com/coco-de/desktop/main/windows/win-setup.ps1 -OutFile $s; Unblock-File $s; & $s
 #   └ 맨 앞의 Set-ExecutionPolicy 는 **지금 열려 있는 이 창에만** 적용된다(창을 닫으면 원래대로).
 #     이게 없으면 새 PC 기본값(Restricted)에서 파일은 내려받아지지만 실행이 막힌다.
 #   └ 이 경우 스크립트 파일 하나만 내려오므로, 팀 셸 설정(PowerShell 프로필)은
@@ -74,7 +74,7 @@ try {
 
 # 이 레포의 원본 파일 주소 — 메모리 실행(iex)으로 시작해 다시 실행할 파일이 없을 때
 # 이 스크립트를 임시 폴더로 내려받는 데 쓴다.
-$RepoRawBase = 'https://raw.githubusercontent.com/coco-de/co-win/main'
+$RepoRawBase = 'https://raw.githubusercontent.com/coco-de/desktop/main/windows'
 
 # ------------------------------------------------------------
 # 실행 방식 감지 — 파일로 실행했나, 메모리에서 바로 실행했나

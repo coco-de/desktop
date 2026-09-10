@@ -6,7 +6,7 @@
 #
 # 실행 (레포를 clone한 경우): chmod +x mac-setup.sh && ./mac-setup.sh
 # 실행 (clone 없이 한 줄로):
-#   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coco-de/co-mac/main/mac-setup.sh)"
+#   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coco-de/desktop/main/macos/mac-setup.sh)"
 #   └ 이 경우 스크립트 파일 하나만 내려오므로, 팀 셸 설정(.zshrc·.p10k.zsh)은
 #     0.5단계에서 같은 레포에서 따로 내려받는다.
 #   └ 이미 세팅한 맥에서 토큰(환경변수)만 다시 주입하려면: ./mac-setup.sh --env-only
@@ -118,7 +118,7 @@ if [[ "$0" == --?* || "$0" == "-h" ]]; then
   echo "❌ 옵션이 스크립트에 전달되지 않았습니다: $0"
   echo ""
   echo "   curl 한 줄로 실행할 때는 옵션 앞에 '--' 가 필요합니다:"
-  echo "   /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/coco-de/co-mac/main/mac-setup.sh)\" -- $0"
+  echo "   /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/coco-de/desktop/main/macos/mac-setup.sh)\" -- $0"
   exit 1
 fi
 
@@ -236,7 +236,7 @@ fi
 #
 #   내려받기에 실패해도 중단하지 않는다 — 8단계의 기본 설정 생성 경로로 자연히 넘어간다.
 # ------------------------------------------------------------
-REPO_RAW_BASE="https://raw.githubusercontent.com/coco-de/co-mac/main"
+REPO_RAW_BASE="https://raw.githubusercontent.com/coco-de/desktop/main/macos"
 # 8단계가 참조할 dotfile 위치. 기본은 스크립트 옆이고, 원라이너 실행이면 임시 폴더로 바뀐다.
 DOTFILE_DIR="$SCRIPT_DIR"
 

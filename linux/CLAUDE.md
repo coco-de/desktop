@@ -1,26 +1,20 @@
-# co-linux
+# linux
 
-새 우분투 PC를 co:code 팀 표준 개발환경으로 세팅하는 스크립트 레포. 핵심 파일은 `linux-setup.sh`(설치 스크립트)와 `README.md`(문서) 둘뿐이며, 두 파일은 항상 같은 내용을 가리켜야 한다.
+새 우분투 PC를 co:code 팀 표준 개발환경으로 세팅하는 스크립트. 핵심 파일은 `linux-setup.sh`(설치 스크립트)와 `README.md`(문서) 둘뿐이며, 두 파일은 항상 같은 내용을 가리켜야 한다.
 
-**형제 레포 — 팀 표준 도구가 바뀌면 셋을 함께 갱신해야 한다:**
-
-| 레포 | 스크립트 | 방식 |
-|------|----------|------|
-| [coco-de/co-mac](https://github.com/coco-de/co-mac) | `mac-setup.sh` | Homebrew |
-| [coco-de/co-win](https://github.com/coco-de/co-win) | `win-setup.ps1` | winget + Scoop |
-| **co-linux** (여기) | `linux-setup.sh` | apt + snap |
+형제 폴더: [macos/](../macos/) · [windows/](../windows/). 팀 표준 도구가 바뀌면 **셋을 함께 갱신해야 한다.** 저장소 공통 규칙은 루트 [CLAUDE.md](../CLAUDE.md)를 따른다.
 
 ## 필수 규칙
 
 - **`linux-setup.sh`에서 도구를 추가/삭제/변경할 때는 반드시 `sync-tool-docs` 스킬을 사용해** README.md와 스크립트 내 log/주석/검증 문구를 함께 갱신한다. 코드만 고치고 문서를 남겨두면 안 된다.
-- **형제 레포와의 대응 관계를 항상 확인한다.** 도구를 추가하면 맥·윈도우에도 있는지, 빠뜨렸다면 왜인지를 README의 `🍎 맥과 무엇이 다른가요` 섹션에 남긴다. 한 OS에만 추가하면 세 환경이 조용히 어긋난다.
+- **macos·windows와의 대응 관계를 항상 확인한다.** 도구를 추가하면 맥·윈도우에도 있는지, 빠뜨렸다면 왜인지를 README의 `🍎 맥과 무엇이 다른가요` 섹션에 남긴다. 한 OS에만 추가하면 세 환경이 조용히 어긋난다.
 - 문서·주석·로그는 한국어, 비개발자 팀원도 읽는다는 전제로 작성한다.
 - 스크립트는 멱등해야 한다: 설치 전 존재 확인, 실패 시 경고 후 건너뛰고 계속 진행.
 
 ## 대상 환경 (확정 · 임의로 넓히지 말 것)
 
 - **Ubuntu 22.04 LTS 이상 / Debian 12 이상 데스크톱.** x86_64(amd64)·ARM64 둘 다.
-- WSL 전용 분기를 넣지 않는다 — WSL 사용자는 co-win 을 쓴다.
+- WSL 전용 분기를 넣지 않는다 — WSL 사용자는 windows/ 를 쓴다.
 - Fedora(dnf)·Arch(pacman) 분기를 넣지 않는다. 다른 배포판은 헤더에서 경고만 하고 계속 진행한다.
 - **Homebrew on Linux 와 flatpak 은 쓰지 않는다.** 패키지는 apt(주) + snap(보조) + 공식 .deb 저장소로 통일한다.
 

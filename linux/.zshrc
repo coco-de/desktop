@@ -1,6 +1,6 @@
 # ============================================================
 # co:code 팀 표준 zsh 설정 (리눅스용)
-#   coco-de/co-mac 의 .zshrc 를 Ubuntu/Debian 경로에 맞춰 옮긴 것이다.
+#   macos/.zshrc 를 Ubuntu/Debian 경로에 맞춰 옮긴 것이다.
 #   달라진 곳: zsh-syntax-highlighting·JAVA_HOME·ANDROID_HOME 경로, colima→docker,
 #             Homebrew 전용 PATH 3종과 macOS 전용 alias 제거.
 #   개인 설정·API 키는 이 파일이 아니라 ~/.zshrc.local 에 둔다 (맨 아래에서 읽어들인다).

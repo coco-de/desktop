@@ -1,0 +1,12 @@
+# 셸 스크립트·도트파일은 LF. CRLF 가 붙으면 리눅스에서
+# `bad interpreter: No such file or directory` 로 실행 자체가 실패한다.
+# PowerShell 은 윈도우 체크아웃 시 CRLF. BOM 은 줄바꿈이 아니라 파일 내용이라
+# git 이 건드리지 않는다 — BOM 이 없으면 Windows PowerShell 5.1 이 CP949 로 읽어 한글이 깨진다.
+* text=auto
+*.sh    text eol=lf
+*.zsh   text eol=lf
+.zshrc  text eol=lf
+*.ps1   text eol=crlf
+*.md    text eol=lf
+*.svg   text eol=lf
+*.png   binary

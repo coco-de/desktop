@@ -1,17 +1,19 @@
-# 🐧 co-linux
+# 🐧 Linux
 
 > 새로 받은 우분투 PC 한 대를 명령어 한 줄로 co:code 팀 전체와 똑같은 개발환경으로 만들어주는 스크립트입니다.
+
+이 안내는 [coco-de/desktop](../README.md) 저장소의 Linux 부분입니다.
 
 [![Platform](https://img.shields.io/badge/platform-Ubuntu_22.04%2B_%7C_Debian_12%2B-E95420?logo=ubuntu&logoColor=white)](https://ubuntu.com/)
 [![Script](https://img.shields.io/badge/script-Bash-4EAA25?logo=gnubash&logoColor=white)](./linux-setup.sh)
 [![Package Manager](https://img.shields.io/badge/package_manager-apt_%2B_snap-E95420?logo=ubuntu&logoColor=white)](https://ubuntu.com/server/docs/package-management)
 
-이 저장소에서 보실 파일은 딱 두 개입니다.
+이 폴더에서 보실 파일은 딱 두 개입니다.
 
 - [`linux-setup.sh`](./linux-setup.sh) — 개발환경을 자동으로 설치해주는 스크립트
 - `README.md` — 지금 보고 계신 이 문서
 
-> 💻 **맥북이나 윈도우 PC를 쓰신다면** 이 레포가 아니라 [coco-de/co-mac](https://github.com/coco-de/co-mac) 또는 [coco-de/co-win](https://github.com/coco-de/co-win)을 쓰세요. 세 레포는 **같은 도구 목록을 각자의 OS 방식으로** 설치합니다. 무엇이 어떻게 다른지는 [🍎 맥과 무엇이 다른가요](#vs-mac)에 정리해두었습니다.
+> 💻 **맥북이나 윈도우 PC를 쓰신다면** [macos/](../macos/) 또는 [windows/](../windows/) 안내를 따르세요. 세 폴더는 **같은 도구 목록을 각자의 OS 방식으로** 설치합니다. 무엇이 어떻게 다른지는 [🍎 맥과 무엇이 다른가요](#vs-mac)에 정리해두었습니다.
 
 ## 목차
 
@@ -63,10 +65,10 @@ co:code는 엔지니어뿐 아니라 디자이너, PM도 하나의 엔지니어�
 터미널을 열고 (**Ctrl + Alt + T**), 아래 한 줄을 붙여넣은 뒤 Enter를 누르세요.
 
 ```bash
-d="$(mktemp -d)" && curl -fsSL https://raw.githubusercontent.com/coco-de/co-linux/main/linux-setup.sh -o "$d/linux-setup.sh" && bash "$d/linux-setup.sh"
+d="$(mktemp -d)" && curl -fsSL https://raw.githubusercontent.com/coco-de/desktop/main/linux/linux-setup.sh -o "$d/linux-setup.sh" && bash "$d/linux-setup.sh"
 ```
 
-> 💡 **맥(co-mac)과 명령 모양이 다릅니다.** 맥에서 쓰는 `bash -c "$(curl ...)"` 형태는 리눅스에서 동작하지 않습니다 — 리눅스 커널은 **인자 하나의 크기를 128KiB로 제한**하는데(`MAX_ARG_STRLEN`) 이 스크립트가 그보다 커서 `Argument list too long` 으로 실행 자체가 막힙니다. 그래서 임시 폴더로 받아 실행합니다.
+> 💡 **맥(macos)과 명령 모양이 다릅니다.** 맥에서 쓰는 `bash -c "$(curl ...)"` 형태는 리눅스에서 동작하지 않습니다 — 리눅스 커널은 **인자 하나의 크기를 128KiB로 제한**하는데(`MAX_ARG_STRLEN`) 이 스크립트가 그보다 커서 `Argument list too long` 으로 실행 자체가 막힙니다. 그래서 임시 폴더로 받아 실행합니다.
 
 > ⏱ **설치에는 30분~2시간 정도 걸립니다.** Android SDK가 수 GB짜리이고 pyenv가 파이썬을 소스에서 직접 빌드해서, 네트워크·CPU 속도에 따라 차이가 큽니다. 중간에 창을 닫지 마시고, 다른 일을 하셔도 됩니다.
 
@@ -79,8 +81,8 @@ d="$(mktemp -d)" && curl -fsSL https://raw.githubusercontent.com/coco-de/co-linu
 
 ```bash
 sudo apt update && sudo apt install -y git
-git clone https://github.com/coco-de/co-linux.git
-cd co-linux
+git clone https://github.com/coco-de/desktop.git
+cd desktop/linux
 chmod +x linux-setup.sh
 ./linux-setup.sh
 ```
@@ -361,7 +363,7 @@ chmod +x linux-setup.sh
 
 ## 🍎 맥과 무엇이 다른가요
 
-[co-mac](https://github.com/coco-de/co-mac)·[co-win](https://github.com/coco-de/co-win)과 **같은 도구 목록을 각자의 OS 방식으로** 설치합니다. Flutter 개발에 필요한 것은 전부 갖춰지며, 팀 표준 셸 설정(`.zshrc`·`.p10k.zsh`)도 그대로 씁니다.
+[macos](../macos/)·[windows](../windows/)와 **같은 도구 목록을 각자의 OS 방식으로** 설치합니다. Flutter 개발에 필요한 것은 전부 갖춰지며, 팀 표준 셸 설정(`.zshrc`·`.p10k.zsh`)도 그대로 씁니다.
 
 ### ✅ 리눅스가 더 나은 것
 
@@ -404,7 +406,7 @@ chmod +x linux-setup.sh
 
 | 항목 | 왜 |
 |---|---|
-| **WSL 전용 분기** | WSL 사용자는 [co-win](https://github.com/coco-de/co-win)을 씁니다. 두 경로를 한 스크립트가 떠안으면 양쪽 다 검증이 어려워집니다 |
+| **WSL 전용 분기** | WSL 사용자는 [windows](../windows/)를 씁니다. 두 경로를 한 스크립트가 떠안으면 양쪽 다 검증이 어려워집니다 |
 | **Fedora·Arch 지원** | 패키지명·저장소가 전부 달라 스크립트가 3배로 복잡해집니다. 다른 배포판에서 실행하면 경고만 하고 되는 것까지는 진행합니다 |
 | **Homebrew on Linux** | 맥 포뮬러를 1:1로 재사용할 수 있지만, 500MB 추가 레이어와 잦은 소스 빌드로 설치가 크게 느려집니다 |
 | **flatpak** | 우분투 기본은 snap입니다. 둘을 함께 쓰면 설정이 한 겹 늘고 Android Studio 연동이 까다로워집니다 |
@@ -604,4 +606,4 @@ Fedora·Arch에서는 스크립트가 경고를 띄우고 계속 진행하지만
 ## 💬 도움이 필요하신가요
 
 - 스크립트가 실패한 단계의 **화면 출력을 그대로 복사해서** 팀 Slack에 올려주세요. `⚠`·`❌` 줄이 원인을 담고 있습니다.
-- 도구가 추가·변경되어야 한다면 이 저장소에 이슈나 PR을 남겨주세요. **맥([co-mac](https://github.com/coco-de/co-mac))·윈도우([co-win](https://github.com/coco-de/co-win))도 함께 갱신해야** 세 환경이 어긋나지 않습니다.
+- 도구가 추가·변경되어야 한다면 이 저장소에 이슈나 PR을 남겨주세요. **맥([macos](../macos/))·윈도우([windows](../windows/))도 함께 갱신해야** 세 환경이 어긋나지 않습니다.

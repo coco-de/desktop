@@ -1,17 +1,19 @@
-# 🪟 co-win
+# 🪟 Windows
 
 > 새로 받은 윈도우 PC 한 대를 명령어 한 줄로 co:code 팀 전체와 똑같은 개발환경으로 만들어주는 스크립트입니다.
+
+이 안내는 [coco-de/desktop](../README.md) 저장소의 Windows 부분입니다.
 
 [![Platform](https://img.shields.io/badge/platform-Windows_10%2F11-0078D4?logo=windows&logoColor=white)](https://www.microsoft.com/windows)
 [![Script](https://img.shields.io/badge/script-PowerShell-5391FE?logo=powershell&logoColor=white)](./win-setup.ps1)
 [![Package Manager](https://img.shields.io/badge/package_manager-winget_%2B_Scoop-0078D4?logo=windows&logoColor=white)](https://learn.microsoft.com/windows/package-manager/)
 
-이 저장소에서 보실 파일은 딱 두 개입니다.
+이 폴더에서 보실 파일은 딱 두 개입니다.
 
 - [`win-setup.ps1`](./win-setup.ps1) — 개발환경을 자동으로 설치해주는 스크립트
 - `README.md` — 지금 보고 계신 이 문서
 
-> 🍎 **맥북을 쓰신다면** 이 레포가 아니라 [coco-de/co-mac](https://github.com/coco-de/co-mac)을 쓰세요. 두 레포는 **같은 도구 목록을 각자의 OS 방식으로** 설치합니다. 무엇이 어떻게 다른지는 [🍎 맥과 무엇이 다른가요](#vs-mac)에 정리해두었습니다.
+> 🍎 **맥북을 쓰신다면** [macos 폴더](../macos/)의 안내를 따르세요. 세 폴더는 **같은 도구 목록을 각자의 OS 방식으로** 설치합니다. 무엇이 어떻게 다른지는 [🍎 맥과 무엇이 다른가요](#vs-mac)에 정리해두었습니다.
 
 ## 목차
 
@@ -62,7 +64,7 @@ co:code는 엔지니어뿐 아니라 디자이너, PM도 하나의 엔지니어�
 **시작 메뉴 > `PowerShell`** 을 열고, 아래 한 줄을 붙여넣은 뒤 Enter를 누르세요.
 
 ```powershell
-Set-ExecutionPolicy -Scope Process Bypass -Force; $s="$env:TEMP\win-setup.ps1"; iwr -UseBasicParsing https://raw.githubusercontent.com/coco-de/co-win/main/win-setup.ps1 -OutFile $s; Unblock-File $s; & $s
+Set-ExecutionPolicy -Scope Process Bypass -Force; $s="$env:TEMP\win-setup.ps1"; iwr -UseBasicParsing https://raw.githubusercontent.com/coco-de/desktop/main/windows/win-setup.ps1 -OutFile $s; Unblock-File $s; & $s
 ```
 
 맨 앞의 `Set-ExecutionPolicy` 는 **지금 열려 있는 이 창에서만** 스크립트 실행을 허용합니다(창을 닫으면 원래대로 돌아갑니다). 이게 없으면 윈도우 기본값에서 파일은 내려받아지지만 실행이 아무 설명 없이 조용히 막힙니다.
@@ -77,8 +79,8 @@ Set-ExecutionPolicy -Scope Process Bypass -Force; $s="$env:TEMP\win-setup.ps1"; 
 <br>
 
 ```powershell
-git clone https://github.com/coco-de/co-win.git
-cd co-win
+git clone https://github.com/coco-de/desktop.git
+cd desktop/windows
 Set-ExecutionPolicy -Scope CurrentUser RemoteSigned -Force
 .\win-setup.ps1
 ```
@@ -408,11 +410,11 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 
 ## 🍎 맥과 무엇이 다른가요
 
-[co-mac](https://github.com/coco-de/co-mac)과 이 레포는 **같은 도구 목록을 각자의 OS 방식으로** 설치합니다. 아래는 실제로 달라지는 부분입니다.
+[macos](../macos/)와 이 폴더는 **같은 도구 목록을 각자의 OS 방식으로** 설치합니다. 아래는 실제로 달라지는 부분입니다.
 
 ### 대체된 것
 
-| 맥 (co-mac) | 윈도우 (co-win) | 왜 |
+| 맥 (macos) | 윈도우 (windows) | 왜 |
 |---|---|---|
 | Homebrew | **winget + Scoop** | 윈도우 공식 앱 설치 관리자 + 관리자 권한 없이 쓰는 보조 도구 |
 | Dia (브라우저) | **Google Chrome / Edge** | Dia는 아직 윈도우 정식 빌드가 없습니다(비공개 베타 단계) |
@@ -659,5 +661,5 @@ Android Studio·Orca는 x64 전용 설치본만 배포돼 스크립트가 건너
 ## 💬 도움이 필요하신가요
 
 - 스크립트 실행 중 오류가 났다면 **화면에 나온 `⚠` 줄을 그대로 복사해서** 팀 슬랙에 올려주세요. 각 경고에는 직접 실행할 수 있는 대안 명령이 함께 적혀 있습니다.
-- 도구가 추가·변경되어야 한다면 이 레포에 이슈나 PR을 올려주세요.
-- **맥과 윈도우 양쪽을 함께 고쳐야 합니다.** 팀 표준 도구가 바뀌면 [co-mac](https://github.com/coco-de/co-mac)의 `mac-setup.sh`와 이 레포의 `win-setup.ps1`을 **같이** 갱신해야 두 환경이 어긋나지 않습니다.
+- 도구가 추가·변경되어야 한다면 이 저장소에 이슈나 PR을 올려주세요.
+- **맥과 윈도우 양쪽을 함께 고쳐야 합니다.** 팀 표준 도구가 바뀌면 [macos](../macos/)의 `mac-setup.sh`와 이 폴더의 `win-setup.ps1`을 **같이** 갱신해야 두 환경이 어긋나지 않습니다.

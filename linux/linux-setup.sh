@@ -8,7 +8,7 @@
 #
 # 실행 (레포를 clone한 경우): chmod +x linux-setup.sh && ./linux-setup.sh
 # 실행 (clone 없이 한 줄로):
-#   d="$(mktemp -d)" && curl -fsSL https://raw.githubusercontent.com/coco-de/co-linux/main/linux-setup.sh -o "$d/linux-setup.sh" && bash "$d/linux-setup.sh"
+#   d="$(mktemp -d)" && curl -fsSL https://raw.githubusercontent.com/coco-de/desktop/main/linux/linux-setup.sh -o "$d/linux-setup.sh" && bash "$d/linux-setup.sh"
 #   └ ⚠ 맥처럼 `bash -c "$(curl ...)"` 로 쓰면 안 된다. 리눅스 커널은 ARG_MAX 와 별개로
 #     **인자 하나의 크기**를 128KiB(MAX_ARG_STRLEN)로 제한하는데 이 스크립트는 그보다 커서
 #     "Argument list too long" 으로 실행 자체가 실패한다. (맥에는 그 제한이 없다)
@@ -24,7 +24,7 @@
 #   ~/.zshrc, ~/.p10k.zsh
 # 를 이 스크립트와 같은 폴더에 복사해 두세요. (있으면 레포 것 대신 그대로 사용)
 #
-# 형제 레포: coco-de/co-mac (macOS) · coco-de/co-win (Windows)
+# 형제 폴더: macos/ (macOS) · windows/ (Windows) — coco-de/desktop
 #            같은 도구 목록을 각 OS 방식으로 설치한다. 도구가 바뀌면 셋 다 갱신해야 한다.
 # ============================================================
 #
@@ -161,7 +161,7 @@ if [[ "$0" == --?* || "$0" == "-h" ]]; then
   echo "❌ 옵션이 스크립트에 전달되지 않았습니다: $0"
   echo ""
   echo "   임시 폴더로 받아 실행하는 방식을 쓰시면 옵션을 그냥 뒤에 붙이면 됩니다:"
-  echo "   d=\"\$(mktemp -d)\" && curl -fsSL https://raw.githubusercontent.com/coco-de/co-linux/main/linux-setup.sh -o \"\$d/linux-setup.sh\" && bash \"\$d/linux-setup.sh\" $0"
+  echo "   d=\"\$(mktemp -d)\" && curl -fsSL https://raw.githubusercontent.com/coco-de/desktop/main/linux/linux-setup.sh -o \"\$d/linux-setup.sh\" && bash \"\$d/linux-setup.sh\" $0"
   exit 1
 fi
 
@@ -202,7 +202,7 @@ fi
 
 if ! have apt-get; then
   echo "❌ apt-get 을 찾을 수 없습니다 — 이 스크립트는 Ubuntu/Debian 계열 전용입니다."
-  echo "   (맥이라면 coco-de/co-mac, 윈도우라면 coco-de/co-win 을 사용해 주세요)"
+   echo "   (맥이라면 macos/mac-setup.sh, 윈도우라면 windows/win-setup.ps1 을 사용해 주세요)"
   exit 1
 fi
 
@@ -598,7 +598,7 @@ fi
 #
 #   내려받기에 실패해도 중단하지 않는다 — 8단계의 기본 설정 생성 경로로 자연히 넘어간다.
 # ------------------------------------------------------------
-REPO_RAW_BASE="https://raw.githubusercontent.com/coco-de/co-linux/main"
+REPO_RAW_BASE="https://raw.githubusercontent.com/coco-de/desktop/main/linux"
 # 8단계가 참조할 dotfile 위치. 기본은 스크립트 옆이고, 원라이너 실행이면 임시 폴더로 바뀐다.
 DOTFILE_DIR="$SCRIPT_DIR"
 
@@ -3395,7 +3395,7 @@ echo "     ↳ 주입 후에는 반드시 '새 터미널'에서 claude를 실행
 echo "       토큰을 읽으므로, 예전 터미널에서 띄운 claude는 토큰을 못 읽습니다"
 echo "  6. ⚠ iOS(아이폰) 앱 빌드·배포는 리눅스에서 불가능합니다 — 애플이 맥에서만 되도록 막아 두었습니다"
 echo "     ↳ 이 PC에서는 Android·Web·서버·Flutter 데스크톱(리눅스) 작업까지 가능합니다"
-echo "     ↳ iOS 빌드·시뮬레이터·앱스토어 업로드가 필요하면 맥이 필요합니다 (맥 세팅: coco-de/co-mac 의 mac-setup.sh)"
+echo "     ↳ iOS 빌드·시뮬레이터·앱스토어 업로드가 필요하면 맥이 필요합니다 (맥 세팅: macos/mac-setup.sh)"
 echo "  7. Claude Code 로그인: claude"
 echo "     ↳ 함께 설치된 다른 AI 코딩 CLI도 최초 1회 로그인이 필요합니다: codex(실행: codex) · agy(실행: agy)"
 echo "     ↳ Claude Code에서 /mcp 실행 → figma를 팀 계정으로 OAuth 로그인 (최초 1회)"
