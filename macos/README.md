@@ -403,7 +403,7 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 | <img src="assets/icons/codex.png" width="20" height="20"> | codex | OpenAI의 터미널 AI 코딩 에이전트. `brew install --cask codex`로 설치하며, 처음 실행할 때 ChatGPT 계정으로 로그인합니다 |
 | <img src="assets/icons/antigravity.png" width="20" height="20"> | agy (Antigravity CLI) | Google의 터미널 AI 코딩 에이전트. 은퇴한 Gemini CLI의 공식 후속 도구로, 단일 실행 파일이라 Claude Code처럼 공식 설치 스크립트(`antigravity.google/cli/install.sh`)로 `~/.local/bin/agy`에 설치합니다(별도 런타임 불필요). 처음 실행할 때 Google 계정으로 로그인합니다 |
 | <img src="assets/icons/slack.png" width="20" height="20"> | slack (Slack CLI) | Slack 앱/워크플로 개발용 공식 CLI. 공식 설치 스크립트(`downloads.slack-edge.com/slack-cli/install.sh`)로 `/usr/local/bin` 또는 `~/.local/bin`에 설치합니다. Slack CLI로 직접 앱을 만들려면 처음 한 번 `slack login`으로 워크스페이스 인증이 필요합니다(별개로, Claude Code의 `slack` MCP는 아래 팀 공용 토큰으로 인증됩니다) |
-| <img src="assets/icons/1password.svg" width="20" height="20"> | op (1Password CLI) | 1Password 금고를 **터미널에서** 열어보는 명령. 1Password 앱과 같은 금고를 보며, 앱에 로그인해 둔 상태를 그대로 빌려 씁니다. 이 스크립트는 팀 공용 ZenHub·Jira·Slack 토큰을 금고에서 읽어 `~/.zshrc`에 자동으로 넣어주고, GitHub PAT로 `gh auth login`까지 대신 처리하는 데 사용합니다 (설정 방법은 아래 [ZenHub·Jira·Slang GPT·DCM·Slack·TypeSafe 토큰 · 1Password CLI 설정](#after-install) 참고) |
+| <img src="assets/icons/1password.svg" width="20" height="20"> | op (1Password CLI) | 1Password 금고를 **터미널에서** 열어보는 명령. 1Password 앱과 같은 금고를 보며, 앱에 로그인해 둔 상태를 그대로 빌려 씁니다. 이 스크립트는 팀 공용 ZenHub·Jira·Slack·TypeSafe 등의 토큰을 금고에서 읽어 `~/.zshrc`에 자동으로 넣어주고, GitHub PAT로 `gh auth login`까지 대신 처리하는 데 사용합니다 (설정 방법은 아래 [ZenHub·Jira·Slang GPT·DCM·Slack·TypeSafe 토큰 · 1Password CLI 설정](#after-install) 참고) |
 | <img src="assets/icons/mas.svg" width="20" height="20"> | mas (App Store CLI) | 터미널에서 Mac App Store 앱을 설치하는 도구. Xcode.app을 자동으로 깔기 위해서만 쓰기 때문에, **Xcode.app이 이미 있으면 mas 자체를 설치하지 않고 건너뜁니다** — App Store에 Apple ID로 로그인이 돼 있어야 하며, 로그인 자체는 mas가 대신 해줄 수 없습니다(로그인 안 돼 있으면 건너뛰고 App Store에서 직접 설치하라고 안내) |
 
 **Flutter / Dart**
@@ -640,7 +640,7 @@ Orca 전체 디스크 접근: ...
 >
 > **TypeSafe 키(TYPESAFE_API_KEY)는 무엇에 쓰나요**
 >
-> `TYPESAFE_API_KEY`는 **TypeSafe**의 AI 모델 **Jev**를 부를 때 쓰는 키입니다. Jev는 글을 지어내는 대신 문장을 읽고 **"예/아니오 확률 · 보기 중 하나 · 점수"** 처럼 정해진 형태의 판단을 돌려주는 모델이라, 앱·스크립트 안에서 "이 문의는 환불 요청인가?" 같은 작은 판단을 맡길 때 씁니다. TypeSafe 공식 SDK(Python·JavaScript)가 이 환경변수를 **알아서 읽기** 때문에 코드에 키를 적을 필요가 없고, Slang GPT와 마찬가지로 MCP가 아니라서 등록·로그인 과정도 없습니다. 키는 팀 공용 1Password **"API Token" 볼트 > "TypeSafe Jev" 항목 > "credential" 필드**에 있고, op 설정만 되어 있으면 8.10단계에서 자동으로 주입됩니다 (화면을 멈추지 않고, 실패하면 경고만 남기고 넘어갑니다).
+> `TYPESAFE_API_KEY`는 **TypeSafe**의 AI 모델 **Jev**를 부를 때 쓰는 키입니다. Jev는 글을 지어내는 대신 문장을 읽고 **"예/아니오 확률 · 보기 중 하나 · 점수"** 처럼 정해진 형태의 판단을 돌려주는 모델이라, 앱·스크립트 안에서 "이 문의는 환불 요청인가?" 같은 작은 판단을 맡길 때 씁니다. TypeSafe 공식 SDK(Python·JavaScript)가 이 환경변수를 **알아서 읽기** 때문에 코드에 키를 적을 필요가 없고, Slang GPT와 마찬가지로 MCP가 아니라서 등록·로그인 과정도 없습니다. 키는 팀 공용 1Password **"API Token" 볼트 > "TypeSafe Jev" 항목 > "credential" 필드**에 있고, op 설정만 되어 있으면 8.10단계에서 자동으로 주입됩니다 (화면을 멈추지 않고, 실패하면 경고만 남기고 넘어갑니다). 팀 공용 키라서 사용량도 팀 계정으로 잡힙니다. 스크립트는 이 줄을 `~/.zshrc` 맨 끝에 적기 때문에, `~/.zshrc.local`에 개인 TypeSafe 키를 넣어 두었더라도 팀 키가 우선 적용됩니다.
 >
 > ⚠️ **주입 후에는 반드시 새 터미널에서 `claude`를 실행하세요(그리고 docker 데몬이 떠 있어야 합니다).** zenhub·jira·slack MCP는 `claude`를 실행한 시점의 환경변수에서 토큰을 읽습니다. 토큰을 넣기 전에 열어 둔 터미널에서 계속 쓰면 토큰이 전달되지 않습니다. 이때 `/mcp` 화면에는 `Connected`로 보여도 실제 호출은 인증 오류가 납니다.
 >
