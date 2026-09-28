@@ -57,6 +57,7 @@
 #   8.7. SLANG_GPT_API_KEY 주입 (slang_gpt 다국어 자동 번역용)
 #   8.8. DCM_EMAIL·DCM_CI_KEY 주입 (DCM CI 라이선스 인증용)
 #   8.9. SLACK_TEAM_ID·SLACK_BOT_TOKEN 주입 (slack MCP용)
+#   8.10. TYPESAFE_API_KEY 주입 (TypeSafe Jev(판단형 AI 모델) SDK용)
 #   9.   시스템 권한 — docker·kvm 그룹 가입, Android 기기 udev 규칙
 #   10.  설치 검증 + 다음 단계 안내
 # ============================================================
@@ -103,7 +104,7 @@ copy_dotfile() {
 # ------------------------------------------------------------
 # 실행 옵션 파싱
 #   (옵션 없음)   : 전체 설치 (0~10단계)
-#   --env-only    : 1Password(op)에서 팀 공용 토큰만 다시 읽어 ~/.zshrc에 주입 (8.5~8.9단계만)
+#   --env-only    : 1Password(op)에서 팀 공용 토큰만 다시 읽어 ~/.zshrc에 주입 (8.5~8.10단계만)
 #   --dart-only   : Dart 글로벌 패키지만 다시 설치/업데이트 (4-b단계만)
 #   --system-only : 관리자 권한이 필요한 시스템 설정만 다시 적용 (9단계만)
 #   -h, --help    : 사용법 출력
@@ -118,7 +119,7 @@ usage() {
                  필요한 저장소·도구는 스크립트가 알아서 등록·설치합니다.
   --env-only     1Password(op)에서 팀 공용 토큰(ZENHUB_API_TOKEN·JIRA_API_TOKEN·
                  SLANG_GPT_API_KEY·DCM_EMAIL·DCM_CI_KEY·SLACK_TEAM_ID·
-                 SLACK_BOT_TOKEN)만 다시 읽어 ~/.zshrc에 주입합니다.
+                 SLACK_BOT_TOKEN·TYPESAFE_API_KEY)만 다시 읽어 ~/.zshrc에 주입합니다.
                  앱/도구 설치 단계는 전부 건너뜁니다.
                  (토큰이 바뀌었거나, 설치 때 토큰 주입을 건너뛴 경우에 사용)
   --dart-only    Dart 글로벌 패키지(coverage·melos·mason_cli·flutter_gen·
@@ -444,7 +445,7 @@ path_prepend() {
 }
 
 # ------------------------------------------------------------
-# 1Password 관련 — 여러 단계(3.4 GitHub 인증 · 8.5~8.9 팀 토큰 주입)가 공유한다.
+# 1Password 관련 — 여러 단계(3.4 GitHub 인증 · 8.5~8.10 팀 토큰 주입)가 공유한다.
 # 가장 먼저 쓰는 단계(3.4)보다 앞에 두어야 해서 여기 둔다.
 # ------------------------------------------------------------
 TEAM_OP_ACCOUNT="team-cocodeinc.1password.com"   # 팀 1Password 계정 (비밀 아님)
@@ -756,10 +757,10 @@ print_dart_packages_verification() {
 }
 
 # ============================================================
-# 8 · 8.5~8.9 · 9 · 10 — 셸 설정 반영 / 팀 토큰 주입 / 시스템 권한 / 검증
+# 8 · 8.5~8.10 · 9 · 10 — 셸 설정 반영 / 팀 토큰 주입 / 시스템 권한 / 검증
 #   8.   ~/.zshrc · ~/.p10k.zsh 반영 (+ 맥 경로 → 리눅스 경로 변환, 기본 셸을 zsh로)
-#   8.5~8.9 1Password 팀 공용 토큰 5종 주입 (ZENHUB · JIRA · SLANG_GPT · DCM · SLACK)
-#   8.10 --env-only 마무리
+#   8.5~8.10 1Password 팀 공용 토큰 6종 주입 (ZENHUB · JIRA · SLANG_GPT · DCM · SLACK · TYPESAFE)
+#   8.11 --env-only 마무리
 #   9.   시스템 권한 — docker·kvm 그룹 가입, 안드로이드 기기 udev 규칙
 #   10.  설치 검증 + 다음 단계 안내
 # ============================================================
@@ -1043,7 +1044,7 @@ else
 
   # --- 1Password 데스크톱 앱 + CLI(op) ---
   #   1Password CLI(op)는 앱이 아니라 터미널 도구다. 이 스크립트에서는 3.4단계(GitHub 인증)와
-  #   8.5~8.9단계(팀 공용 토큰 주입)가 금고에서 값을 읽어오는 데 쓴다.
+  #   8.5~8.10단계(팀 공용 토큰 주입)가 금고에서 값을 읽어오는 데 쓴다.
   #   ⚠ 1Password는 apt 저장소 등록만으로는 부족하고, 패키지 서명을 검증하는 debsig 정책 파일도
   #     함께 넣어 줘야 설치가 통과한다(공식 문서 절차). 정책 파일 작성이 실패해도 멈추지 않는다 —
   #     데스크톱 앱이 안 깔려도 CLI(op)만 깔리면 토큰 주입 단계는 정상 동작한다.
@@ -1070,7 +1071,7 @@ else
 
     apt_install 1password 1password-cli || true
     if ! have op && ! is_installed 1password-cli; then
-      warn "1Password CLI(op) 설치 실패 → 3.4 · 8.5~8.9단계의 토큰 자동 주입을 건너뛰게 됩니다"
+      warn "1Password CLI(op) 설치 실패 → 3.4 · 8.5~8.10단계의 토큰 자동 주입을 건너뛰게 됩니다"
       info "수동 설치 안내: https://developer.1password.com/docs/cli/get-started/"
     fi
   else
@@ -1299,7 +1300,7 @@ fi
 # 1.8. 1Password CLI(op) — 화면 없는 환경 보완
 #   op 는 앱이 아니라 **터미널 도구**다. 위 1단계(GUI 전용 블록) 안에서 데스크톱 앱과 함께
 #   깔리지만, 화면 없는 서버·컨테이너에서는 그 블록을 통째로 건너뛰므로 op 도 함께 빠진다.
-#   그러면 3.4단계(GitHub 자동 로그인)와 8.5~8.9단계(팀 토큰 주입)가 전부 무력화된다.
+#   그러면 3.4단계(GitHub 자동 로그인)와 8.5~8.10단계(팀 토큰 주입)가 전부 무력화된다.
 #   → 데스크톱이든 아니든 op 만큼은 반드시 확보한다. (이미 있으면 그대로 넘어간다)
 # ------------------------------------------------------------
 if have op; then
@@ -1313,7 +1314,7 @@ else
   if have op; then
     ok "op 설치 완료"
   else
-    warn "1Password CLI(op) 설치 실패 → 3.4 · 8.5~8.9단계의 토큰 자동 주입을 건너뛰게 됩니다"
+    warn "1Password CLI(op) 설치 실패 → 3.4 · 8.5~8.10단계의 토큰 자동 주입을 건너뛰게 됩니다"
     info "수동 설치 안내: https://developer.1password.com/docs/cli/get-started/"
   fi
 fi
@@ -2538,10 +2539,10 @@ if [[ -f "$DOTFILE_DIR/.zshrc" ]]; then
   else
     # ── 이미 주입돼 있던 팀 토큰 줄을 먼저 건져 둔다 ──
     #   아래에서 팀 원본 .zshrc 로 통째로 덮어쓰는데, 팀 원본에는 토큰 줄이 없다.
-    #   보통은 8.5~8.9단계가 이 실행에서 다시 주입하지만, 1Password 가 잠겨 있거나
+    #   보통은 8.5~8.10단계가 이 실행에서 다시 주입하지만, 1Password 가 잠겨 있거나
     #   비대화형이면 그 단계가 건너뛰어져 **토큰이 통째로 사라진다**(도구 하나 추가하려고
     #   재실행했다가 ZenHub·Jira MCP 가 전부 끊기는 사고). 그래서 덮어쓰기 직후 되돌린다.
-    PRESERVED_TOKENS="$(grep -E '^export (ZENHUB_API_TOKEN|JIRA_API_TOKEN|SLANG_GPT_API_KEY|DCM_EMAIL|DCM_CI_KEY|SLACK_TEAM_ID|SLACK_BOT_TOKEN)=' "$HOME/.zshrc" 2>/dev/null || true)"
+    PRESERVED_TOKENS="$(grep -E '^export (ZENHUB_API_TOKEN|JIRA_API_TOKEN|SLANG_GPT_API_KEY|DCM_EMAIL|DCM_CI_KEY|SLACK_TEAM_ID|SLACK_BOT_TOKEN|TYPESAFE_API_KEY)=' "$HOME/.zshrc" 2>/dev/null || true)"
 
     if [[ -f "$HOME/.zshrc" ]]; then
       ZSHRC_BACKUP="$HOME/.zshrc.backup.$(date +%Y%m%d%H%M%S)"
@@ -2559,7 +2560,7 @@ if [[ -f "$DOTFILE_DIR/.zshrc" ]]; then
     # cp 실패(예: 예전에 sudo 로 편집해 ~/.zshrc 가 root 소유가 된 PC)를 받지 않으면
     #   set -e 에 걸려 스크립트가 8단계에서 그대로 죽는다.
     if cp "$DOTFILE_DIR/.zshrc" "$HOME/.zshrc" 2>/dev/null; then
-      # 건져 둔 토큰 줄을 되돌린다. 8.5~8.9단계가 이어서 돌면 각자 strip 후 최신값으로 다시 넣으므로
+      # 건져 둔 토큰 줄을 되돌린다. 8.5~8.10단계가 이어서 돌면 각자 strip 후 최신값으로 다시 넣으므로
       # 중복되지 않는다(멱등).
       if [[ -n "$PRESERVED_TOKENS" ]]; then
         printf '\n%s\n' "$PRESERVED_TOKENS" >> "$HOME/.zshrc"
@@ -2741,7 +2742,7 @@ else
   fi
 fi
 
-fi  # ══ 8단계 끝 — 여기부터(8.5~8.9 토큰 주입)는 --env-only 실행 시에도 수행된다 ══
+fi  # ══ 8단계 끝 — 여기부터(8.5~8.10 토큰 주입)는 --env-only 실행 시에도 수행된다 ══
 
 # --env-only 가드: 아직 전체 세팅을 한 번도 하지 않은 PC면 토큰을 붙일 ~/.zshrc 골격이
 #   없다. 빈 .zshrc를 새로 만들어 토큰만 꽂으면 PATH·테마 등이 빠진 반쪽짜리 설정이 되므로,
@@ -2798,6 +2799,10 @@ DCM_CI_KEY_OP_REF="op://API Token/DCM CI CD/credential"  # 팀 공용 항목의 
 #   한 항목("Cocode Slack")의 두 필드(SLACK_TEAM_ID·SLACK_BOT_TOKEN)를 DCM과 동일하게 각각 읽는다.
 SLACK_TEAM_ID_OP_REF="op://API Token/Cocode Slack/SLACK_TEAM_ID"      # 팀 공용 항목의 팀 ID 필드 (값은 1Password에만 존재)
 SLACK_BOT_TOKEN_OP_REF="op://API Token/Cocode Slack/SLACK_BOT_TOKEN"  # 팀 공용 항목의 봇 토큰 필드 (값은 1Password에만 존재)
+# TypeSafe Jev(판단형 AI 모델) API 키도 같은 팀 계정·같은 볼트에서 읽는다 (아래 8.10단계에서 주입).
+#   MCP 인증용이 아니라 TypeSafe SDK(Python·JavaScript)가 셸 환경변수 TYPESAFE_API_KEY를 직접 읽는
+#   순수 환경변수라 claude mcp 등록 단계는 없다 (Slang GPT와 같은 단일 값 패턴).
+TYPESAFE_TOKEN_OP_REF="op://API Token/TypeSafe Jev/credential"  # 팀 공용 항목 경로 (키 값은 1Password에만 존재)
 
 # ~/.zshrc에서 기존 ZENHUB_API_TOKEN 라인을 모두 제거한다.
 #   빈 값(export ZENHUB_API_TOKEN="")이 남아 있으면 zenhub MCP가 인증 없이 뜨면서
@@ -2972,6 +2977,35 @@ inject_slack_token() {
   unset team_id bot_token
 }
 
+# ── TypeSafe Jev API 키 헬퍼 — 위 Slang GPT와 동일 패턴(단일 값) ──────────────
+#   TypeSafe SDK(Python·JavaScript)가 셸 환경변수 TYPESAFE_API_KEY를 직접 읽는다.
+#   MCP 등록이 없는 순수 환경변수라 주입 3형제만 있으면 된다.
+strip_typesafe_token_lines() {
+  touch "$HOME/.zshrc"
+  { grep -v '^export TYPESAFE_API_KEY=' "$HOME/.zshrc" || true; } > "$HOME/.zshrc.tmp"
+  mv "$HOME/.zshrc.tmp" "$HOME/.zshrc"
+}
+
+typesafe_token_line_is_empty() {
+  local line val
+  line="$(grep '^export TYPESAFE_API_KEY=' "$HOME/.zshrc" 2>/dev/null | tail -1)"
+  [[ -n "$line" ]] || return 1
+  val="${line#export TYPESAFE_API_KEY=}"
+  val="${val#\"}"; val="${val%\"}"
+  val="${val#\'}"; val="${val%\'}"
+  [[ -z "$val" ]]
+}
+
+inject_typesafe_token() {
+  local tok
+  op_has_account || return 1
+  tok="$(op read --account "$TEAM_OP_ACCOUNT" "$TYPESAFE_TOKEN_OP_REF" 2>/dev/null </dev/null)" || return 1
+  [[ -n "$tok" ]] || { unset tok; return 1; }
+  strip_typesafe_token_lines
+  printf 'export TYPESAFE_API_KEY=%q\n' "$tok" >> "$HOME/.zshrc"
+  unset tok
+}
+
 log "8.5. ZENHUB_API_TOKEN 주입 (1Password 공용 토큰)"
 # 값이 빈 기존 라인은 먼저 걷어낸다 — 남겨두면 zenhub MCP가 '연결됨'처럼 보이면서
 # 실제 호출만 조용히 실패한다. 주입에 성공하면 어차피 새 값으로 다시 기록된다.
@@ -3089,7 +3123,7 @@ else
     info "확인 후 './linux-setup.sh --env-only' 를 실행하면 토큰만 다시 주입됩니다 (그전까지 jira MCP는 미주입 상태)."
   else
     warn "JIRA_API_TOKEN 미주입 — op 계정이 아직 준비되지 않았습니다 (위 8.5 ZenHub 안내 참고)."
-    info "op(1Password CLI) 설정을 마친 뒤 './linux-setup.sh --env-only' 를 실행하면 ZenHub·Jira·Slang GPT·DCM·Slack 토큰이 함께 주입됩니다."
+    info "op(1Password CLI) 설정을 마친 뒤 './linux-setup.sh --env-only' 를 실행하면 ZenHub·Jira·Slang GPT·DCM·Slack·TypeSafe 토큰이 함께 주입됩니다."
   fi
 fi
 
@@ -3129,7 +3163,7 @@ else
     info "확인 후 './linux-setup.sh --env-only' 를 실행하면 키만 다시 주입됩니다 (그전까지 slang_gpt 번역은 사용 불가)."
   else
     warn "SLANG_GPT_API_KEY 미주입 — op 계정이 아직 준비되지 않았습니다 (위 8.5 ZenHub 안내 참고)."
-    info "op(1Password CLI) 설정을 마친 뒤 './linux-setup.sh --env-only' 를 실행하면 ZenHub·Jira·Slang GPT·DCM·Slack 토큰이 함께 주입됩니다."
+    info "op(1Password CLI) 설정을 마친 뒤 './linux-setup.sh --env-only' 를 실행하면 ZenHub·Jira·Slang GPT·DCM·Slack·TypeSafe 토큰이 함께 주입됩니다."
   fi
 fi
 
@@ -3169,7 +3203,7 @@ else
     info "확인 후 './linux-setup.sh --env-only' 를 실행하면 값만 다시 주입됩니다 (그전까지 DCM CI 인증은 사용 불가)."
   else
     warn "DCM_EMAIL·DCM_CI_KEY 미주입 — op 계정이 아직 준비되지 않았습니다 (위 8.5 ZenHub 안내 참고)."
-    info "op(1Password CLI) 설정을 마친 뒤 './linux-setup.sh --env-only' 를 실행하면 ZenHub·Jira·Slang GPT·DCM·Slack 토큰이 함께 주입됩니다."
+    info "op(1Password CLI) 설정을 마친 뒤 './linux-setup.sh --env-only' 를 실행하면 ZenHub·Jira·Slang GPT·DCM·Slack·TypeSafe 토큰이 함께 주입됩니다."
   fi
 fi
 
@@ -3204,12 +3238,52 @@ else
     info "확인 후 './linux-setup.sh --env-only' 를 실행하면 값만 다시 주입됩니다 (그전까지 slack MCP는 미주입 상태)."
   else
     warn "SLACK_TEAM_ID·SLACK_BOT_TOKEN 미주입 — op 계정이 아직 준비되지 않았습니다 (위 8.5 ZenHub 안내 참고)."
-    info "op(1Password CLI) 설정을 마친 뒤 './linux-setup.sh --env-only' 를 실행하면 ZenHub·Jira·Slang GPT·DCM·Slack 토큰이 함께 주입됩니다."
+    info "op(1Password CLI) 설정을 마친 뒤 './linux-setup.sh --env-only' 를 실행하면 ZenHub·Jira·Slang GPT·DCM·Slack·TypeSafe 토큰이 함께 주입됩니다."
   fi
 fi
 
 # ------------------------------------------------------------
-# 8.10. --env-only 마무리: 주입 결과만 요약하고 종료 (아래 10단계 전체 검증은 돌리지 않음)
+# 8.10. TYPESAFE_API_KEY 주입 (TypeSafe Jev 판단형 AI 모델 API 키 — 1Password에서 자동 주입)
+#
+#   [이 단계가 하는 일 — 비개발자용 설명]
+#   TypeSafe는 문장을 읽고 글을 지어내는 대신 '예/아니오 확률 · 보기 중 하나 · 점수'처럼 정해진
+#   형태의 판단을 돌려주는 AI 서비스이고, Jev는 그 대표 모델이다. 앱·스크립트에서 이 모델을 부르려면
+#   '키'가 필요한데, 다른 팀 공용 토큰과 똑같이 1Password 금고에서 읽어 ~/.zshrc에 적어준다.
+#   TypeSafe 공식 SDK(Python·JavaScript)는 환경변수 TYPESAFE_API_KEY를 알아서 읽으므로,
+#   주입만 되면 코드에 키를 적지 않고 바로 쓸 수 있다.
+#
+#   ※ 팀 공용 1Password 항목: "API Token" 볼트 > "TypeSafe Jev" > credential 필드
+#   ※ 이 값은 MCP 인증용이 아니라 SDK가 환경변수로 직접 읽는 값이라 claude mcp 등록 단계가 없다
+#     (그래서 10단계 검증도 'mcp:' 형태가 아닌 단순 주입 여부만 표시 — Slang GPT와 동일).
+# ------------------------------------------------------------
+log "8.10. TYPESAFE_API_KEY 주입 (1Password 공용 키 'TypeSafe Jev', TypeSafe SDK용)"
+
+# 값이 빈 기존 라인은 먼저 걷어낸다 (다른 토큰과 동일 — 빈 값이 남으면 SDK가 키를 읽은 것처럼
+# 동작하다 호출만 인증 오류로 실패한다)
+if typesafe_token_line_is_empty; then
+  strip_typesafe_token_lines
+  echo "  · 값이 비어 있던 기존 TYPESAFE_API_KEY 라인을 제거했습니다 (잘못된 인증 상태 방지)"
+fi
+
+if ! have op; then
+  warn "op(1Password CLI) 미설치 → TYPESAFE_API_KEY 미주입 (위 ZenHub 안내와 동일하게 op 설치 후 './linux-setup.sh --env-only' 실행)"
+elif inject_typesafe_token; then
+  ok "TYPESAFE_API_KEY 주입 완료 (~/.zshrc, 키 값은 커밋되지 않음)"
+else
+  if op_has_account; then
+    warn "TYPESAFE_API_KEY 미주입 — 1Password에서 'TypeSafe Jev > credential'을 읽지 못했습니다."
+    info "확인하세요:"
+    info "  1) 팀 'API Token' 볼트 접근 권한이 있는지 (없으면 팀 관리자에게 공유 요청)"
+    info "  2) 볼트에 'TypeSafe Jev' 항목 + 'credential' 필드가 있는지"
+    info "확인 후 './linux-setup.sh --env-only' 를 실행하면 키만 다시 주입됩니다 (그전까지 TypeSafe SDK 호출은 인증 오류로 실패)."
+  else
+    warn "TYPESAFE_API_KEY 미주입 — op 계정이 아직 준비되지 않았습니다 (위 8.5 ZenHub 안내 참고)."
+    info "op(1Password CLI) 설정을 마친 뒤 './linux-setup.sh --env-only' 를 실행하면 ZenHub·Jira·Slang GPT·DCM·Slack·TypeSafe 토큰이 함께 주입됩니다."
+  fi
+fi
+
+# ------------------------------------------------------------
+# 8.11. --env-only 마무리: 주입 결과만 요약하고 종료 (아래 10단계 전체 검증은 돌리지 않음)
 #   토큰 유무는 10단계와 같은 기준(~/.zshrc의 값)으로 판단한다 — MCP의 'Connected' 표시는
 #   인증 성공을 뜻하지 않기 때문 (8.5단계 주석 참고).
 # ------------------------------------------------------------
@@ -3224,13 +3298,16 @@ if (( ENV_ONLY )); then
   # slack도 DCM과 동일하게 팀 ID+봇 토큰 두 값이 모두 있어야 인증되므로 둘 다 채워졌을 때만 '주입됨'으로 본다.
   SLACK_TEAM_ID_VAL=$(grep '^export SLACK_TEAM_ID=' "$HOME/.zshrc" 2>/dev/null | tail -1 | sed 's/^export SLACK_TEAM_ID=//; s/^"//; s/"$//')
   SLACK_BOT_TOKEN_VAL=$(grep '^export SLACK_BOT_TOKEN=' "$HOME/.zshrc" 2>/dev/null | tail -1 | sed 's/^export SLACK_BOT_TOKEN=//; s/^"//; s/"$//')
+  # TypeSafe 키는 Slang GPT와 같은 단일 값이라 값이 있으면 '주입됨'으로 본다.
+  TYPESAFE_VAL=$(grep '^export TYPESAFE_API_KEY=' "$HOME/.zshrc" 2>/dev/null | tail -1 | sed 's/^export TYPESAFE_API_KEY=//; s/^"//; s/"$//')
   echo "  ZENHUB_API_TOKEN: $([[ -n "$ZH_VAL" ]] && echo '✓ 주입됨' || echo '❌ 미주입 (위 안내 참고)')"
   echo "  JIRA_API_TOKEN  : $([[ -n "$JIRA_VAL" ]] && echo '✓ 주입됨' || echo '❌ 미주입 (위 안내 참고)')"
   echo "  SLANG_GPT_API_KEY: $([[ -n "$SLANG_GPT_VAL" ]] && echo '✓ 주입됨' || echo '❌ 미주입 (위 안내 참고)')"
   echo "  DCM_EMAIL/DCM_CI_KEY: $([[ -n "$DCM_EMAIL_VAL" && -n "$DCM_CI_KEY_VAL" ]] && echo '✓ 주입됨' || echo '❌ 미주입 (위 안내 참고)')"
   echo "  SLACK_TEAM_ID/SLACK_BOT_TOKEN: $([[ -n "$SLACK_TEAM_ID_VAL" && -n "$SLACK_BOT_TOKEN_VAL" ]] && echo '✓ 주입됨' || echo '❌ 미주입 (위 안내 참고)')"
+  echo "  TYPESAFE_API_KEY: $([[ -n "$TYPESAFE_VAL" ]] && echo '✓ 주입됨' || echo '❌ 미주입 (위 안내 참고)')"
   echo ""
-  if [[ -n "$ZH_VAL" || -n "$JIRA_VAL" || -n "$SLANG_GPT_VAL" || ( -n "$DCM_EMAIL_VAL" && -n "$DCM_CI_KEY_VAL" ) || ( -n "$SLACK_TEAM_ID_VAL" && -n "$SLACK_BOT_TOKEN_VAL" ) ]]; then
+  if [[ -n "$ZH_VAL" || -n "$JIRA_VAL" || -n "$SLANG_GPT_VAL" || ( -n "$DCM_EMAIL_VAL" && -n "$DCM_CI_KEY_VAL" ) || ( -n "$SLACK_TEAM_ID_VAL" && -n "$SLACK_BOT_TOKEN_VAL" ) || -n "$TYPESAFE_VAL" ]]; then
     echo "✅ 완료! 새 터미널을 열거나 'source ~/.zshrc' 를 실행한 뒤 claude를 다시 켜세요."
     echo "   (jira MCP는 docker 데몬이 떠 있어야 연결됩니다 — 'docker info' 가 되는지 먼저 확인해 주세요)"
   else
@@ -3355,6 +3432,11 @@ SLACK_BOT_TOKEN_VAL=$(grep '^export SLACK_BOT_TOKEN=' "$HOME/.zshrc" 2>/dev/null
 echo "  mcp:slack: $(claude mcp list 2>/dev/null | grep -q '^slack' \
   && echo "✓ 등록됨$([[ -n "$SLACK_TEAM_ID_VAL" && -n "$SLACK_BOT_TOKEN_VAL" ]] && echo ' + 토큰 주입됨 (새 터미널에서 적용)' || echo ' (⚠ 토큰 미주입 — 1Password 앱 CLI 통합/볼트 권한 확인 후 --env-only 재실행)')" \
   || echo '❌')"
+# TypeSafe Jev 키: MCP가 아니라 TypeSafe SDK가 셸 환경변수로 직접 읽는 값이라 등록 여부 없이 주입 여부만 본다 (Slang GPT와 동일).
+TYPESAFE_VAL=$(grep '^export TYPESAFE_API_KEY=' "$HOME/.zshrc" 2>/dev/null | tail -1 | sed 's/^export TYPESAFE_API_KEY=//; s/^"//; s/"$//')
+echo "  TYPESAFE_API_KEY: $([[ -n "$TYPESAFE_VAL" ]] \
+  && echo '✓ 주입됨 (새 터미널에서 적용 — TypeSafe Jev SDK용)' \
+  || echo '❌ 미주입 (1Password 앱 CLI 통합/볼트 권한 확인 후 --env-only 재실행)')"
 # Dart 글로벌 패키지 — 본체는 4-b단계의 print_dart_packages_verification 에 있다
 #   (--dart-only 마무리에서도 같은 출력을 써야 해서 함수로 뽑혀 있다)
 if declare -f print_dart_packages_verification >/dev/null 2>&1; then
@@ -3390,7 +3472,7 @@ echo "     ↳ 이걸 해야 커밋·푸시할 때 포맷/린트/테스트가 �
 echo "  5. 1Password 연동이 안 돼 토큰이 '❌ 미주입'이라면: ./linux-setup.sh --env-only"
 echo "     ↳ 1Password 앱 로그인(team-cocodeinc) → 설정(Ctrl+,) > 개발자 > '1Password CLI와 통합' 체크"
 echo "       ('개발자' 탭이 없으면 설정 > 보안 > '시스템 인증으로 잠금 해제'를 먼저 켜세요)"
-echo "       확인: op account list 에 팀 계정이 보이면 성공 · 그 뒤 --env-only 로 ZenHub·Jira·Slang GPT·DCM·Slack 토큰이 함께 주입됩니다"
+echo "       확인: op account list 에 팀 계정이 보이면 성공 · 그 뒤 --env-only 로 ZenHub·Jira·Slang GPT·DCM·Slack·TypeSafe 토큰이 함께 주입됩니다"
 echo "     ↳ 주입 후에는 반드시 '새 터미널'에서 claude를 실행하세요 — claude는 실행 시점의 환경변수에서"
 echo "       토큰을 읽으므로, 예전 터미널에서 띄운 claude는 토큰을 못 읽습니다"
 echo "  6. ⚠ iOS(아이폰) 앱 빌드·배포는 리눅스에서 불가능합니다 — 애플이 맥에서만 되도록 막아 두었습니다"

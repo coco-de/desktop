@@ -106,7 +106,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 > /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coco-de/desktop/main/macos/mac-setup.sh)" -- --env-only
 > ```
 >
-> 앱·도구 설치는 전부 건너뛰고, 1Password(`op`)에서 팀 공용 토큰(`ZENHUB_API_TOKEN`·`JIRA_API_TOKEN`·`SLANG_GPT_API_KEY`·`DCM_EMAIL`·`DCM_CI_KEY`·`SLACK_TEAM_ID`·`SLACK_BOT_TOKEN`)만 다시 읽어 `~/.zshrc`에 넣어줍니다. 토큰이 바뀌었거나 설치 때 토큰 주입(8.5~8.9단계)을 건너뛴 경우, 전체 설치를 다시 돌릴 필요 없이 몇 초 만에 끝납니다. 사용법은 `./mac-setup.sh --help`로도 볼 수 있습니다.
+> 앱·도구 설치는 전부 건너뛰고, 1Password(`op`)에서 팀 공용 토큰(`ZENHUB_API_TOKEN`·`JIRA_API_TOKEN`·`SLANG_GPT_API_KEY`·`DCM_EMAIL`·`DCM_CI_KEY`·`SLACK_TEAM_ID`·`SLACK_BOT_TOKEN`·`TYPESAFE_API_KEY`)만 다시 읽어 `~/.zshrc`에 넣어줍니다. 토큰이 바뀌었거나 설치 때 토큰 주입(8.5~8.10단계)을 건너뛴 경우, 전체 설치를 다시 돌릴 필요 없이 몇 초 만에 끝납니다. 사용법은 `./mac-setup.sh --help`로도 볼 수 있습니다.
 
 > 🎯 **팀 Dart 패키지 목록이 바뀌었거나, 패키지만 최신으로 올리고 싶다면**
 >
@@ -309,7 +309,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 | 🍎 Xcode 개발자 도구 | Xcode.app이 없으면 `mas`(App Store CLI)로 자동 설치 시도(App Store 로그인 필요 · 수십 GB라 오래 걸릴 수 있음). Command Line Tools만 활성화돼 있으면(`xcodebuild` "requires Xcode" 에러 원인) `xcode-select`를 Xcode.app으로 자동 전환하고 최초 실행 동의(`xcodebuild -runFirstLaunch`)까지 진행 (sudo 암호 입력 필요) |
 | 🧩 브라우저 확장 프로그램 | Chrome·Dia에 [ZenHub for GitHub](https://chromewebstore.google.com/detail/zenhub-for-github/ogcgkffhplmphkaahpmffcafajaocjbd) 확장을 자동 등록(External Extensions 드롭인 방식, sudo 암호 입력 필요) — Dia는 동작이 보장되지 않아 실패해도 경고만 남기고 계속 진행 |
 | 🔌 Claude MCP | figma 플러그인 자동 설치 + marionette·dart MCP, zenhub·jira·slack MCP 자동 등록. `ZENHUB_API_TOKEN`·`JIRA_API_TOKEN`·`SLACK_TEAM_ID`·`SLACK_BOT_TOKEN`(팀 공용 토큰)은 1Password CLI(`op`)로 `~/.zshrc`에 자동 주입 — git에 커밋 안 됨 (⚠️ figma는 최초 1회 `/mcp` OAuth 로그인. zenhub·jira·slack은 OAuth 대신 1Password 팀 공용 토큰으로 인증 — 1Password 앱의 CLI 통합만 되면 자동 주입. jira는 `sooperset/mcp-atlassian`(Docker)로 **Jira REST API에 직접** 붙어(개발팀 공용 계정 토큰) 조직 Rovo 권한이 필요 없음 — 런타임에 colima/docker 데몬 필요. slack은 `@modelcontextprotocol/server-slack`(npx)로 뜨며 팀 ID+봇 토큰 두 값이 모두 있어야 인증됨 — [설정 방법](#after-install)) |
-| 🔑 팀 공용 토큰 | 위 `ZENHUB_API_TOKEN`·`JIRA_API_TOKEN`·`SLACK_TEAM_ID`·`SLACK_BOT_TOKEN`에 더해, 다국어 자동 번역 도구 `slang_gpt`가 쓰는 `SLANG_GPT_API_KEY`, DCM을 CI 모드로 인증하는 `DCM_EMAIL`·`DCM_CI_KEY`(1Password 항목 `DCM CI CD`의 이메일+키 한 쌍)도 같은 방식(1Password CLI → `~/.zshrc`)으로 자동 주입 — `SLANG_GPT_API_KEY`·`DCM_EMAIL`·`DCM_CI_KEY`는 MCP가 아니라 명령줄 도구가 직접 읽는 값이라 등록·로그인 과정이 없음 ([설정 방법](#after-install)) |
+| 🔑 팀 공용 토큰 | 위 `ZENHUB_API_TOKEN`·`JIRA_API_TOKEN`·`SLACK_TEAM_ID`·`SLACK_BOT_TOKEN`에 더해, 다국어 자동 번역 도구 `slang_gpt`가 쓰는 `SLANG_GPT_API_KEY`, DCM을 CI 모드로 인증하는 `DCM_EMAIL`·`DCM_CI_KEY`(1Password 항목 `DCM CI CD`의 이메일+키 한 쌍), TypeSafe(판단형 AI 모델 Jev) SDK가 쓰는 `TYPESAFE_API_KEY`(1Password 항목 `TypeSafe Jev`)도 같은 방식(1Password CLI → `~/.zshrc`)으로 자동 주입 — `SLANG_GPT_API_KEY`·`DCM_EMAIL`·`DCM_CI_KEY`·`TYPESAFE_API_KEY`는 MCP가 아니라 명령줄 도구·SDK가 직접 읽는 값이라 등록·로그인 과정이 없음 ([설정 방법](#after-install)) |
 | 🔑 GitHub 인증(gh) | coco-de 조직의 비공개 레포(`co-bricks`·`skills`) 접근용 GitHub 로그인을 팀 공용 1Password 토큰으로 자동 처리(`gh auth login` + `gh auth setup-git`) — 이미 인증돼 있으면 건너뜀. 실패해도 계속 진행하며, 아래 cocode-skills·cob(co-bricks)가 각자 인증 상태를 다시 확인해 건너뜀([설정 방법](#after-install)) |
 | 🧩 cocode-skills 팀 플러그인 | 사설 레포 `coco-de/skills`의 `install.sh`로 cc-* 플러그인 번들(marionette·dart·figma·dev-cycle·coui 등) 자동 동기화 (⚠️ GitHub 인증 필요 — 보통 위 단계에서 1Password로 자동 처리되며, 안 됐다면 `gh auth login` 수동 실행 후 재실행) |
 | 📱 Android SDK | cmdline-tools, platform-tools, build-tools, platforms, NDK, 에뮬레이터 시스템 이미지, AVD까지 전부 자동 설치·구성 (Android Studio 첫 실행 마법사 불필요) |
@@ -403,7 +403,7 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 | <img src="assets/icons/codex.png" width="20" height="20"> | codex | OpenAI의 터미널 AI 코딩 에이전트. `brew install --cask codex`로 설치하며, 처음 실행할 때 ChatGPT 계정으로 로그인합니다 |
 | <img src="assets/icons/antigravity.png" width="20" height="20"> | agy (Antigravity CLI) | Google의 터미널 AI 코딩 에이전트. 은퇴한 Gemini CLI의 공식 후속 도구로, 단일 실행 파일이라 Claude Code처럼 공식 설치 스크립트(`antigravity.google/cli/install.sh`)로 `~/.local/bin/agy`에 설치합니다(별도 런타임 불필요). 처음 실행할 때 Google 계정으로 로그인합니다 |
 | <img src="assets/icons/slack.png" width="20" height="20"> | slack (Slack CLI) | Slack 앱/워크플로 개발용 공식 CLI. 공식 설치 스크립트(`downloads.slack-edge.com/slack-cli/install.sh`)로 `/usr/local/bin` 또는 `~/.local/bin`에 설치합니다. Slack CLI로 직접 앱을 만들려면 처음 한 번 `slack login`으로 워크스페이스 인증이 필요합니다(별개로, Claude Code의 `slack` MCP는 아래 팀 공용 토큰으로 인증됩니다) |
-| <img src="assets/icons/1password.svg" width="20" height="20"> | op (1Password CLI) | 1Password 금고를 **터미널에서** 열어보는 명령. 1Password 앱과 같은 금고를 보며, 앱에 로그인해 둔 상태를 그대로 빌려 씁니다. 이 스크립트는 팀 공용 ZenHub·Jira·Slack 토큰을 금고에서 읽어 `~/.zshrc`에 자동으로 넣어주고, GitHub PAT로 `gh auth login`까지 대신 처리하는 데 사용합니다 (설정 방법은 아래 [ZenHub·Jira·Slang GPT·DCM·Slack 토큰 · 1Password CLI 설정](#after-install) 참고) |
+| <img src="assets/icons/1password.svg" width="20" height="20"> | op (1Password CLI) | 1Password 금고를 **터미널에서** 열어보는 명령. 1Password 앱과 같은 금고를 보며, 앱에 로그인해 둔 상태를 그대로 빌려 씁니다. 이 스크립트는 팀 공용 ZenHub·Jira·Slack·TypeSafe 등의 토큰을 금고에서 읽어 `~/.zshrc`에 자동으로 넣어주고, GitHub PAT로 `gh auth login`까지 대신 처리하는 데 사용합니다 (설정 방법은 아래 [ZenHub·Jira·Slang GPT·DCM·Slack·TypeSafe 토큰 · 1Password CLI 설정](#after-install) 참고) |
 | <img src="assets/icons/mas.svg" width="20" height="20"> | mas (App Store CLI) | 터미널에서 Mac App Store 앱을 설치하는 도구. Xcode.app을 자동으로 깔기 위해서만 쓰기 때문에, **Xcode.app이 이미 있으면 mas 자체를 설치하지 않고 건너뜁니다** — App Store에 Apple ID로 로그인이 돼 있어야 하며, 로그인 자체는 mas가 대신 해줄 수 없습니다(로그인 안 돼 있으면 건너뛰고 App Store에서 직접 설치하라고 안내) |
 
 **Flutter / Dart**
@@ -478,6 +478,7 @@ mcp:mcp-atlassian(jira): ...
 SLANG_GPT_API_KEY: ...
 DCM_EMAIL/DCM_CI_KEY: ...
 mcp:slack: ...
+TYPESAFE_API_KEY: ...
 dart 기본 패키지: ...
 marionette: ...
 mcp_server_dart: ...
@@ -498,15 +499,17 @@ Orca 전체 디스크 접근: ...
 
 > `GitHub 인증(gh)`이 `❌`이면 바로 아래 `cob(co-bricks)`·`cocode-skills` 둘 다 설치되지 않습니다 — 둘 다 coco-de의 비공개 레포라 GitHub 로그인이 필요하기 때문입니다. 보통은 팀 공용 1Password 항목("API Token" 볼트 > "GitHub API Token" > credential 필드)으로 자동 로그인되며, 항목이 없거나 실패했다면 `gh auth login`을 직접 실행한 뒤 스크립트를 다시 실행하세요.
 >
-> `op(1Password CLI)`는 **설치 여부와 설정 여부를 따로** 보여줍니다. `⚠ 설치됨 (설정 미완료 — 토큰을 읽지 못했습니다)`라면 CLI는 깔렸지만 금고에서 토큰을 읽지 못한 상태입니다. 원인은 두 가지이고, 스크립트가 화면에 확인 순서(① 앱 CLI 통합 체크 → ② 금고 접근 권한)를 함께 출력해 줍니다 — 아래 **ZenHub·Jira·Slang GPT·DCM·Slack 토큰 · 1Password CLI 설정**을 참고해 주세요.
+> `op(1Password CLI)`는 **설치 여부와 설정 여부를 따로** 보여줍니다. `⚠ 설치됨 (설정 미완료 — 토큰을 읽지 못했습니다)`라면 CLI는 깔렸지만 금고에서 토큰을 읽지 못한 상태입니다. 원인은 두 가지이고, 스크립트가 화면에 확인 순서(① 앱 CLI 통합 체크 → ② 금고 접근 권한)를 함께 출력해 줍니다 — 아래 **ZenHub·Jira·Slang GPT·DCM·Slack·TypeSafe 토큰 · 1Password CLI 설정**을 참고해 주세요.
 
-> `mcp:zenhub`·`mcp:mcp-atlassian`·`mcp:slack`이 `✓ 등록됨`인데 뒤에 `(⚠ 토큰 미주입)`이 붙어 있다면, MCP 서버는 등록됐지만 인증 토큰이 없는 상태입니다. 아래 **ZenHub·Jira·Slang GPT·DCM·Slack 토큰** 안내대로 1Password(앱 CLI 통합 + 팀 'API Token' 볼트 권한)를 준비한 뒤 스크립트를 다시 실행해 주세요.
+> `mcp:zenhub`·`mcp:mcp-atlassian`·`mcp:slack`이 `✓ 등록됨`인데 뒤에 `(⚠ 토큰 미주입)`이 붙어 있다면, MCP 서버는 등록됐지만 인증 토큰이 없는 상태입니다. 아래 **ZenHub·Jira·Slang GPT·DCM·Slack·TypeSafe 토큰** 안내대로 1Password(앱 CLI 통합 + 팀 'API Token' 볼트 권한)를 준비한 뒤 스크립트를 다시 실행해 주세요.
 
 > `SLANG_GPT_API_KEY`는 Flutter 다국어 문구를 자동 번역해 주는 도구 `slang_gpt`가 쓰는 키입니다. MCP가 아니라 명령줄 도구가 환경변수로 바로 읽는 값이라 등록 여부 없이 **주입됐는지만** 표시합니다. `❌ 미주입`이면 다른 토큰과 같은 원인(앱 CLI 통합 · 'API Token' 볼트 권한)이니 아래 안내를 따라 주세요.
 
 > `DCM_EMAIL/DCM_CI_KEY`는 Dart 코드 품질 검사 도구 `DCM`을 CI/자동화 모드로 인증하는 이메일+키 한 쌍입니다. 이 역시 MCP가 아니라 `dcm` 명령줄 도구가 환경변수로 직접 읽는 값이라 **주입됐는지만** 표시하며, **두 값이 모두 있어야** `✓ 주입됨`으로 나옵니다. `❌ 미주입`이면 다른 토큰과 같은 원인(앱 CLI 통합 · 'API Token' 볼트 권한)이니 아래 안내를 따라 주세요.
 
 > `mcp:slack`은 `slack` MCP(`@modelcontextprotocol/server-slack`)의 등록·인증 상태입니다. zenhub·jira와 같은 기준으로, `SLACK_TEAM_ID`·`SLACK_BOT_TOKEN` **두 값이 모두 있어야** `+ 토큰 주입됨`으로 표시됩니다. `(⚠ 토큰 미주입)`이면 아래 안내를 따라 주세요.
+
+> `TYPESAFE_API_KEY`는 TypeSafe의 판단형 AI 모델 **Jev**를 부를 때 쓰는 키입니다. Slang GPT 키와 마찬가지로 MCP가 아니라 TypeSafe SDK(Python·JavaScript)가 환경변수로 바로 읽는 값이라 등록 여부 없이 **주입됐는지만** 표시합니다. `❌ 미주입`이면 다른 토큰과 같은 원인(앱 CLI 통합 · 'API Token' 볼트 권한)이니 아래 안내를 따라 주세요.
 
 > `Orca 전체 디스크 접근`은 Orca가 다른 앱의 폴더를 읽을 수 있는지(= 허용 창이 반복해서 뜨지 않는지)를 보여줍니다. `⚠ 확인 불가`로 나와도 **문제가 생긴 게 아닙니다** — 이 상태를 조회하려면 조회하는 쪽(터미널)에도 같은 권한이 있어야 해서, 새로 세팅한 맥에서는 대개 확인만 못 하는 것입니다. 이때는 시스템 설정에서 Orca 토글이 켜져 있는지 눈으로 확인해 주세요. 자세한 내용은 아래 [🔐 Orca 전체 디스크 접근 권한](#orca-full-disk-access)에 있습니다.
 
@@ -577,11 +580,11 @@ Orca 전체 디스크 접근: ...
 > - **그래도 안 될 때**: `claude` 안에서 `/mcp`를 보면 `mcp-atlassian`이 연결 실패로 뜨거나 Jira를 물어보면 "연결할 수 없다"는 답이 옵니다 → `colima start`를 직접 실행한 뒤(`docker info`가 에러 없이 나오면 데몬이 켜진 것, `colima status`로도 확인 가능) **새 터미널**에서 `claude`를 다시 켜세요. (자동 기동 함수는 `.zshrc`를 반영한 새 터미널에서만 동작합니다 — `mac-setup.sh`를 처음 돌렸거나 갱신했다면 `source ~/.zshrc` 또는 새 터미널이 필요합니다.)
 > - 참고: ZenHub·figma·slack 등 다른 MCP는 docker가 필요 없습니다. **Jira MCP만** docker로 뜹니다.
 
-> 🔑 **ZenHub·Jira·Slang GPT·DCM·Slack·GitHub 토큰 · 1Password CLI 설정 (실행 중 안내됨)**
+> 🔑 **ZenHub·Jira·Slang GPT·DCM·Slack·TypeSafe·GitHub 토큰 · 1Password CLI 설정 (실행 중 안내됨)**
 >
-> **이게 무슨 단계인가요?** ZenHub(이슈 보드)·Jira·Slack을 Claude Code에서 쓰거나, 다국어 문구를 자동 번역하는 `slang_gpt`, 코드 품질 검사 도구 `DCM`을 CI 모드로 인증하려면 비밀번호 같은 **토큰/키** 값이 필요합니다. 이 값은 사람마다 복사해 붙여넣지 않도록 **팀 공용 1Password 금고**에 넣어 두었고, **1Password CLI(`op`)** 가 그 금고를 대신 열어 읽어옵니다. `op`는 1Password의 터미널 버전이라고 보시면 되고, 아래 설정은 `op`에게 **"1Password 앱에 이미 로그인해 둔 상태를 그대로 써도 된다"** 고 허락해 주는 과정입니다. (Jira는 예전엔 `/mcp` OAuth 로그인을 매번 해야 했지만, ZenHub처럼 팀 공용 토큰 방식으로 통일했습니다.)
+> **이게 무슨 단계인가요?** ZenHub(이슈 보드)·Jira·Slack을 Claude Code에서 쓰거나, 다국어 문구를 자동 번역하는 `slang_gpt`, 코드 품질 검사 도구 `DCM`을 CI 모드로 인증하거나, TypeSafe의 판단형 AI 모델(Jev)을 부르려면 비밀번호 같은 **토큰/키** 값이 필요합니다. 이 값은 사람마다 복사해 붙여넣지 않도록 **팀 공용 1Password 금고**에 넣어 두었고, **1Password CLI(`op`)** 가 그 금고를 대신 열어 읽어옵니다. `op`는 1Password의 터미널 버전이라고 보시면 되고, 아래 설정은 `op`에게 **"1Password 앱에 이미 로그인해 둔 상태를 그대로 써도 된다"** 고 허락해 주는 과정입니다. (Jira는 예전엔 `/mcp` OAuth 로그인을 매번 해야 했지만, ZenHub처럼 팀 공용 토큰 방식으로 통일했습니다.)
 >
-> 스크립트 실행 도중 토큰 주입 단계(ZenHub 8.5 · Jira 8.6 · Slang GPT 8.7 · DCM 8.8 · Slack 8.9)에서 1Password 준비가 안 돼 있으면 **화면이 잠깐 멈추고 같은 내용의 안내**가 뜹니다. 아래를 마친 뒤 **Enter**를 누르면 팀 공용 토큰이 자동으로 `~/.zshrc`에 주입됩니다 (지금 하기 어려우면 `s` + Enter로 건너뛰고, 나중에 `./mac-setup.sh --env-only`로 토큰만 다시 주입하면 됩니다 — 전체 설치를 다시 돌릴 필요가 없습니다). 멈춰서 물어보는 건 ZenHub(8.5) 한 곳뿐이고, **op 설정을 한 번만 마치면 ZenHub·Jira·Slang GPT·DCM·Slack 토큰이 함께 주입됩니다.**
+> 스크립트 실행 도중 토큰 주입 단계(ZenHub 8.5 · Jira 8.6 · Slang GPT 8.7 · DCM 8.8 · Slack 8.9 · TypeSafe 8.10)에서 1Password 준비가 안 돼 있으면 **화면이 잠깐 멈추고 같은 내용의 안내**가 뜹니다. 아래를 마친 뒤 **Enter**를 누르면 팀 공용 토큰이 자동으로 `~/.zshrc`에 주입됩니다 (지금 하기 어려우면 `s` + Enter로 건너뛰고, 나중에 `./mac-setup.sh --env-only`로 토큰만 다시 주입하면 됩니다 — 전체 설치를 다시 돌릴 필요가 없습니다). 멈춰서 물어보는 건 ZenHub(8.5) 한 곳뿐이고, **op 설정을 한 번만 마치면 ZenHub·Jira·Slang GPT·DCM·Slack·TypeSafe 토큰이 함께 주입됩니다.**
 >
 > **설정 방법 — 1Password 앱에서**
 >
@@ -612,6 +615,7 @@ Orca 전체 디스크 접근: ...
 > | 설치 검증에 `SLANG_GPT_API_KEY: ❌ 미주입` | op는 되지만 팀 'API Token' 볼트의 'Slang GPT API Token > credential'을 못 읽는 경우입니다 → 볼트 접근 권한을 팀 관리자에게 요청 후 `./mac-setup.sh --env-only` 실행 |
 > | 설치 검증에 `DCM_EMAIL/DCM_CI_KEY: ❌ 미주입` | op는 되지만 팀 'API Token' 볼트의 'DCM CI CD' 항목(사용자명·자격 증명 필드)을 못 읽는 경우입니다 → 볼트 접근 권한을 팀 관리자에게 요청 후 `./mac-setup.sh --env-only` 실행 (이메일·키 중 하나만 읽혀도 미주입으로 표시됩니다) |
 > | `mcp:slack: ✓ 등록됨 (⚠ 토큰 미주입 …)` | op는 되지만 팀 'API Token' 볼트의 'Cocode Slack' 항목(SLACK_TEAM_ID·SLACK_BOT_TOKEN 필드)을 못 읽는 경우입니다 → 볼트 접근 권한을 팀 관리자에게 요청 후 `./mac-setup.sh --env-only` 실행 (두 필드 중 하나만 읽혀도 미주입으로 표시됩니다) |
+> | 설치 검증에 `TYPESAFE_API_KEY: ❌ 미주입` | op는 되지만 팀 'API Token' 볼트의 'TypeSafe Jev > credential'을 못 읽는 경우입니다 → 볼트 접근 권한을 팀 관리자에게 요청 후 `./mac-setup.sh --env-only` 실행 |
 > | 설치 검증에 `GitHub 인증(gh): ❌`이거나 `cob(co-bricks)`/`cocode-skills`가 `❌` | op는 되지만 팀 'API Token' 볼트의 'GitHub API Token > credential'을 못 읽거나 항목이 없는 경우입니다 → 항목이 없다면 팀 관리자에게 생성(레포 read 권한 PAT)을 요청하고, 있다면 볼트 접근 권한을 요청한 뒤 스크립트를 다시 실행하세요. 이 단계는 `--env-only`에는 포함되지 않으므로 전체 스크립트(`./mac-setup.sh`)를 다시 실행해야 합니다 (또는 직접 `gh auth login`). 인증만 고친 뒤 `cob(co-bricks)`만 다시 깔면 될 때는 `./mac-setup.sh --dart-only`가 더 빠릅니다 |
 >
 > **Jira는 어떻게 인증하나요 (Rovo 안 거침)**
@@ -634,11 +638,15 @@ Orca 전체 디스크 접근: ...
 >
 > `SLACK_TEAM_ID`·`SLACK_BOT_TOKEN`은 Claude Code에 등록되는 **`slack` MCP**(`@modelcontextprotocol/server-slack`, npx로 실행)가 Slack 워크스페이스에 접속할 때 쓰는 **팀 ID + 봇 토큰** 한 쌍입니다. zenhub·jira처럼 MCP 인증용 토큰이라 `claude mcp add slack`에는 `${SLACK_BOT_TOKEN}`·`${SLACK_TEAM_ID}` 리터럴만 등록되고, 실제 값은 `~/.zshrc`에서 런타임에 채워집니다. 두 값은 팀 공용 1Password **"API Token" 볼트 > "Cocode Slack" 항목**의 **SLACK_TEAM_ID · SLACK_BOT_TOKEN** 필드에 있고, op 설정만 되어 있으면 8.9단계에서 자동으로 주입됩니다 (화면을 멈추지 않고, 실패하면 경고만 남기고 넘어갑니다). DCM과 마찬가지로 **두 값이 모두 읽혀야** 주입되며, 하나라도 못 읽으면 반쪽 인증을 막기 위해 아무것도 넣지 않습니다. (Slack CLI로 직접 앱을 개발할 때 쓰는 `slack login`은 이 토큰과 별개입니다.)
 >
+> **TypeSafe 키(TYPESAFE_API_KEY)는 무엇에 쓰나요**
+>
+> `TYPESAFE_API_KEY`는 **TypeSafe**의 AI 모델 **Jev**를 부를 때 쓰는 키입니다. Jev는 글을 지어내는 대신 문장을 읽고 **"예/아니오 확률 · 보기 중 하나 · 점수"** 처럼 정해진 형태의 판단을 돌려주는 모델이라, 앱·스크립트 안에서 "이 문의는 환불 요청인가?" 같은 작은 판단을 맡길 때 씁니다. TypeSafe 공식 SDK(Python·JavaScript)가 이 환경변수를 **알아서 읽기** 때문에 코드에 키를 적을 필요가 없고, Slang GPT와 마찬가지로 MCP가 아니라서 등록·로그인 과정도 없습니다. 키는 팀 공용 1Password **"API Token" 볼트 > "TypeSafe Jev" 항목 > "credential" 필드**에 있고, op 설정만 되어 있으면 8.10단계에서 자동으로 주입됩니다 (화면을 멈추지 않고, 실패하면 경고만 남기고 넘어갑니다). 팀 공용 키라서 사용량도 팀 계정으로 잡힙니다. 스크립트는 이 줄을 `~/.zshrc` 맨 끝에 적기 때문에, `~/.zshrc.local`에 개인 TypeSafe 키를 넣어 두었더라도 팀 키가 우선 적용됩니다.
+>
 > ⚠️ **주입 후에는 반드시 새 터미널에서 `claude`를 실행하세요(그리고 docker 데몬이 떠 있어야 합니다).** zenhub·jira·slack MCP는 `claude`를 실행한 시점의 환경변수에서 토큰을 읽습니다. 토큰을 넣기 전에 열어 둔 터미널에서 계속 쓰면 토큰이 전달되지 않습니다. 이때 `/mcp` 화면에는 `Connected`로 보여도 실제 호출은 인증 오류가 납니다.
 >
 > **GitHub 인증(gh)은 위 토큰들과 뭐가 다른가요**
 >
-> coco-de 조직의 `co-bricks`·`skills` 레포는 비공개라서, `cob(co-bricks)` 설치(4단계)와 `cocode-skills` 팀 플러그인 설치(3.5단계)에는 GitHub 로그인이 필요합니다. 위 토큰들처럼 `~/.zshrc`에 환경변수로 주입되는 대신, 같은 팀 공용 1Password **"API Token" 볼트 > "GitHub API Token" 항목 > "credential" 필드**(레포 read 권한이면 충분한 Personal Access Token)에서 읽은 값으로 `gh auth login` + `gh auth setup-git`을 대신 실행해 둡니다(3.4단계) — 이후 `git`이 github.com에 접근할 때도 이 인증을 그대로 씁니다. **이미 `gh auth login`이 돼 있다면 건너뜁니다(멱등)**. 위 8.5~8.9 토큰과 달리 이 단계는 준비가 안 돼 있어도 화면을 멈추지 않고 경고만 남긴 뒤 계속 진행하며, `--env-only`로는 재실행되지 않으므로(설치 단계에 속함) 안 됐다면 전체 스크립트를 다시 실행하거나 `gh auth login`을 직접 실행하세요. (`gh auth login`을 마친 뒤 `cob(co-bricks)`만 다시 깔면 되는 상황이라면 `./mac-setup.sh --dart-only`로 그 단계만 다시 돌릴 수 있습니다.)
+> coco-de 조직의 `co-bricks`·`skills` 레포는 비공개라서, `cob(co-bricks)` 설치(4단계)와 `cocode-skills` 팀 플러그인 설치(3.5단계)에는 GitHub 로그인이 필요합니다. 위 토큰들처럼 `~/.zshrc`에 환경변수로 주입되는 대신, 같은 팀 공용 1Password **"API Token" 볼트 > "GitHub API Token" 항목 > "credential" 필드**(레포 read 권한이면 충분한 Personal Access Token)에서 읽은 값으로 `gh auth login` + `gh auth setup-git`을 대신 실행해 둡니다(3.4단계) — 이후 `git`이 github.com에 접근할 때도 이 인증을 그대로 씁니다. **이미 `gh auth login`이 돼 있다면 건너뜁니다(멱등)**. 위 8.5~8.10 토큰과 달리 이 단계는 준비가 안 돼 있어도 화면을 멈추지 않고 경고만 남긴 뒤 계속 진행하며, `--env-only`로는 재실행되지 않으므로(설치 단계에 속함) 안 됐다면 전체 스크립트를 다시 실행하거나 `gh auth login`을 직접 실행하세요. (`gh auth login`을 마친 뒤 `cob(co-bricks)`만 다시 깔면 되는 상황이라면 `./mac-setup.sh --dart-only`로 그 단계만 다시 돌릴 수 있습니다.)
 
 <br>
 
@@ -650,7 +658,7 @@ Orca 전체 디스크 접근: ...
 
 - **이미 설치된 건 다시 건드리지 않습니다.** 앱/도구별로 설치 여부를 먼저 확인하고, 이미 있으면 `✓ 이미 설치됨`을 출력하고 건너뜁니다. 스크립트를 여러 번 실행해도 문제없습니다. 다만 두 가지는 예외입니다 — **팀 표준에서 빠진 항목**(예전 atlassian OAuth 플러그인, flutter-mcp-toolkit 플러그인)은 재실행 시 **자동으로 정리(제거)** 되고, **zenhub·jira·slack MCP 등록**은 설정이 최신으로 유지되도록 매번 지웠다가 다시 등록합니다. **Dart 글로벌 패키지**(`melos`·`mason_cli` 등)도 매번 최신으로 다시 활성화되는데, 이건 의도된 동작입니다 — 그래서 `./mac-setup.sh --dart-only`가 재설치이자 **업데이트** 역할을 합니다.
 - **일부가 실패해도 전체가 멈추지 않습니다.** 개별 항목 설치가 실패하면 `⚠` 표시와 함께 건너뛰고 나머지를 계속 진행합니다.
-- **설치 중 y/n 질문에 자동으로 답합니다.** (`NONINTERACTIVE=1`, `CI=true` 설정) 터미널 앞에서 계속 기다리지 않아도 되도록 하기 위함입니다. 사람 입력을 기다리는 곳은 두 종류뿐입니다 — ① **관리자(맥 로그인) 암호**: Homebrew 설치(0) · Xcode 전환(1.5) · 브라우저 확장 등록(1.6), ② **직접 답해야 하는 질문**: **Git 이메일 입력(3.2)** · **ZenHub 토큰 주입(8.5)** · **Orca 권한 안내(9)** 에서만 잠깐 멈춥니다 — 각각 `s`로 건너뛸 수 있고, 이미 설정된 맥이라면 묻지 않습니다. (Jira 토큰 주입(8.6)·Slang GPT 키 주입(8.7)·DCM 키 주입(8.8)·Slack 토큰 주입(8.9)은 ZenHub에서 켠 op 설정을 그대로 재사용하므로 따로 멈추지 않습니다.) (터미널이 아닌 파이프 실행이면 멈추지 않고 건너뜁니다.)
+- **설치 중 y/n 질문에 자동으로 답합니다.** (`NONINTERACTIVE=1`, `CI=true` 설정) 터미널 앞에서 계속 기다리지 않아도 되도록 하기 위함입니다. 사람 입력을 기다리는 곳은 두 종류뿐입니다 — ① **관리자(맥 로그인) 암호**: Homebrew 설치(0) · Xcode 전환(1.5) · 브라우저 확장 등록(1.6), ② **직접 답해야 하는 질문**: **Git 이메일 입력(3.2)** · **ZenHub 토큰 주입(8.5)** · **Orca 권한 안내(9)** 에서만 잠깐 멈춥니다 — 각각 `s`로 건너뛸 수 있고, 이미 설정된 맥이라면 묻지 않습니다. (Jira 토큰 주입(8.6)·Slang GPT 키 주입(8.7)·DCM 키 주입(8.8)·Slack 토큰 주입(8.9)·TypeSafe 키 주입(8.10)은 ZenHub에서 켠 op 설정을 그대로 재사용하므로 따로 멈추지 않습니다.) (터미널이 아닌 파이프 실행이면 멈추지 않고 건너뜁니다.)
 - **Homebrew 자동 설치(0단계)에서 관리자 암호를 한 번 물어볼 수 있습니다.** Homebrew는 이미 있으면 건드리지 않고, 없을 때만 [공식 설치 스크립트](https://brew.sh)를 그대로 실행합니다(비공식 경로를 쓰지 않습니다). **여기만은 실패하면 `⚠` 후 계속이 아니라 스크립트가 멈춥니다** — 이후 단계 대부분이 Homebrew로 설치되기 때문에, 계속 진행하면 전부 실패해서 원인을 알아보기 어려워지기 때문입니다.
 - **Xcode 전환(1.5단계)에서 sudo 암호를 한 번 물어볼 수 있습니다.** `xcode-select`가 Command Line Tools를 가리키고 있으면 Xcode.app으로 전환하는데, 이 작업엔 관리자 암호가 필요합니다. 이미 Xcode.app을 가리키고 있다면 묻지 않고 건너뜁니다. (터미널이 아닌 파이프 실행이면 시도하지 않고 건너뜁니다.)
 - **Terminal.app 폰트 자동 적용(7.5단계)은 macOS 기본 Terminal.app에서 실행 중일 때만 동작합니다.** 지금 실행 중인 터미널이 Terminal.app이 아니면(예: iTerm2) 건드리지 않고 건너뛰므로, 다른 터미널 앱에서 예상치 못한 창이 뜨는 일은 없습니다.
