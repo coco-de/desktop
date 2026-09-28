@@ -262,7 +262,7 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned -Force
 | 🧩 브라우저 확장 프로그램 | Chrome·Edge에 [ZenHub for GitHub](https://chromewebstore.google.com/detail/zenhub-for-github/ogcgkffhplmphkaahpmffcafajaocjbd) 확장을 레지스트리 '외부 확장' 방식으로 자동 등록(관리자 권한 필요) — 브라우저를 실행하면 확인 창이 뜨고, 거기서 '확장 사용'을 눌러야 켜집니다. 강제설치 정책은 일부러 쓰지 않습니다([이유](#vs-mac)) |
 | 🌐 브라우저 번역 언어 | Chrome·Edge의 번역 대상 언어를 한국어로, "번역 안 함" 목록을 영어로 자동 설정 — 브라우저가 실행 중이면 건너뛰고 경고만 표시 |
 | 🔌 Claude MCP | figma 플러그인 자동 설치 + marionette·dart MCP, zenhub·jira·slack MCP 자동 등록. `ZENHUB_API_TOKEN`·`JIRA_API_TOKEN`·`SLACK_TEAM_ID`·`SLACK_BOT_TOKEN`(팀 공용 토큰)은 1Password CLI(`op`)로 **윈도우 사용자 환경변수**에 자동 주입 — git에 커밋 안 됨 (⚠️ figma는 최초 1회 `/mcp` OAuth 로그인. jira는 `sooperset/mcp-atlassian`(Docker)로 Jira REST API에 직접 붙어 조직 Rovo 권한이 필요 없음 — 런타임에 **Docker Desktop이 실행 중**이어야 함) |
-| 🔑 팀 공용 토큰 | 위 4종에 더해, 다국어 자동 번역 도구 `slang_gpt`가 쓰는 `SLANG_GPT_API_KEY`, DCM을 CI 모드로 인증하는 `DCM_EMAIL`·`DCM_CI_KEY`도 같은 방식(1Password CLI → 윈도우 사용자 환경변수)으로 자동 주입 ([설정 방법](#after-install)) |
+| 🔑 팀 공용 토큰 | 위 4종에 더해, 다국어 자동 번역 도구 `slang_gpt`가 쓰는 `SLANG_GPT_API_KEY`, DCM을 CI 모드로 인증하는 `DCM_EMAIL`·`DCM_CI_KEY`, TypeSafe(판단형 AI 모델 Jev) SDK가 쓰는 `TYPESAFE_API_KEY`(1Password 항목 `TypeSafe Jev`)도 같은 방식(1Password CLI → 윈도우 사용자 환경변수)으로 자동 주입 ([설정 방법](#after-install)) |
 | 🔑 GitHub 인증(gh) | coco-de 조직의 비공개 레포(`co-bricks`·`skills`) 접근용 로그인을 팀 공용 1Password 토큰으로 자동 처리(`gh auth login` + `gh auth setup-git`) — 이미 인증돼 있으면 건너뜀 |
 | 🧩 cocode-skills 팀 플러그인 | 사설 레포 `coco-de/skills` 설치 스크립트로 cc-\* 플러그인 번들 동기화 (⚠️ **현재 윈도우에서는 자동 설치가 되지 않습니다** — 아래 [알려진 제약](#known-gap) 참고) |
 | 📱 Android SDK | cmdline-tools, platform-tools, build-tools, platforms, NDK, 에뮬레이터 시스템 이미지, AVD까지 전부 자동 설치·구성 (Android Studio 첫 실행 마법사 불필요). NDK는 최신이 아니라 **Flutter stable이 요구하는 버전으로 고정** 설치 |

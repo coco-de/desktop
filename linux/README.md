@@ -280,7 +280,7 @@ chmod +x linux-setup.sh
 | **7** | oh-my-zsh + powerlevel10k |
 | **7.5** | 터미널 폰트 자동 적용 (MesloLGS NF) |
 | **8** | `~/.zshrc`·`~/.p10k.zsh` 반영 + 기본 셸을 zsh로 변경 |
-| **8.5~8.9** | 팀 공용 토큰 5종 주입 (ZenHub · Jira · slang_gpt · DCM · Slack) |
+| **8.5~8.10** | 팀 공용 토큰 6종 주입 (ZenHub · Jira · slang_gpt · DCM · Slack · TypeSafe) |
 | **9** | 시스템 권한 — docker·kvm 그룹 가입, Android 기기 인식 규칙 |
 | **10** | 설치 검증 + 다음 단계 안내 |
 
@@ -297,7 +297,7 @@ chmod +x linux-setup.sh
 | <img src="assets/icons/slack.png" width="20"> | **Slack** | 팀 커뮤니케이션 (`snap install slack`) |
 | <img src="assets/icons/chrome.svg" width="20"> | **Google Chrome** | 팀 표준 브라우저 · Flutter 웹 디버깅 (공식 apt 저장소) |
 | <img src="assets/icons/claude.svg" width="20"> | **Claude Desktop** | Claude 데스크톱 앱 (공식 apt 저장소 · 2026년 6월부터 리눅스 정식 베타) |
-| <img src="assets/icons/1password.svg" width="20"> | **1Password** + `op` | 팀 공용 비밀번호·토큰 금고. `op`(CLI)는 3.4·8.5~8.9단계가 토큰을 읽는 데 씁니다 (공식 apt 저장소) |
+| <img src="assets/icons/1password.svg" width="20"> | **1Password** + `op` | 팀 공용 비밀번호·토큰 금고. `op`(CLI)는 3.4·8.5~8.10단계가 토큰을 읽는 데 씁니다 (공식 apt 저장소) |
 | <img src="assets/icons/tailscale.svg" width="20"> | **Tailscale** | 팀 내부망 VPN (공식 설치 스크립트) |
 | <img src="assets/icons/orca.png" width="20"> | **Orca** | 여러 AI 에이전트를 동시에 돌리는 개발 환경 (GitHub 릴리스 AppImage) |
 | <img src="assets/icons/lumide.png" width="20"> | **Lumide** | 에이전트 친화 경량 코드 에디터 |
@@ -455,7 +455,7 @@ chmod +x linux-setup.sh
 
 <br>
 
-3.4단계(GitHub 자동 로그인)와 8.5~8.9단계(팀 토큰 주입)는 1Password에서 값을 읽어옵니다. 연동이 안 돼 있으면 그 단계들이 건너뛰어집니다.
+3.4단계(GitHub 자동 로그인)와 8.5~8.10단계(팀 토큰 주입)는 1Password에서 값을 읽어옵니다. 연동이 안 돼 있으면 그 단계들이 건너뛰어집니다.
 
 1. 1Password 앱을 열고 팀 계정(`team-cocodeinc.1password.com`)으로 로그인
 2. **설정 > 개발자 > "1Password CLI와 통합"** 체크
