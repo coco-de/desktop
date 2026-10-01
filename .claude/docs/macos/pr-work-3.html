@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>#3 작업내역 — macOS 서명 키체인 로그인 자동 해제</title>
+  <style>
+    :root { color-scheme: light dark; --fg:#1f2328; --muted:#59636e; --bg:#fff; --line:#d1d9e0; --code:#f6f8fa; }
+    @media (prefers-color-scheme:dark) { :root { --fg:#e6edf3; --muted:#9198a1; --bg:#0d1117; --line:#3d444d; --code:#151b23; } }
+    body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.7 system-ui,-apple-system,sans-serif; }
+    main { max-width:80ch; margin:auto; padding:24px 16px 64px; }
+    h1,h2 { line-height:1.35; } h2 { margin-top:32px; }
+    .muted { color:var(--muted); } code { background:var(--code); padding:2px 5px; border-radius:4px; overflow-wrap:anywhere; }
+    li { margin:6px 0; } table { width:100%; border-collapse:collapse; }
+    th,td { border:1px solid var(--line); padding:8px; text-align:left; overflow-wrap:anywhere; }
+    a { color:inherit; } pre { overflow:auto; background:var(--code); padding:12px; border-radius:6px; }
+  </style>
+</head>
+<body><main>
+  <h1>macOS 서명 키체인 로그인 자동 해제</h1>
+  <p class="muted">이슈 #3 · <code>feature/3-macos-signing-keychains</code> → <code>main</code></p>
+  <p>파일 키체인의 자동 잠금 설정과 서명 키 접근 권한을 확인하고, 사용자 로그인 뒤 키체인을 자동으로 여는 선택형 macOS 설정을 추가했습니다. 최초 등록은 1Password 원본을 사용하고, 로그인 실행은 login 키체인의 암호화 사본을 사용합니다.</p>
+
+  <h2>여기부터 보세요</h2>
+  <ol>
+    <li><code>macos/signing-keychains/helper.m</code>: 암호의 메모리 처리, 제한된 캐시 ACL, UI 없는 잠금 해제, 기존 partition 보존을 확인합니다.</li>
+    <li><code>macos/signing-keychains/setup.py</code>: 대상 경로 탐색, helper 서명·설치, LaunchAgent 등록, 실제 반복 서명 검증을 확인합니다.</li>
+    <li><code>macos/signing-keychains/test-helper.m</code> 및 <code>tests.py</code>: 다른 프로세스의 캐시 읽기 거부, 실제 잠금 주입, 빈 암호, ACL 멱등성, Installer 정책 분리를 검증합니다.</li>
+    <li><code>macos/mac-setup.sh</code>: <code>--keychains-only</code>가 전체 설치와 분리되어 실행되는지 확인합니다.</li>
+    <li>macOS 안내와 Windows·Linux 차이 표: 실행 방법과 macOS 전용 근거를 함께 기록했습니다.</li>
+  </ol>
+
+  <h2>설계 판단</h2>
+  <p>로그인마다 1Password CLI로 암호를 조회하면 1Password 잠금 해제나 접근 승인이 다시 필요할 수 있습니다. 원본은 1Password로 관리하되, 로그인 키체인의 암호화 사본을 전용 helper 하나만 읽도록 제한했습니다. LaunchAgent에는 실행 경로와 설정 파일 경로만 넣습니다.</p>
+  <p>암호를 명령행 <code>-p</code>·<code>-k</code>로 넘기거나 평문 파일에 쓰는 방식은 사용하지 않습니다. 파일 키체인의 ACL을 다루는 공개 Security.framework API가 필요하므로 Objective-C helper를 사용합니다. 정상 ACL은 유지하고 누락 도구·partition만 보완합니다.</p>
+  <p>Installer 인증서만 있는 장비에서는 로컬 ad-hoc helper 서명을 지원합니다. 앱 접근은 해당 helper의 코드 식별자로 제한됩니다. helper를 갱신할 때는 기존 대상 모두의 원본을 다시 지정해 캐시 접근 권한을 연결합니다.</p>
+  <p>공유 항목에서 최초 이전할 때는 보호된 표준입력 파이프를 지원합니다. 해당 경로에는 공유 URL이 저장되지 않습니다. 원본 자동 갱신을 사용하려면 실제 <code>op://</code> 참조를 연결해야 합니다.</p>
+
+  <h2>변경 내역</h2>
+  <p>코드·안내 변경은 9개 파일, 1,368줄 추가입니다. 이 작업내역 문서는 별도 문서 커밋으로 추가합니다.</p>
+  <ul>
+    <li><code>4b063f7</code>: 서명 키체인 설정·helper·테스트·안내 구현.</li>
+    <li><code>5e1c5a1</code>: 최신 main의 기본 MCP 설정 변경을 일반 병합으로 반영.</li>
+  </ul>
+
+  <h2>로컬 검증</h2>
+  <table>
+    <thead><tr><th>검증</th><th>확정된 결과</th></tr></thead>
+    <tbody>
+      <tr><td>서명 키체인 테스트</td><td>10건 통과. 격리한 실제 키체인·별도 프로세스 검증 포함.</td></tr>
+      <tr><td>기존 기본 MCP 테스트</td><td>7건 통과. 최신 main과 결합 후 실행.</td></tr>
+      <tr><td>Objective-C 컴파일</td><td>테스트에서 <code>-Wall -Wextra -Werror</code> 적용.</td></tr>
+      <tr><td>스크립트·diff</td><td><code>bash -n</code>, 공백 검사 통과. 새 시크릿·공유 링크 패턴 없음.</td></tr>
+      <tr><td>ShellCheck</td><td>main과 같은 기존 경고 3종(SC2010·SC2043·SC2088). 신규 경고 0건.</td></tr>
+      <tr><td>실제 로그인 작업</td><td>두 대상 키체인을 잠근 뒤 LaunchAgent 실행으로 무암호 자동 해제 확인.</td></tr>
+      <tr><td>실제 코드 서명</td><td>개발 2회·배포 2회, 총 4회 서명과 엄격 검증을 암호 입력 없이 확인.</td></tr>
+      <tr><td>설치 패키지 서명</td><td>이 장비에는 해당 인증서·개인 키 쌍이 없어 실서명 미검증. Installer 정책 분리 회귀 테스트 포함.</td></tr>
+    </tbody>
+  </table>
+  <p>상태 점검은 조회 명령의 성공만 확인하지 않고 자동 잠금·신뢰 앱·partition 누락도 실패로 판정합니다. 로컬 파일 모드는 전용 디렉터리·helper 0700, 설정·로그·LaunchAgent 0600으로 확인했습니다.</p>
+
+  <h2>운영 조건과 검증 범위</h2>
+  <ul>
+    <li>사용자 로그인 시 login 키체인이 정상적으로 열려야 합니다. 로그인 전에 실행되는 시스템 데몬용 설정은 아닙니다.</li>
+    <li>실제 재부팅은 수행하지 않았습니다. 로그인 작업 재실행과 실제 잠금→해제로 검증했습니다.</li>
+    <li>Fastlane이 임시 키체인을 재생성해 암호를 변경하면 원본과 로컬 암호화 사본도 갱신해야 합니다.</li>
+    <li>검증 패키지는 설치하지 않습니다. 검증·전달용 임시 파일과 서버는 정리했습니다.</li>
+  </ul>
+</main></body>
+</html>
