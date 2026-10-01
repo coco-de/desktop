@@ -201,7 +201,20 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned -Force
 </tr>
 </table>
 
-**🐦 Flutter / Dart**
+**🔌 AI 도구 · 기본 MCP 추가 항목**
+
+<table><tr>
+<td align="center" width="100"><img src="assets/icons/opencode.svg" width="36" height="36" alt="OpenCode"><br><sub><b>OpenCode</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/mobbin.png" width="36" height="36" alt="Mobbin MCP"><br><sub><b>Mobbin MCP</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/atlassian.svg" width="36" height="36" alt="Atlassian MCP"><br><sub><b>Atlassian MCP</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/zenhub.png" width="36" height="36" alt="ZenHub MCP"><br><sub><b>ZenHub MCP</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/chrome.svg" width="36" height="36" alt="Chrome DevTools MCP"><br><sub><b>Chrome DevTools</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/playwright.png" width="36" height="36" alt="Playwright MCP"><br><sub><b>Playwright MCP</b></sub></td>
+</tr></table>
+
+<sub>※ OpenCode·Atlassian의 SVG는 [Simple Icons](https://simpleicons.org), Mobbin·ZenHub·Playwright의 PNG는 공식 사이트 파비콘입니다.</sub>
+
+**🐦 Flutter / Dart 패키지**
 
 <table>
 <tr>
@@ -261,12 +274,12 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned -Force
 | 🪟 윈도우 시스템 설정 | **개발자 모드**(Flutter가 쓰는 심볼릭 링크 허용 — 꺼져 있으면 빌드가 실패합니다), **긴 경로 허용**(260자 제한 해제), **Git 긴 경로 지원**(`core.longpaths`). 셋 다 관리자 권한이 있을 때만 자동 적용되고, 없으면 켜는 방법만 안내합니다 (재부팅 후 적용) |
 | 🧩 브라우저 확장 프로그램 | Chrome·Edge에 [ZenHub for GitHub](https://chromewebstore.google.com/detail/zenhub-for-github/ogcgkffhplmphkaahpmffcafajaocjbd) 확장을 레지스트리 '외부 확장' 방식으로 자동 등록(관리자 권한 필요) — 브라우저를 실행하면 확인 창이 뜨고, 거기서 '확장 사용'을 눌러야 켜집니다. 강제설치 정책은 일부러 쓰지 않습니다([이유](#vs-mac)) |
 | 🌐 브라우저 번역 언어 | Chrome·Edge의 번역 대상 언어를 한국어로, "번역 안 함" 목록을 영어로 자동 설정 — 브라우저가 실행 중이면 건너뛰고 경고만 표시 |
-| 🔌 Claude MCP | figma 플러그인 자동 설치 + marionette·dart MCP, zenhub·jira·slack MCP 자동 등록. `ZENHUB_API_TOKEN`·`JIRA_API_TOKEN`·`SLACK_TEAM_ID`·`SLACK_BOT_TOKEN`(팀 공용 토큰)은 1Password CLI(`op`)로 **윈도우 사용자 환경변수**에 자동 주입 — git에 커밋 안 됨 (⚠️ figma는 최초 1회 `/mcp` OAuth 로그인. jira는 `sooperset/mcp-atlassian`(Docker)로 Jira REST API에 직접 붙어 조직 Rovo 권한이 필요 없음 — 런타임에 **Docker Desktop이 실행 중**이어야 함) |
-| 🔑 팀 공용 토큰 | 위 4종에 더해, 다국어 자동 번역 도구 `slang_gpt`가 쓰는 `SLANG_GPT_API_KEY`, DCM을 CI 모드로 인증하는 `DCM_EMAIL`·`DCM_CI_KEY`, TypeSafe(판단형 AI 모델 Jev) SDK가 쓰는 `TYPESAFE_API_KEY`(1Password 항목 `TypeSafe Jev`)도 같은 방식(1Password CLI → 윈도우 사용자 환경변수)으로 자동 주입 ([설정 방법](#after-install)) |
+| 🔌 OpenCode·Claude Code MCP | **6.6단계**에서 OpenCode CLI(`npm install -g opencode-ai`) 설치 + 두 도구에 `cob` · `dart` · `figma` · `marionette` · `atlassian` · `mobbin` · `slack` · `zenhub` · `chrome-devtools` · `playwright` 직접 등록. 기존 설정은 백업 후 병합합니다. Figma 보조 플러그인도 설치합니다. 인증·실행 조건은 [기본 MCP 표](#default-mcp)를 참고하세요 |
+| 🔑 팀 공용 토큰 | MCP용 `ZENHUB_API_TOKEN`·`JIRA_API_TOKEN`·`SLACK_TEAM_ID`·`SLACK_BOT_TOKEN`에 더해, 다국어 자동 번역 도구 `slang_gpt`가 쓰는 `SLANG_GPT_API_KEY`, DCM을 CI 모드로 인증하는 `DCM_EMAIL`·`DCM_CI_KEY`, TypeSafe SDK가 쓰는 `TYPESAFE_API_KEY`도 1Password CLI → 윈도우 사용자 환경변수로 자동 주입 ([설정 방법](#after-install)) |
 | 🔑 GitHub 인증(gh) | coco-de 조직의 비공개 레포(`co-bricks`·`skills`) 접근용 로그인을 팀 공용 1Password 토큰으로 자동 처리(`gh auth login` + `gh auth setup-git`) — 이미 인증돼 있으면 건너뜀 |
 | 🧩 cocode-skills 팀 플러그인 | 사설 레포 `coco-de/skills` 설치 스크립트로 cc-\* 플러그인 번들 동기화 (⚠️ **현재 윈도우에서는 자동 설치가 되지 않습니다** — 아래 [알려진 제약](#known-gap) 참고) |
 | 📱 Android SDK | cmdline-tools, platform-tools, build-tools, platforms, NDK, 에뮬레이터 시스템 이미지, AVD까지 전부 자동 설치·구성 (Android Studio 첫 실행 마법사 불필요). NDK는 최신이 아니라 **Flutter stable이 요구하는 버전으로 고정** 설치 |
-| 🛠 CLI 도구 | git(Git for Windows — Flutter가 요구하는 심볼릭 링크·줄바꿈 옵션까지 지정), go, pyenv-win, nvm-windows, gh, jq, awscli, Docker Desktop, direnv, lefthook(레포별로 최초 1회 `lefthook install` 필요), JDK 17(Temurin), Visual Studio 2022 Build Tools(C++ 워크로드 — 윈도우 데스크톱 앱 빌드용), Claude Code, ccstatusline → 실패 시 Awesome CC Statusline(small), codex, agy(Antigravity CLI), slack(Slack CLI), op(1Password CLI) |
+| 🛠 CLI 도구 | git(Git for Windows — Flutter가 요구하는 심볼릭 링크·줄바꿈 옵션까지 지정), go, pyenv-win, nvm-windows, gh, jq, awscli, Docker Desktop, direnv, lefthook(레포별로 최초 1회 `lefthook install` 필요), JDK 17(Temurin), Visual Studio 2022 Build Tools(C++ 워크로드 — 윈도우 데스크톱 앱 빌드용), Claude Code, **OpenCode**, ccstatusline → 실패 시 Awesome CC Statusline(small), codex, agy(Antigravity CLI), slack(Slack CLI), op(1Password CLI) |
 | ✉️ Git 설정 | 커밋에 사용할 회사 이메일을 실행 중에 입력받아 전역 설정(`git config --global user.email`) — 이미 설정돼 있으면 묻지 않고 건너뜀 |
 | 🐦 Flutter | fvm(버전 관리자 · 공식 zip을 `%LOCALAPPDATA%\fvm-bin`에 설치)으로 Flutter stable 채널 글로벌 설정, DCM(Dart 코드 품질 검사 도구) |
 | 🎯 Dart 글로벌 패키지 | coverage, melos, mason_cli, flutter_gen, jaspr_cli, serverpod_cli(pub.dev 최신 베타/RC 버전 자동 조회), flutterfire_cli, marionette_mcp, mcp_server_dart, cob(co-bricks) (⚠️ cob은 비공개 레포라 GitHub 인증 필요) · 나중에 이 목록만 다시 깔려면 `.\win-setup.ps1 -DartOnly` |
@@ -362,6 +375,7 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 | <img src="assets/icons/openjdk.svg" width="20" height="20"> | JDK 17 (Temurin) | 자바 17 (안드로이드 빌드에 필요). winget `EclipseAdoptium.Temurin.17.JDK` — 설치 프로그램이 `JAVA_HOME`을 자동으로 잡아 주기 때문에 Microsoft OpenJDK 대신 이걸 씁니다 |
 | <img src="assets/icons/visualstudio.png" width="20" height="20"> | Visual Studio 2022 Build Tools | 윈도우 데스크톱 앱을 빌드할 때 필요한 C++ 도구 모음 (맥에서 Xcode가 필요한 것과 같은 역할). 무거운 Visual Studio 전체판은 필요 없습니다. winget `Microsoft.VisualStudio.2022.BuildTools` · ⚠ 수 GB 다운로드 |
 | <img src="assets/icons/claude.svg" width="20" height="20"> | Claude Code | 터미널에서 대화하듯 코드를 작성·수정하는 Claude CLI. 공식 스크립트(`claude.ai/install.ps1`)로 `%USERPROFILE%\.local\bin`에 설치 (실패 시 폴백: winget `Anthropic.ClaudeCode`) · ⚠ 네이티브 윈도우에서는 샌드박스 기능이 지원되지 않습니다 |
+| <img src="assets/icons/opencode.svg" width="20" height="20"> | OpenCode | 여러 AI 모델을 연결해 쓰는 코딩 CLI (`npm install -g opencode-ai`, 6.6단계) · 최초 실행 후 `/connect`로 모델 계정을 연결합니다 |
 | <img src="assets/icons/claude.svg" width="20" height="20"> | ccstatusline / awesome-statusline | Claude Code 하단 상태줄을 모델·세션 비용·컨텍스트 사용량·git 상태까지 보여주는 정보 표시줄로 바꿔 줍니다. ccstatusline은 대화형이라 자동 등록에 대개 실패하며, 그때 Awesome CC Statusline(크기 `small`)이 자동으로 대신 설치됩니다 |
 | <img src="assets/icons/codex.png" width="20" height="20"> | codex | OpenAI의 터미널 AI 코딩 에이전트. 공식 스크립트(`chatgpt.com/codex/install.ps1`, 폴백: winget `OpenAI.Codex`) · 처음 실행할 때 ChatGPT 계정으로 로그인 |
 | <img src="assets/icons/antigravity.png" width="20" height="20"> | agy (Antigravity CLI) | Google의 터미널 AI 코딩 에이전트. 은퇴한 Gemini CLI의 공식 후속 도구. 공식 스크립트(`antigravity.google/cli/install.ps1`)로 `%LOCALAPPDATA%\agy\bin`에 설치 · 처음 실행할 때 Google 계정으로 로그인 |
@@ -380,8 +394,8 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 | <img src="assets/icons/dart.svg" width="20" height="20"> | jaspr_cli | Dart로 웹사이트를 만드는 Jaspr 프레임워크의 CLI |
 | <img src="assets/icons/dart.svg" width="20" height="20"> | serverpod_cli | Serverpod 백엔드 프레임워크 CLI. pub.dev API로 지금 시점 실제 최신 버전(안정판 latest에 안 잡히는 베타·RC 포함)을 조회해 그 버전으로 설치하므로, 4.x → 5.x처럼 major가 올라가도 손대지 않아도 자동으로 따라갑니다 (조회 실패 시에만 안정판으로 대체 설치) |
 | <img src="assets/icons/firebase.svg" width="20" height="20"> | flutterfire_cli | Flutter 프로젝트를 Firebase와 연동해주는 CLI. pub.dev 공개 패키지라 GitHub 인증 없이 설치됩니다 |
-| <img src="assets/icons/dart.svg" width="20" height="20"> | marionette_mcp | Claude Code의 `marionette` MCP 서버 — 실행 중인 Flutter 앱을 위젯 단위로 조작합니다 |
-| <img src="assets/icons/dart.svg" width="20" height="20"> | mcp_server_dart | Claude Code의 `dart` MCP 서버 — 코드 분석·핫 리로드·패키지 탐색을 Claude가 직접 하게 해줍니다 |
+| <img src="assets/icons/dart.svg" width="20" height="20"> | marionette_mcp | 두 도구의 `marionette` MCP 서버 — 실행 중인 Flutter 앱을 위젯 단위로 조작합니다 |
+| <img src="assets/icons/dart.svg" width="20" height="20"> | mcp_server_dart | 추가 Dart MCP 패키지. 기본 `dart` MCP는 SDK에 포함된 공식 `dart mcp-server`로 등록합니다 |
 | <img src="assets/icons/dart.svg" width="20" height="20"> | cob (co-bricks) | Mason bricks 동기화·관리 CLI. `cc-bricks` 플러그인이 Feature/프로젝트를 빠르게 생성할 때 사용합니다 · ⚠ 비공개 레포라 GitHub 인증(`gh auth login` + **`gh auth setup-git`**)이 먼저 돼 있어야 합니다 |
 
 **클라우드 / 언어 런타임**
@@ -478,18 +492,50 @@ scoop   : ...
   avd     : ✓ Pixel_6_API_36
 ── AI 코딩 도구 · MCP ────────────────────────
   claude  : ...
+  opencode: ...
   GitHub 인증(gh): ✓ 인증됨
-  mcp:zenhub: ✓ 등록됨 + 토큰 주입됨
+  mcp:claude:zenhub: ✓ 등록됨 (연결·인증은 새 세션에서 확인)
+  mcp:opencode:zenhub: ✓ 등록됨 (연결·인증은 새 세션에서 확인)
 ...
 ```
 
-### 사람이 직접 해야 하는 일
+<a id="default-mcp"></a>
+
+### 🔌 OpenCode·Claude Code 기본 MCP 10개
+
+| | 등록 이름 | 하는 일 · 실행 방법 | 인증·준비 |
+|---|---|---|---|
+| <img src="assets/icons/dart.svg" width="20"> | `cob` | 팀 코드 템플릿 생성 · `dart pub global run cob:cob_mcp` | 4-b단계의 비공개 `co-bricks` 설치, GitHub 인증 필요 |
+| <img src="assets/icons/dart.svg" width="20"> | `dart` | 코드 분석·핫 리로드 · `dart mcp-server` | FVM의 Flutter/Dart SDK |
+| <img src="assets/icons/figma.svg" width="20"> | `figma` | Figma 디자인 읽기 · `https://mcp.figma.com/mcp` | 최초 OAuth 로그인 |
+| <img src="assets/icons/dart.svg" width="20"> | `marionette` | Flutter 앱 화면 조작 · `dart pub global run marionette_mcp:marionette_mcp` | 앱의 `MarionetteBinding` 설정 + debug 실행 |
+| <img src="assets/icons/atlassian.svg" width="20"> | `atlassian` | Jira 작업 · Docker `ghcr.io/sooperset/mcp-atlassian:latest` | `JIRA_API_TOKEN` + Docker Desktop 실행 |
+| <img src="assets/icons/mobbin.png" width="20"> | `mobbin` | 실제 제품의 디자인 사례 검색 · `https://api.mobbin.com/mcp` | 최초 OAuth 로그인 + Mobbin Pro·Team·Enterprise 플랜 |
+| <img src="assets/icons/slack.png" width="20"> | `slack` | 팀 메시지 읽기·쓰기 · `npx -y @modelcontextprotocol/server-slack` | `SLACK_TEAM_ID` + `SLACK_BOT_TOKEN` |
+| <img src="assets/icons/zenhub.png" width="20"> | `zenhub` | 이슈 보드 관리 · `https://api.zenhub.com/mcp` | `ZENHUB_API_TOKEN`, 팀 워크스페이스 자동 지정 |
+| <img src="assets/icons/chrome.svg" width="20"> | `chrome-devtools` | 브라우저·네트워크·성능 분석 · `npx -y chrome-devtools-mcp@latest` | Node.js LTS + Chrome |
+| <img src="assets/icons/playwright.png" width="20"> | `playwright` | 웹 화면 자동 조작·검증 · `npx -y @playwright/mcp@latest --browser chrome` | Node.js LTS + Chrome |
+
+실제 Windows 설정에서는 `dart`·`npx`를 **`cmd /c`로 감쌉니다**. 등록 위치는 Claude Code의 `%USERPROFILE%\.claude.json`(`mcpServers`, 사용자 범위)과 OpenCode의 `%USERPROFILE%\.config\opencode\opencode.json`(`mcp`)입니다. `XDG_CONFIG_HOME`을 지정했다면 OpenCode는 그 아래에 저장합니다. 기존 파일은 최초 한 번 `.bak`으로 백업하고, 기본 10개 정의만 갱신하며 다른 설정·MCP는 유지합니다. 기존 `opencode.jsonc`에 같은 이름의 MCP가 있으면 그 설정이 우선합니다. 예전 팀 Docker 등록명 `mcp-atlassian`은 `atlassian`으로 통합합니다.
+
+실제 토큰 대신 Claude Code에는 `${VAR}`, OpenCode에는 `{env:VAR}` 참조가 저장됩니다. ZenHub·Jira·Slack 토큰은 기존 1Password 단계에서 **사용자 환경변수**에 주입됩니다. **새 PowerShell 창에서 두 도구를 완전히 종료했다 다시 실행**하고 아래를 확인하세요. OpenCode 모델 계정은 `/connect`로 연결합니다.
+
+```powershell
+claude mcp list               # 실제 연결 상태 확인 · Claude Code 안에서는 /mcp
+opencode mcp auth figma       # 최초 Figma 로그인
+opencode mcp auth mobbin      # 최초 Mobbin 로그인
+opencode mcp list             # 실제 연결 상태 확인
+```
+
+Claude Code에서는 `/mcp`에서 `figma`·`mobbin`을 각각 인증합니다. 스크립트의 `✓ 등록됨`은 설정 저장 확인이며 로그인·서버 연결 성공과는 다릅니다. 브라우저 MCP 패키지는 최초 연결 때 `npx`가 내려받습니다. 전체 스크립트를 재실행하면 이 등록도 갱신됩니다(`-DartOnly`·`-EnvOnly`는 각자의 단계만 실행합니다).
+
+### 사람이 직접 해야 하는 일 목록
 
 1. **새 PowerShell 창을 여세요.** 윈도우는 이미 열린 창의 PATH·환경변수를 갱신하지 않습니다. 새 창을 열어야 방금 깐 명령과 팀 공용 토큰이 전부 잡힙니다.
 2. **재부팅하세요.** 개발자 모드와 긴 경로 허용은 재부팅 후에 유효해집니다. 켜지 않으면 Flutter 빌드가 심볼릭 링크/경로 길이 오류로 실패합니다.
 3. **Android Studio를 한 번 실행**해 최초 실행 화면을 넘긴 뒤 `flutter doctor`를 돌려보세요. SDK·NDK·AVD는 이미 자동으로 설치·구성돼 있습니다.
 4. **AI 코딩 CLI 최초 1회 로그인** — `claude`(Anthropic 계정) · `codex`(ChatGPT 계정) · `agy`(Google 계정) · `slack login`(Slack 워크스페이스).
-5. **Claude Code에서 `/mcp` 실행 → figma를 팀 계정으로 OAuth 로그인** (최초 1회). zenhub·jira·slack은 OAuth 로그인이 필요 없습니다 — 아래 6번의 토큰으로 인증합니다. jira MCP는 Docker로 뜨므로 **Docker Desktop을 먼저 실행**해 두세요.
+5. **두 AI 도구를 재시작하고 Figma·Mobbin OAuth 로그인**을 마치세요([기본 MCP 표](#default-mcp)). Claude Code에서는 `/mcp`, OpenCode에서는 `opencode mcp auth figma`·`opencode mcp auth mobbin`을 실행합니다. zenhub·atlassian·slack은 아래 6번의 토큰으로 인증합니다. Atlassian MCP는 Docker로 뜨므로 **Docker Desktop을 먼저 실행**해 두세요.
 6. **1Password CLI 통합 켜기** (토큰이 ❌ 미주입으로 나왔을 때)
    - 1Password 앱에 팀 계정(`team-cocodeinc`)으로 로그인
    - 설정 > **보안** > **Windows Hello** 켜기 ← 맥은 Touch ID였지만 윈도우는 이걸 먼저 켜야 합니다

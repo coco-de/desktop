@@ -104,6 +104,7 @@ function Show-Usage {
 
   (옵션 없음)   co:code 팀 표준 개발환경 전체 설치 (0~10단계)
                 winget·Scoop이 없으면 0단계에서 자동으로 설치합니다.
+                OpenCode·Claude Code에 기본 MCP 10개를 함께 등록합니다(6.6단계).
   -EnvOnly      1Password(op)에서 팀 공용 토큰(ZENHUB_API_TOKEN·JIRA_API_TOKEN·
                 SLANG_GPT_API_KEY·DCM_EMAIL·DCM_CI_KEY·SLACK_TEAM_ID·
                 SLACK_BOT_TOKEN·TYPESAFE_API_KEY)만 다시 읽어
@@ -578,7 +579,7 @@ if ([string]::IsNullOrWhiteSpace($CpuArch)) {
 #        1.5.5 빌드를 방해할 수 있는 보안 기능 안내 (-DefenderExclusions 를 붙였을 때만
 #              Defender 검사 제외 폴더를 실제로 등록한다)
 #   2.   Claude Code CLI (공식 install.ps1)
-#   2.5. Claude MCP (figma 플러그인 + zenhub·jira(mcp-atlassian)·slack 등록)
+#   2.5. Claude Figma 보조 플러그인 (MCP 직접 등록은 6.6단계)
 #   2.6. 다른 AI 코딩 CLI (codex · agy)
 #   2.7. Slack CLI
 #   3.   CLI 도구 (git, go, pyenv-win, nvm-windows, gh, jq, awscli, Docker Desktop,
@@ -594,6 +595,7 @@ if ([string]::IsNullOrWhiteSpace($CpuArch)) {
 #   5.   Python 최신 3.x (pyenv-win)
 #   6.   Node.js LTS (nvm-windows)
 #   6.5. Claude Code 상태줄
+#   6.6. OpenCode CLI + 두 도구의 기본 MCP 10개 직접 등록 (기존 설정 병합)
 #   7.   PowerShell 프로필 + PSReadLine (맥의 oh-my-zsh 자리)
 #   7.3. Oh My Posh 프롬프트 테마 (맥의 powerlevel10k 자리)
 #   7.5. MesloLGS NF 폰트  (+ 7.5-a Windows Terminal 폰트 자동 적용)
@@ -1973,110 +1975,18 @@ if (-not (Test-Cmd 'git')) {
 Write-Info "네이티브 윈도우 Claude Code는 샌드박스 기능을 지원하지 않습니다(맥과 다른 점) — 꼭 필요하면 WSL2에 따로 설치하세요"
 
 # ============================================================
-# 2.5. Claude Code MCP 서버 / 플러그인 (figma, zenhub, jira=mcp-atlassian, slack)
-#
-# 왜 이걸 하나요?
-#   MCP는 Claude Code가 바깥 서비스(ZenHub·Jira·Slack·Figma)를 직접 읽고 쓰게 해 주는
-#   연결 설정입니다. 여기서는 '연결 정보만' 등록하고, 실제 비밀번호(토큰)는 넣지 않습니다.
-#   토큰은 8.5단계에서 1Password 팀 공용 항목에서 읽어 윈도우 사용자 환경변수로 넣고,
-#   Claude Code가 실행될 때 ${ZENHUB_API_TOKEN} 같은 자리에 알아서 채워 넣습니다.
-#   → 그래서 이 스크립트와 설정 파일 어디에도 토큰 값이 남지 않습니다(커밋 금지 대상 없음).
-#
-# 맥과 다른 점 — 여기가 윈도우에서 가장 잘 깨지는 곳입니다
-#   1) npx로 뜨는 MCP(zenhub·slack)는 반드시 `cmd /c npx ...` 형태로 등록해야 합니다.
-#      npx는 진짜 실행파일이 아니라 배치 스크립트(npx.cmd)라서, 감싸지 않으면 목록에는
-#      멀쩡히 보이는데 연결만 조용히 실패합니다. docker로 뜨는 jira는 감쌀 필요 없습니다.
-#   2) ${VAR} 자리는 반드시 '작은따옴표'로 씁니다. 큰따옴표를 쓰면 그 자리에서 빈 문자열로
-#      바뀌어 저장되고, 등록은 성공한 것처럼 보이지만 인증만 실패합니다(가장 찾기 어려운 사고).
-#   3) 등록 명령이 인용 문제로 계속 실패하면, 마지막 수단으로 %USERPROFILE%\.claude.json 을
-#      직접 편집합니다(맨 처음 한 번, 원본을 .claude.json.bak 으로 백업해 둡니다).
-#   4) figma 플러그인은 git으로 마켓플레이스를 내려받습니다 — git이 아직 없으면
-#      여기서 미뤄 두고 3.5단계(3단계에서 git 설치 완료 후)에서 자동으로 다시 시도합니다.
+# 2.5. Claude Code Figma 보조 플러그인
+#   디자인 작업용 스킬을 설치합니다. 기본 MCP 10개는 6.6단계에서 두 도구에 직접
+#   등록하므로 사설 플러그인 설치 여부에 의존하지 않습니다.
+#   git이 아직 없으면 3.5단계에서 플러그인 설치를 다시 시도합니다.
 # ============================================================
 
-# 지역 헬퍼 ⑤: MCP 등록의 마지막 수단 — ~/.claude.json 의 mcpServers를 직접 편집한다.
-#   셸 인용 규칙을 통째로 우회할 수 있고, ${VAR} 문자열은 JSON 값에 그대로 넣으면 된다.
-function Set-CoClaudeMcpJson {
-  param(
-    [string]$Name,
-    [string]$Command,
-    [string[]]$CommandArgs,
-    [hashtable]$EnvMap
-  )
-  $cfgPath = Join-Path $env:USERPROFILE '.claude.json'
-  try {
-    $cfg = $null
-    if (Test-Path $cfgPath) {
-      # 백업은 '없을 때 한 번만' 만든다 — 이 함수는 한 번 실행하는 동안에도 MCP마다 다시 불리는데,
-      # 매번 덮어쓰면 .bak이 원본이 아니라 '방금 우리가 고친 파일'이 되어 되돌릴 수 없다.
-      if (-not (Test-Path -LiteralPath "$cfgPath.bak")) {
-        Copy-Item $cfgPath "$cfgPath.bak" -Force -ErrorAction SilentlyContinue   # 원본 백업(맨 처음 한 번만)
-      }
-      $raw = [IO.File]::ReadAllText($cfgPath)
-      if (-not [string]::IsNullOrWhiteSpace($raw)) { $cfg = $raw | ConvertFrom-Json }
-    }
-    if ($null -eq $cfg) { $cfg = New-Object PSObject }
-    if ($null -eq $cfg.PSObject.Properties['mcpServers']) {
-      $cfg | Add-Member -NotePropertyName 'mcpServers' -NotePropertyValue (New-Object PSObject)
-    }
-    $entry = New-Object PSObject
-    $entry | Add-Member -NotePropertyName 'type'    -NotePropertyValue 'stdio'
-    $entry | Add-Member -NotePropertyName 'command' -NotePropertyValue $Command
-    $entry | Add-Member -NotePropertyName 'args'    -NotePropertyValue $CommandArgs
-    $envObj = New-Object PSObject
-    if ($EnvMap) {
-      foreach ($k in $EnvMap.Keys) { $envObj | Add-Member -NotePropertyName $k -NotePropertyValue $EnvMap[$k] }
-    }
-    $entry | Add-Member -NotePropertyName 'env' -NotePropertyValue $envObj
-    $cfg.mcpServers | Add-Member -NotePropertyName $Name -NotePropertyValue $entry -Force
-    $json = $cfg | ConvertTo-Json -Depth 100
-    [IO.File]::WriteAllText($cfgPath, $json, (New-Object Text.UTF8Encoding($false)))
-    return $true
-  } catch {
-    Write-Warn ".claude.json 직접 편집 실패: $($_.Exception.Message)"
-    return $false
-  }
-}
-
-# 지역 헬퍼 ⑥: MCP 한 개를 등록한다.
-#   맥 스크립트와 같은 멱등 전략 — '있으면 건너뛰기'가 아니라 '항상 지우고 다시 등록'.
-#   그래야 정의가 바뀐 업데이트(헤더·이미지 태그·환경변수)가 재실행만으로 반영된다.
-function Add-CoClaudeMcp {
-  param(
-    [string]$Name,
-    [string[]]$AddArgs,        # claude 에 그대로 넘길 인자 배열
-    [string]$OkMessage,
-    [string]$Command,          # 폴백(JSON 직접 편집)용 실행 명령
-    [string[]]$CommandArgs,    # 폴백용 인자
-    [hashtable]$EnvMap = @{}   # 폴백용 환경변수
-  )
-  try { & claude mcp remove $Name 2>&1 | Out-Null } catch { }
-  $ok = $false
-  try {
-    & claude @AddArgs 2>&1 | Out-Null
-    if ($LASTEXITCODE -eq 0) { $ok = $true }
-  } catch {
-    $ok = $false
-  }
-  if ($ok) {
-    Write-Ok $OkMessage
-    return $true
-  }
-  Write-Info "$Name MCP 등록 명령이 실패해 .claude.json 직접 편집으로 다시 시도합니다"
-  if (Set-CoClaudeMcpJson -Name $Name -Command $Command -CommandArgs $CommandArgs -EnvMap $EnvMap) {
-    Write-Ok "$OkMessage [.claude.json 직접 등록]"
-    return $true
-  }
-  Write-Warn "$Name MCP 등록 실패 → 건너뜀 (수동: claude mcp add $Name ... · README의 MCP 표 참고)"
-  return $false
-}
-
-Write-Step "2.5. Claude Code MCP 설치 (figma 플러그인 + zenhub·jira·slack 등록)"
+Write-Step "2.5. Claude Code Figma 보조 플러그인 설치 (기본 MCP 등록은 6.6단계)"
 
 $CoFigmaPluginPending = $false   # git이 없어 미뤄 둔 경우 3.5단계에서 다시 시도하려고 표시
 
 if (-not (Test-Cmd 'claude')) {
-  Write-Warn "claude CLI가 없어 MCP·플러그인 설치를 건너뜁니다 (2단계 확인 후 재실행)"
+  Write-Warn "claude CLI가 없어 Figma 보조 플러그인 설치를 건너뜁니다 (2단계 확인 후 재실행)"
 } else {
   # --- ① 공식 마켓플레이스 + figma 플러그인 (git 필요) ---
   $pluginList = ''
@@ -2112,102 +2022,6 @@ if (-not (Test-Cmd 'claude')) {
       else { Write-Warn "기존 atlassian OAuth 플러그인 제거 실패 → 수동 제거 필요(claude plugin uninstall atlassian@claude-plugins-official)" }
     } catch { }
   }
-  # 예전 Rovo 방식 atlassian MCP도 정리 (조직 권한으로 막혀 동작하지 않는다)
-  try {
-    & claude mcp remove atlassian 2>&1 | Out-Null
-    if ($LASTEXITCODE -eq 0) { Write-Info "기존 Rovo atlassian MCP 제거 (Jira REST 직결 방식으로 전환)" }
-  } catch { }
-
-  # --- ③ zenhub MCP (원격 서버 + API 토큰, npx로 실행 → cmd /c 래핑 필수) ---
-  #   토큰은 여기 넣지 않는다. '${ZENHUB_API_TOKEN}' 이라는 글자 그대로 저장해 두면
-  #   Claude Code가 실행될 때 윈도우 사용자 환경변수에서 값을 채운다(8.5단계에서 주입).
-  #   ⚠ 'Authorization:${...}' 의 콜론 뒤에 공백을 넣지 말 것 — 윈도우에서 인자 안 공백이
-  #     제대로 전달되지 않는 mcp-remote 버그를 피하는 형태다.
-  $zenhubCmdArgs = @(
-    '/c', 'npx', '-y', 'mcp-remote', 'https://api.zenhub.com/mcp',
-    '--header', 'Authorization:${ZENHUB_API_TOKEN}',
-    '--header', 'X-zh-workspace:69ae742925c359000f5acf14'
-  )
-  $zenhubAddArgs = @('mcp', 'add', 'zenhub', '--scope', 'user', '--', 'cmd') + $zenhubCmdArgs
-  Add-CoClaudeMcp -Name 'zenhub' -AddArgs $zenhubAddArgs `
-    -OkMessage 'zenhub MCP 등록/갱신 (토큰은 8.5단계에서 1Password 공용 항목으로 주입)' `
-    -Command 'cmd' -CommandArgs $zenhubCmdArgs -EnvMap @{} | Out-Null
-
-  # --- ④ jira MCP = sooperset/mcp-atlassian (Docker) ---
-  #   Jira REST API에 토큰으로 직접 붙는 오픈소스 MCP다(조직 Rovo 권한 우회).
-  #   docker.exe는 진짜 실행파일이라 cmd /c 래핑이 필요 없다(npx만 필요).
-  #   ⚠ 이 MCP는 요청할 때마다 컨테이너를 띄우므로 Docker Desktop이 '실행 중'이어야 한다.
-  $dockerReady = $false
-  if (Test-Cmd 'docker') {
-    try {
-      & docker info 2>&1 | Out-Null
-      if ($LASTEXITCODE -eq 0) { $dockerReady = $true }
-    } catch { $dockerReady = $false }
-  }
-  if ($dockerReady) {
-    try {
-      & docker pull ghcr.io/sooperset/mcp-atlassian:latest 2>&1 | Out-Null
-      if ($LASTEXITCODE -eq 0) { Write-Info "mcp-atlassian 도커 이미지 준비됨" }
-      else { Write-Warn "mcp-atlassian 이미지 pull 실패 → 최초 사용 시 자동 pull(지연)" }
-    } catch {
-      Write-Warn "mcp-atlassian 이미지 pull 실패 → 최초 사용 시 자동 pull(지연)"
-    }
-  } else {
-    Write-Warn "Docker 미실행 → 이미지 pull 생략 (Docker Desktop은 3단계에서 설치 · 실행 후 재실행 권장, 등록은 계속)"
-  }
-  $jiraCmdArgs = @(
-    'run', '--rm', '-i',
-    '-e', 'JIRA_URL', '-e', 'JIRA_USERNAME', '-e', 'JIRA_API_TOKEN',
-    'ghcr.io/sooperset/mcp-atlassian:latest', '--transport', 'stdio'
-  )
-  # URL·이메일은 비밀이 아니라 그대로 기입하고, 토큰만 '${JIRA_API_TOKEN}' 리터럴로 남긴다.
-  $jiraAddArgs = @(
-    'mcp', 'add', 'mcp-atlassian', '--scope', 'user',
-    '--env', 'JIRA_URL=https://laputa.atlassian.net',
-    '--env', 'JIRA_USERNAME=dev@cocode.im',
-    '--env', 'JIRA_API_TOKEN=${JIRA_API_TOKEN}',
-    '--', 'docker'
-  ) + $jiraCmdArgs
-  $jiraEnvMap = @{
-    'JIRA_URL'       = 'https://laputa.atlassian.net'
-    'JIRA_USERNAME'  = 'dev@cocode.im'
-    'JIRA_API_TOKEN' = '${JIRA_API_TOKEN}'
-  }
-  Add-CoClaudeMcp -Name 'mcp-atlassian' -AddArgs $jiraAddArgs `
-    -OkMessage 'mcp-atlassian(jira) MCP 등록/갱신 (토큰은 8.5단계 주입 · Docker Desktop 실행 필요)' `
-    -Command 'docker' -CommandArgs $jiraCmdArgs -EnvMap $jiraEnvMap | Out-Null
-
-  # --- ⑤ slack MCP (@modelcontextprotocol/server-slack, npx → cmd /c 래핑 필수) ---
-  $slackCmdArgs = @('/c', 'npx', '-y', '@modelcontextprotocol/server-slack')
-  $slackAddArgs = @(
-    'mcp', 'add', 'slack', '--scope', 'user',
-    '--env', 'SLACK_TEAM_ID=${SLACK_TEAM_ID}',
-    '--env', 'SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}',
-    '--', 'cmd'
-  ) + $slackCmdArgs
-  $slackEnvMap = @{
-    'SLACK_TEAM_ID'   = '${SLACK_TEAM_ID}'
-    'SLACK_BOT_TOKEN' = '${SLACK_BOT_TOKEN}'
-  }
-  Add-CoClaudeMcp -Name 'slack' -AddArgs $slackAddArgs `
-    -OkMessage 'slack MCP 등록/갱신 (토큰은 8.5단계에서 1Password 공용 항목으로 주입)' `
-    -Command 'cmd' -CommandArgs $slackCmdArgs -EnvMap $slackEnvMap | Out-Null
-
-  # --- ⑥ 등록 결과 확인 ---
-  #   Claude Code는 npx를 cmd /c 없이 등록하면 목록에 경고 문구를 함께 출력한다.
-  #   그 문구가 보이면 위 래핑이 어긋난 것이므로 즉시 알려 준다.
-  $mcpList = ''
-  try { $mcpList = (& claude mcp list 2>&1 | Out-String) } catch { $mcpList = '' }
-  if ($mcpList -match 'wrapper to execute npx') {
-    Write-Warn "npx MCP가 'cmd /c' 없이 등록된 흔적이 있습니다 → claude mcp list 출력을 확인하세요"
-  }
-  if (-not [string]::IsNullOrWhiteSpace($mcpList)) {
-    foreach ($srv in @('zenhub', 'mcp-atlassian', 'slack')) {
-      if ($mcpList -match ("(?m)^" + [regex]::Escape($srv))) { Write-Info "$srv 등록 확인됨" }
-      else { Write-Warn "$srv 가 claude mcp list 에 보이지 않습니다 → 새 터미널에서 'claude mcp list' 재확인" }
-    }
-  }
-  Write-Info "토큰은 8.5단계에서 주입되며, 반드시 '새 터미널'에서 claude를 실행해야 값이 읽힙니다"
 }
 
 # ============================================================
@@ -4414,6 +4228,116 @@ else {
 }
 
 # ============================================================
+# 6.6. OpenCode CLI + OpenCode·Claude Code 기본 MCP
+#   기본 10개: cob, dart, figma, marionette, atlassian, mobbin, slack, zenhub,
+#              chrome-devtools, playwright
+#   로컬 실행 파일은 4단계(Dart)·6단계(Node)에서 준비합니다. Figma·Mobbin은 OAuth,
+#   Atlassian·Slack·ZenHub는 8.5단계의 팀 공용 토큰으로 인증합니다.
+#   npx와 dart는 Windows 배치 파일이므로 cmd /c로 감싸 두 클라이언트에 등록합니다.
+#   실제 토큰 대신 환경변수 참조를 저장하고, 기존 설정은 백업 후 병합합니다.
+# ============================================================
+Write-Step "6.6. OpenCode CLI 설치 + 기본 MCP 10개 등록 (OpenCode·Claude Code)"
+if (Test-Cmd 'opencode') {
+    Write-Ok "opencode 이미 설치됨"
+} elseif (Test-Cmd 'npm') {
+    try {
+        & npm install -g opencode-ai
+        if ($LASTEXITCODE -ne 0) { Write-Warn "OpenCode 설치 실패 → 건너뜀 (수동: npm install -g opencode-ai)" }
+        Add-UserPath (Join-Path $env:APPDATA 'npm')
+    } catch { Write-Warn "OpenCode 설치 실패 → 건너뜀 (수동: npm install -g opencode-ai)" }
+} else {
+    Write-Warn "npm 없음 → OpenCode 설치 건너뜀 (6단계 확인 후 재실행)"
+}
+
+# 작은따옴표 here-string: ${VAR}를 지금 확장하지 않고 글자 그대로 저장합니다.
+$McpDefaults = @'
+{
+  "cob": {"type":"stdio","command":"cmd","args":["/c","dart","pub","global","run","cob:cob_mcp"]},
+  "dart": {"type":"stdio","command":"cmd","args":["/c","dart","mcp-server"]},
+  "figma": {"type":"http","url":"https://mcp.figma.com/mcp"},
+  "marionette": {"type":"stdio","command":"cmd","args":["/c","dart","pub","global","run","marionette_mcp:marionette_mcp"]},
+  "atlassian": {"type":"stdio","command":"docker","args":["run","--rm","-i","-e","JIRA_URL","-e","JIRA_USERNAME","-e","JIRA_API_TOKEN","ghcr.io/sooperset/mcp-atlassian:latest","--transport","stdio"],"env":{"JIRA_URL":"https://laputa.atlassian.net","JIRA_USERNAME":"dev@cocode.im","JIRA_API_TOKEN":"${JIRA_API_TOKEN}"}},
+  "mobbin": {"type":"http","url":"https://api.mobbin.com/mcp"},
+  "slack": {"type":"stdio","command":"cmd","args":["/c","npx","-y","@modelcontextprotocol/server-slack"],"env":{"SLACK_TEAM_ID":"${SLACK_TEAM_ID}","SLACK_BOT_TOKEN":"${SLACK_BOT_TOKEN}"}},
+  "zenhub": {"type":"http","url":"https://api.zenhub.com/mcp","headers":{"Authorization":"${ZENHUB_API_TOKEN}","X-zh-workspace":"69ae742925c359000f5acf14"}},
+  "chrome-devtools": {"type":"stdio","command":"cmd","args":["/c","npx","-y","chrome-devtools-mcp@latest"]},
+  "playwright": {"type":"stdio","command":"cmd","args":["/c","npx","-y","@playwright/mcp@latest","--browser","chrome"]}
+}
+'@ | ConvertFrom-Json
+$OpenCodeConfigRoot = Join-Path $env:USERPROFILE '.config'
+if ($env:XDG_CONFIG_HOME) { $OpenCodeConfigRoot = $env:XDG_CONFIG_HOME }
+$OpenCodeConfigPath = Join-Path $OpenCodeConfigRoot 'opencode\opencode.json'
+foreach ($mcpClient in @('claude', 'opencode')) {
+    $mcpTmp = $null
+    try {
+        $mcpKey = 'mcpServers'
+        $mcpConfig = Join-Path $env:USERPROFILE '.claude.json'
+        if ($mcpClient -eq 'opencode') { $mcpKey = 'mcp'; $mcpConfig = $OpenCodeConfigPath }
+        $cfg = New-Object PSObject
+        if (Test-Path -LiteralPath $mcpConfig) {
+            $cfg = [IO.File]::ReadAllText($mcpConfig) | ConvertFrom-Json -ErrorAction Stop
+            if ($cfg -isnot [PSCustomObject] -or ($null -ne $cfg.$mcpKey -and $cfg.$mcpKey -isnot [PSCustomObject])) {
+                Write-Warn "$mcpConfig 형식 확인 필요 → 원본을 유지합니다"
+                continue
+            }
+            if (-not (Test-Path -LiteralPath "$mcpConfig.bak")) {
+                Copy-Item -LiteralPath $mcpConfig -Destination "$mcpConfig.bak" -ErrorAction Stop
+            }
+        }
+        if ($null -eq $cfg.$mcpKey) {
+            $cfg | Add-Member -NotePropertyName $mcpKey -NotePropertyValue (New-Object PSObject) -Force
+        }
+        foreach ($server in $McpDefaults.PSObject.Properties) {
+            $entry = $server.Value
+            if ($mcpClient -eq 'opencode') {
+                if ($entry.type -eq 'http') {
+                    $converted = [ordered]@{ type = 'remote'; url = $entry.url; enabled = $true }
+                    if ($entry.headers) {
+                        $headers = @{}
+                        foreach ($prop in $entry.headers.PSObject.Properties) {
+                            $headers[$prop.Name] = ([string]$prop.Value) -replace '\$\{([A-Z_]+)\}', '{env:$1}'
+                        }
+                        $converted['oauth'] = $false
+                        $converted['headers'] = $headers
+                    }
+                } else {
+                    $converted = [ordered]@{ type = 'local'; command = @($entry.command) + @($entry.args); enabled = $true; timeout = 30000 }
+                    if ($entry.env) {
+                        $environment = @{}
+                        foreach ($prop in $entry.env.PSObject.Properties) {
+                            $environment[$prop.Name] = ([string]$prop.Value) -replace '\$\{([A-Z_]+)\}', '{env:$1}'
+                        }
+                        $converted['environment'] = $environment
+                    }
+                }
+                $entry = [PSCustomObject]$converted
+            }
+            $cfg.$mcpKey | Add-Member -NotePropertyName $server.Name -NotePropertyValue $entry -Force
+        }
+        # 예전 팀 Docker 등록명만 atlassian으로 통합합니다. 다른 사용자 MCP는 유지합니다.
+        $legacy = $cfg.$mcpKey.'mcp-atlassian'
+        if ($legacy.command -eq 'docker' -and $legacy.args -contains 'ghcr.io/sooperset/mcp-atlassian:latest') {
+            $cfg.$mcpKey.PSObject.Properties.Remove('mcp-atlassian')
+        }
+        if ($mcpClient -eq 'opencode') {
+            $cfg | Add-Member -NotePropertyName '$schema' -NotePropertyValue 'https://opencode.ai/config.json' -Force
+        }
+        New-Item -ItemType Directory -Path (Split-Path -Parent $mcpConfig) -Force -ErrorAction Stop | Out-Null
+        $mcpTmp = "$mcpConfig.tmp.$([Guid]::NewGuid().ToString('N'))"
+        [IO.File]::WriteAllText($mcpTmp, ($cfg | ConvertTo-Json -Depth 100), (New-Object Text.UTF8Encoding($false)))
+        Move-Item -LiteralPath $mcpTmp -Destination $mcpConfig -Force -ErrorAction Stop
+        Write-Ok "$mcpClient 기본 MCP 10개 등록/갱신 (기존 설정 병합)"
+    } catch {
+        if ($mcpTmp -and (Test-Path -LiteralPath $mcpTmp)) { Remove-Item -LiteralPath $mcpTmp -Force -ErrorAction SilentlyContinue }
+        Write-Warn "$mcpClient MCP 설정 저장 실패 → 원본을 유지합니다 (JSON 주석·문법 확인 후 재실행)"
+    }
+}
+if (Test-Path -LiteralPath ($OpenCodeConfigPath + 'c')) {
+    Write-Info "기존 opencode.jsonc의 같은 이름 설정이 우선 적용됩니다 — opencode mcp list 로 확인하세요"
+}
+Write-Info "새 PowerShell 창에서 두 도구를 재시작하세요. Claude Code: /mcp · OpenCode: opencode mcp auth figma · opencode mcp auth mobbin"
+
+# ============================================================
 # 7. PowerShell 프로필 · PSReadLine
 #
 #   [이 단계가 하는 일 — 비개발자용 설명]
@@ -5228,16 +5152,25 @@ Write-Host "  에뮬가속: $AndroidAccelMsg"
 Write-Host ''
 Write-Host '── AI 코딩 도구 · MCP ────────────────────────' -ForegroundColor DarkCyan
 Write-Host ("  claude  : " + $(if (Test-Cmd 'claude') { $v = (& claude --version 2>$null | Select-Object -First 1); if ($v) { $v } else { "✓ 설치됨" } } else { "❌ (수동 설치: irm https://claude.ai/install.ps1 | iex)" }))
+Write-Host ("  opencode: " + $(if (Test-Cmd 'opencode') { & opencode --version 2>$null } else { "❌ (수동 설치: npm install -g opencode-ai)" }))
 Write-Host ("  codex   : " + $(if (Test-Cmd 'codex') { $v = (& codex --version 2>$null | Select-Object -First 1); if ($v) { $v } else { "✓ 설치됨" } } else { "❌ (수동 설치: irm https://chatgpt.com/codex/install.ps1 | iex)" }))
 Write-Host ("  agy(antigravity): " + $(if (Test-Cmd 'agy') { "✓ 설치됨 (최초 실행 시 agy 로 Google 로그인)" } else { "❌ (수동 설치: irm https://antigravity.google/cli/install.ps1 | iex)" }))
 Write-Host ("  slack   : " + $(if (Test-Cmd 'slack') { $v = (& slack version 2>$null | Select-Object -First 1); if ($v) { $v } else { "✓ 설치됨" } } else { "❌ (수동 설치: PowerShell 7에서 irm https://downloads.slack-edge.com/slack-cli/install-windows.ps1 | iex)" }))
 Write-Host ("  Claude Bash 경로: " + $(if ($env:CLAUDE_CODE_GIT_BASH_PATH -and (Test-Path $env:CLAUDE_CODE_GIT_BASH_PATH)) { "✓ " + $env:CLAUDE_CODE_GIT_BASH_PATH } else { "❌ (Git for Windows 확인 — 없으면 Claude Code가 Bash 대신 PowerShell을 씁니다)" }))
 $ghOk = $false; if (Test-Cmd 'gh') { & gh auth status 2>&1 | Out-Null; $ghOk = ($LASTEXITCODE -eq 0) }; Write-Host ("  GitHub 인증(gh): " + $(if ($ghOk) { "✓ 인증됨" } else { "❌ (1Password 'API Token' 볼트의 'GitHub API Token' 확인 · 수동: gh auth login)" }))
-$mcpList = ''; $pluginList = ''; if (Test-Cmd 'claude') { $mcpList = (& claude mcp list 2>&1 | Out-String); $pluginList = (& claude plugin list 2>&1 | Out-String) }
-Write-Host ("  mcp:figma: " + $(if ($pluginList -match 'figma@claude-plugins-official') { "✓ 설치됨 (최초 1회 /mcp 로그인 필요)" } else { "❌ (claude plugin install figma@claude-plugins-official --scope user)" }))
-Write-Host ("  mcp:zenhub: " + $(if ($mcpList -match '(?m)^zenhub') { "✓ 등록됨" + $(if ([Environment]::GetEnvironmentVariable('ZENHUB_API_TOKEN','User')) { " + 토큰 주입됨 (새 터미널에서 적용)" } else { " (⚠ 토큰 미주입 — 8.5단계 안내 확인 후 재실행)" }) } else { "❌" }))
-Write-Host ("  mcp:mcp-atlassian(jira): " + $(if ($mcpList -match '(?m)^mcp-atlassian') { "✓ 등록됨" + $(if ([Environment]::GetEnvironmentVariable('JIRA_API_TOKEN','User')) { " + 토큰 주입됨 (Docker Desktop 실행 중이어야 적용)" } else { " (⚠ 토큰 미주입 — 8.5단계 안내 확인 후 재실행)" }) } else { "❌" }))
-Write-Host ("  mcp:slack: " + $(if ($mcpList -match '(?m)^slack') { "✓ 등록됨" + $(if ([Environment]::GetEnvironmentVariable('SLACK_TEAM_ID','User') -and [Environment]::GetEnvironmentVariable('SLACK_BOT_TOKEN','User')) { " + 토큰 주입됨 (새 터미널에서 적용)" } else { " (⚠ 토큰 미주입 — 8.5단계 안내 확인 후 재실행)" }) } else { "❌" }))
+# 연결을 시도하지 않고 설정 파일의 등록 여부만 확인합니다. 인증은 새 세션에서 확인합니다.
+foreach ($mcpClient in @('claude', 'opencode')) {
+    $cfg = $null; $mcpKey = 'mcpServers'; $mcpConfig = Join-Path $env:USERPROFILE '.claude.json'
+    if ($mcpClient -eq 'opencode') { $mcpKey = 'mcp'; $mcpConfig = $OpenCodeConfigPath }
+    try { $cfg = [IO.File]::ReadAllText($mcpConfig) | ConvertFrom-Json -ErrorAction Stop } catch { }
+    foreach ($name in @('cob','dart','figma','marionette','atlassian','mobbin','slack','zenhub','chrome-devtools','playwright')) {
+        $state = '❌ 미등록 (.\win-setup.ps1 재실행 · 6.6단계 확인)'
+        if ($null -ne $cfg -and $null -ne $cfg.$mcpKey -and $null -ne $cfg.$mcpKey.$name) {
+            $state = '✓ 등록됨 (연결·인증은 새 세션에서 확인)'
+        }
+        Write-Host "  mcp:${mcpClient}:${name}: $state"
+    }
+}
 # 3.5단계와 같은 기준으로 본다 — 버전 스탬프 파일 또는 마켓플레이스 plugins 폴더 중 하나만 있으면 설치된 것.
 $csStamp = Join-Path $env:USERPROFILE '.claude\skills\.cocode-skills-version'
 $csMarket = Join-Path $env:USERPROFILE '.claude\plugins\marketplaces\cocode-skills\plugins'
@@ -5289,9 +5222,11 @@ Write-Host '  3. Android Studio를 한 번 실행해 최초 실행 화면을 넘
 Write-Host '     ↳ SDK·NDK·AVD는 이미 자동으로 설치·구성했습니다. Windows 데스크톱 앱까지 빌드하려면 Visual Studio Build Tools 항목이 ✓ 여야 합니다'
 Write-Host '  4. AI 코딩 CLI 최초 1회 로그인'
 Write-Host '     ↳ claude (Anthropic 계정) · codex (ChatGPT 계정) · agy (Google 계정) · slack login (Slack 워크스페이스)'
-Write-Host '  5. Claude Code에서 /mcp 실행 → figma를 팀 계정으로 OAuth 로그인 (최초 1회)'
+Write-Host '  5. Claude Code에서 /mcp 실행 → figma·mobbin OAuth 로그인 (최초 1회, Mobbin 유료 플랜 필요)'
+Write-Host '     ↳ OpenCode도 재시작한 뒤 /connect로 모델 계정 연결, opencode mcp auth figma · opencode mcp auth mobbin 실행'
+Write-Host '     ↳ claude mcp list · opencode mcp list 로 기본 MCP 10개의 실제 연결을 확인하세요'
 Write-Host '     ↳ zenhub·jira·slack은 OAuth 로그인이 필요 없습니다 — 아래 6번의 1Password 팀 공용 토큰으로 인증합니다'
-Write-Host '     ↳ jira(mcp-atlassian) MCP는 Docker로 뜹니다. Docker Desktop을 먼저 실행해 두세요'
+Write-Host '     ↳ atlassian(Jira) MCP는 Docker로 뜹니다. Docker Desktop을 먼저 실행해 두세요'
 Write-Host '  6. 토큰이 ❌ 미주입으로 나왔다면 1Password CLI 통합을 켜고 다시 주입하세요'
 Write-Host '     ↳ 1Password 앱 로그인(team-cocodeinc) → 설정 > 보안 > Windows Hello 켜기 → 설정 > 개발자 > "1Password CLI와 통합" 체크'
 Write-Host '       (맥은 Touch ID였지만 윈도우는 Windows Hello 입니다 — 이걸 먼저 켜야 개발자 탭의 통합 옵션이 동작합니다)'

@@ -98,6 +98,7 @@ usage() {
 
   (옵션 없음)   co:code 팀 표준 개발환경 전체 설치 (0~10단계)
                 Homebrew가 없으면 0단계에서 자동으로 설치합니다.
+                OpenCode·Claude Code에 기본 MCP 10개를 함께 등록합니다(6.6단계).
   --env-only    1Password(op)에서 팀 공용 토큰(ZENHUB_API_TOKEN·JIRA_API_TOKEN·
                 SLANG_GPT_API_KEY·DCM_EMAIL·DCM_CI_KEY·SLACK_TEAM_ID·
                 SLACK_BOT_TOKEN·TYPESAFE_API_KEY)만 다시 읽어 ~/.zshrc에
@@ -300,7 +301,7 @@ fi
 #   1.6. Chrome/Dia 확장 프로그램 자동 추가 (ZenHub for GitHub, External Extensions
 #        드롭인 방식, sudo 필요 · TTY에서만 시도 · Dia는 동작 미보장이라 실패해도 경고 후 계속)
 #   2.   Claude Code CLI
-#   2.5. Claude MCP (figma 플러그인 + zenhub·jira(mcp-atlassian)·slack 토큰 등록)
+#   2.5. Claude Figma 보조 플러그인 (MCP 직접 등록은 6.6단계)
 #        └ 설정 기록/자체완결 설치라 런타임(node·dart)보다 앞서도 무해.
 #          런타임은 새 세션에서 MCP 서버가 실제 뜰 때만 필요 (그땐 스크립트 완료 후).
 #   2.6. 다른 AI 코딩 CLI (codex=OpenAI(brew cask) · agy=Google Antigravity(공식 스크립트→~/.local/bin))
@@ -318,6 +319,7 @@ fi
 #   6.5. Claude Code 상태줄 (ccstatusline 먼저 시도 → 대화형이라 자동 등록에 보통 실패 →
 #        Awesome CC Statusline(small)로 자동 대체 설치, node 설치 직후에 실행 ·
 #        ~/.claude/settings.json 자동 등록)
+#   6.6. OpenCode CLI + 두 도구의 기본 MCP 10개 직접 등록 (기존 설정 병합)
 #   7.   oh-my-zsh + powerlevel10k
 #   7.5. Terminal.app 프로필 폰트 자동 적용 (MesloLGS NF, Terminal.app 실행 중일 때만)
 #   8.   ~/.zshrc / ~/.p10k.zsh 반영
@@ -555,7 +557,7 @@ path_force_front() {
 #   기본 패키지 — 팀 Makefile의 `make pub_global`과 같은 목록이라, 프로젝트를 받자마자
 #     바로 빌드·코드생성·테스트를 돌릴 수 있다:
 #     coverage · melos · mason_cli · flutter_gen · jaspr_cli · serverpod_cli · flutterfire_cli
-#   co:code 추가분 — Claude Code가 쓰는 MCP 서버와 사내 스캐폴딩 CLI:
+#   co:code 추가분 — OpenCode·Claude Code가 쓰는 MCP 서버와 사내 스캐폴딩 CLI:
 #     marionette_mcp · mcp_server_dart · cob(co-bricks)
 #
 #   [정의를 여기 둔 이유]
@@ -888,21 +890,11 @@ else
 fi
 
 # ------------------------------------------------------------
-# 2.5. Claude Code MCP 서버 / 플러그인 (jira=atlassian, figma, zenhub, slack)
-#   MCP는 3계층으로 설치된다:
-#     ① 플러그인 계층  : claude plugin install (figma) — 아래에서 자동
-#     ② 로컬 바이너리   : marionette_mcp·dart mcp-server(4단계에서 설치)
-#     ③ 인증 계층      : figma OAuth는 최초 1회 `/mcp`에서 수동 로그인 (자동화 불가),
-#                        zenhub·jira·slack은 ~/.zshrc의 팀 공용 토큰(런타임 확장)으로 인증 — 토큰 값은 커밋 금지
-#   ※ jira(atlassian)는 과거 OAuth 플러그인이었으나, 매번 `/mcp` 로그인하는 수고를 없애려고 팀 공용
-#     토큰 방식으로 전환했다. 공식 원격 MCP(mcp.atlassian.com, Rovo)는 조직 Rovo 엔타이틀먼트로 막혀,
-#     Jira REST API에 토큰으로 직접 붙는 오픈소스 MCP(sooperset/mcp-atlassian, Docker)로 붙인다.
-#     → 개발팀 공용 계정(dev@cocode.im)의 Jira 토큰만 있으면 되고 Rovo 권한이 필요 없다. (토큰 주입은 8.6단계)
-#     ⚠ 런타임에 colima/docker 데몬이 떠 있어야 이 MCP가 뜬다(팀은 backend 개발로 docker 상시 사용).
-#   ※ marionette·dart·figma(serve) MCP 정의는 사설 cocode-skills 플러그인 번들에서 제공됨
-#     (coco-de/skills의 install.sh — 아래 3.5단계에서 설치)
+# 2.5. Claude Code Figma 보조 플러그인
+#   디자인 작업용 스킬을 설치한다. 기본 MCP 10개는 런타임 설치가 끝난 6.6단계에서
+#   OpenCode·Claude Code에 직접 등록하므로 사설 플러그인 설치 여부에 의존하지 않는다.
 # ------------------------------------------------------------
-log "Claude Code MCP 설치 (figma 플러그인 + zenhub·jira·slack 토큰 등록)"
+log "Claude Code Figma 보조 플러그인 설치 (기본 MCP 등록은 6.6단계)"
 
 if have claude; then
   # 공식 마켓플레이스 등록 (이미 있으면 무시)
@@ -921,64 +913,13 @@ if have claude; then
   done
 
   # atlassian(jira): 예전엔 OAuth 플러그인이었으나 토큰 방식으로 전환 →
-  #   기존에 설치된 atlassian OAuth 플러그인이 있으면 제거해야 아래 토큰 등록이 'atlassian' 이름을 차지한다.
+  #   예전 atlassian OAuth 플러그인은 정리하고 6.6단계에서 팀 토큰 방식으로 직접 등록한다.
   if claude plugin list 2>/dev/null | grep -q "atlassian@claude-plugins-official"; then
     claude plugin uninstall atlassian@claude-plugins-official >/dev/null 2>&1 \
       && echo "  · 기존 atlassian OAuth 플러그인 제거 (토큰 방식으로 전환)" \
       || echo "  ⚠ 기존 atlassian OAuth 플러그인 제거 실패 → 수동 제거 필요(claude plugin uninstall atlassian@claude-plugins-official)"
   fi
 
-  # zenhub MCP (사설 cocode-skills 루트 .mcp.json과 동일 구조 — 원격 서버 + API 토큰)
-  #   토큰은 ~/.zshrc의 ZENHUB_API_TOKEN에서 런타임 확장되므로 단일따옴표로 리터럴 등록 (토큰 값 커밋 금지)
-  #   ⚠ '이미 있으면 건너뛰기'가 아니라 항상 remove 후 add 한다 — 그래야 정의가 바뀐 업데이트(헤더/워크스페이스
-  #     등)를 재실행만으로 반영한다. remove는 등록이 없을 때 실패해도 무해(|| true).
-  claude mcp remove zenhub >/dev/null 2>&1 || true
-  claude mcp add zenhub --scope user -- \
-    npx -y mcp-remote https://api.zenhub.com/mcp \
-    --header 'Authorization:${ZENHUB_API_TOKEN}' \
-    --header 'X-zh-workspace:69ae742925c359000f5acf14' >/dev/null 2>&1 \
-    && echo "  ✓ zenhub MCP 등록/갱신 (토큰은 8.5단계에서 1Password 공용 항목으로 주입)" \
-    || echo "  ⚠ zenhub MCP 등록 실패 → 건너뜀"
-
-  # 기존 Rovo 방식 atlassian MCP가 남아 있으면 제거(엔타이틀먼트로 막혀 미동작) → 아래 mcp-atlassian으로 대체.
-  #   grep 없이 무조건 remove — 없을 때 실패해도 무해(|| true).
-  claude mcp remove atlassian >/dev/null 2>&1 && echo "  · 기존 Rovo atlassian MCP 제거 (REST 직결 방식으로 전환)" || true
-
-  # jira MCP = sooperset/mcp-atlassian (Docker) — Jira Cloud REST API에 토큰으로 직접 붙는다(Rovo 우회).
-  #   인증: JIRA_URL/JIRA_USERNAME/JIRA_API_TOKEN 환경변수 → 서버가 내부적으로 Basic(email:token) 처리.
-  #   토큰만 비밀이라 --env 'JIRA_API_TOKEN=${JIRA_API_TOKEN}'로 리터럴 등록(claude가 런타임에 ~/.zshrc 값으로 확장,
-  #   config에는 '${JIRA_API_TOKEN}' 문자열만 저장 — 값 커밋/노출 없음). URL·이메일은 비밀 아님(직접 기입).
-  #   먼저 이미지 pull(없으면 최초 claude 실행 때 pull되며 지연). docker 데몬 필요.
-  #   ⚠ zenhub와 동일하게 항상 remove 후 add — 정의가 바뀐 업데이트(이미지 태그·env·args 변경)를 재실행만으로 반영.
-  if have docker && docker info >/dev/null 2>&1; then
-    docker pull ghcr.io/sooperset/mcp-atlassian:latest >/dev/null 2>&1 \
-      && echo "  · mcp-atlassian 도커 이미지 준비됨" \
-      || echo "  ⚠ mcp-atlassian 이미지 pull 실패 → 최초 사용 시 자동 pull(지연) 또는 수동 확인"
-  else
-    echo "  ⚠ docker 데몬 미동작 → 이미지 pull 생략 (colima start 후 재실행 권장, 등록은 계속)"
-  fi
-  claude mcp remove mcp-atlassian >/dev/null 2>&1 || true
-  claude mcp add mcp-atlassian --scope user \
-    --env JIRA_URL=https://laputa.atlassian.net \
-    --env JIRA_USERNAME=dev@cocode.im \
-    --env 'JIRA_API_TOKEN=${JIRA_API_TOKEN}' \
-    -- docker run --rm -i -e JIRA_URL -e JIRA_USERNAME -e JIRA_API_TOKEN \
-       ghcr.io/sooperset/mcp-atlassian:latest --transport stdio >/dev/null 2>&1 \
-    && echo "  ✓ mcp-atlassian(jira) MCP 등록/갱신 (토큰은 8.6단계에서 1Password 공용 항목으로 주입)" \
-    || echo "  ⚠ mcp-atlassian 등록 실패 → 건너뜀"
-
-  # slack MCP = @modelcontextprotocol/server-slack (Anthropic 공식 레퍼런스 서버, npx 실행).
-  #   SLACK_BOT_TOKEN·SLACK_TEAM_ID는 ~/.zshrc에서 런타임 확장되므로 zenhub·jira와 동일하게
-  #   단일따옴표 '${VAR}' 리터럴로 등록(토큰 값 커밋 금지). 값 자체는 8.9단계에서 1Password
-  #   팀 공용 항목("Cocode Slack")으로 주입된다.
-  #   ⚠ zenhub·jira와 동일하게 항상 remove 후 add — 정의가 바뀐 업데이트를 재실행만으로 반영.
-  claude mcp remove slack >/dev/null 2>&1 || true
-  claude mcp add slack --scope user \
-    --env 'SLACK_TEAM_ID=${SLACK_TEAM_ID}' \
-    --env 'SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}' \
-    -- npx -y @modelcontextprotocol/server-slack >/dev/null 2>&1 \
-    && echo "  ✓ slack MCP 등록/갱신 (토큰은 8.9단계에서 1Password 공용 항목으로 주입)" \
-    || echo "  ⚠ slack MCP 등록 실패 → 건너뜀"
 else
   echo "  ⚠ claude CLI가 없어 MCP 플러그인 설치를 건너뜁니다"
 fi
@@ -1443,6 +1384,92 @@ else
     fi
   fi
 fi
+
+# ------------------------------------------------------------
+# 6.6. OpenCode CLI + OpenCode·Claude Code 기본 MCP
+#   기본 10개: cob, dart, figma, marionette, atlassian, mobbin, slack, zenhub,
+#              chrome-devtools, playwright
+#   로컬 실행 파일은 4단계(Dart)·6단계(Node)에서 준비한다. Figma·Mobbin은 OAuth,
+#   Atlassian·Slack·ZenHub는 8.5~8.9단계에서 주입하는 팀 공용 토큰으로 인증한다.
+#   두 클라이언트의 설정을 백업 후 병합한다. 토큰 값 대신 각 클라이언트의 환경변수
+#   참조 문법을 저장하며, 등록 확인과 실제 연결·인증 확인은 구분한다.
+# ------------------------------------------------------------
+log "6.6. OpenCode CLI 설치 + 기본 MCP 10개 등록 (OpenCode·Claude Code)"
+if have opencode; then
+  echo "  ✓ opencode 이미 설치됨"
+elif have npm; then
+  npm install -g opencode-ai || echo "  ⚠ OpenCode 설치 실패 → 건너뜀 (수동: npm install -g opencode-ai)"
+else
+  echo "  ⚠ npm 없음 → OpenCode 설치 건너뜀 (6단계 확인 후 재실행)"
+fi
+
+if have jq; then
+  # 따옴표로 감싼 heredoc: ${VAR}를 지금 확장하지 않고 글자 그대로 저장한다.
+  MCP_DEFAULTS=$(cat <<'MCP_JSON'
+{
+  "cob": {"type":"stdio","command":"dart","args":["pub","global","run","cob:cob_mcp"]},
+  "dart": {"type":"stdio","command":"dart","args":["mcp-server"]},
+  "figma": {"type":"http","url":"https://mcp.figma.com/mcp"},
+  "marionette": {"type":"stdio","command":"dart","args":["pub","global","run","marionette_mcp:marionette_mcp"]},
+  "atlassian": {"type":"stdio","command":"docker","args":["run","--rm","-i","-e","JIRA_URL","-e","JIRA_USERNAME","-e","JIRA_API_TOKEN","ghcr.io/sooperset/mcp-atlassian:latest","--transport","stdio"],"env":{"JIRA_URL":"https://laputa.atlassian.net","JIRA_USERNAME":"dev@cocode.im","JIRA_API_TOKEN":"${JIRA_API_TOKEN}"}},
+  "mobbin": {"type":"http","url":"https://api.mobbin.com/mcp"},
+  "slack": {"type":"stdio","command":"npx","args":["-y","@modelcontextprotocol/server-slack"],"env":{"SLACK_TEAM_ID":"${SLACK_TEAM_ID}","SLACK_BOT_TOKEN":"${SLACK_BOT_TOKEN}"}},
+  "zenhub": {"type":"http","url":"https://api.zenhub.com/mcp","headers":{"Authorization":"${ZENHUB_API_TOKEN}","X-zh-workspace":"69ae742925c359000f5acf14"}},
+  "chrome-devtools": {"type":"stdio","command":"npx","args":["-y","chrome-devtools-mcp@latest"]},
+  "playwright": {"type":"stdio","command":"npx","args":["-y","@playwright/mcp@latest","--browser","chrome"]}
+}
+MCP_JSON
+  )
+  for mcp_client in claude opencode; do
+    if [[ "$mcp_client" == claude ]]; then
+      mcp_config="$HOME/.claude.json"
+      mcp_key="mcpServers"
+      mcp_entries="$MCP_DEFAULTS"
+    else
+      mcp_config="${XDG_CONFIG_HOME:-$HOME/.config}/opencode/opencode.json"
+      mcp_key="mcp"
+      mcp_entries=$(printf '%s' "$MCP_DEFAULTS" | jq 'with_entries(.value |= (
+        if .type == "http" then
+          {type:"remote", url:.url, enabled:true}
+          + (if .headers then {oauth:false, headers:(.headers | map_values(gsub("\\$\\{(?<name>[A-Z_]+)\\}"; "{env:\(.name)}")))} else {} end)
+        else
+          {type:"local", command:([.command] + .args), enabled:true, timeout:30000}
+          + (if .env then {environment:(.env | map_values(gsub("\\$\\{(?<name>[A-Z_]+)\\}"; "{env:\(.name)}")))} else {} end)
+        end))') || { echo "  ⚠ OpenCode MCP 형식 변환 실패 → 건너뜀"; continue; }
+    fi
+    mkdir -p "$(dirname "$mcp_config")" || { echo "  ⚠ $mcp_client 설정 폴더 생성 실패 → 건너뜀"; continue; }
+    if [[ -f "$mcp_config" ]] && ! jq -e --arg key "$mcp_key" \
+      'type == "object" and ((.[$key] // {}) | type == "object")' "$mcp_config" >/dev/null 2>&1; then
+      echo "  ⚠ $mcp_config 형식 확인 필요 → 원본을 유지합니다 (JSON 주석·문법 확인 후 재실행)"
+      continue
+    fi
+    if [[ -f "$mcp_config" && ! -f "$mcp_config.bak" ]]; then
+      cp -p "$mcp_config" "$mcp_config.bak" || { echo "  ⚠ $mcp_client 설정 백업 실패 → 건너뜀"; continue; }
+    fi
+    mcp_tmp=$(mktemp "$mcp_config.tmp.XXXXXX") || { echo "  ⚠ $mcp_client 임시 파일 생성 실패 → 건너뜀"; continue; }
+    mcp_source="$mcp_config"
+    [[ -f "$mcp_source" ]] || mcp_source=/dev/null
+    if jq -s --arg key "$mcp_key" --argjson defaults "$mcp_entries" '
+      (.[0] // {})
+      | .[$key] = ((.[$key] // {}) + $defaults)
+      | if (.[$key]["mcp-atlassian"].command == "docker"
+            and (((.[$key]["mcp-atlassian"].args // []) | index("ghcr.io/sooperset/mcp-atlassian:latest")) != null))
+        then del(.[$key]["mcp-atlassian"]) else . end
+      | if $key == "mcp" then .["$schema"] = "https://opencode.ai/config.json" else . end
+      ' "$mcp_source" > "$mcp_tmp" && mv "$mcp_tmp" "$mcp_config"; then
+      echo "  ✓ $mcp_client 기본 MCP 10개 등록/갱신 (기존 설정 병합)"
+    else
+      rm -f "$mcp_tmp"
+      echo "  ⚠ $mcp_client MCP 설정 저장 실패 → 건너뜀"
+    fi
+  done
+  unset MCP_DEFAULTS mcp_entries
+  [[ ! -f "${XDG_CONFIG_HOME:-$HOME/.config}/opencode/opencode.jsonc" ]] \
+    || echo "  · 기존 opencode.jsonc의 같은 이름 설정이 우선 적용됩니다 — opencode mcp list 로 확인하세요"
+else
+  echo "  ⚠ jq 없음 → 기본 MCP 등록 건너뜀 (수동: brew install jq 후 재실행)"
+fi
+echo "  · 새 터미널에서 두 도구를 재시작하세요. Claude Code: /mcp · OpenCode: opencode mcp auth figma · opencode mcp auth mobbin"
 
 # ------------------------------------------------------------
 # 7. oh-my-zsh + powerlevel10k + 플러그인
@@ -2101,7 +2128,7 @@ fi
 # 8.9. SLACK_TEAM_ID·SLACK_BOT_TOKEN 주입 (slack MCP용 팀 공용 토큰 — 1Password에서 자동 주입)
 #
 #   [이 단계가 하는 일 — 비개발자용 설명]
-#   slack MCP(2.5단계에서 등록)가 Slack 워크스페이스에 접속할 때 쓰는 '팀 ID + 봇 토큰' 한 쌍이
+#   slack MCP(6.6단계에서 등록)가 Slack 워크스페이스에 접속할 때 쓰는 '팀 ID + 봇 토큰' 한 쌍이
 #   필요하다. ZenHub·Jira·Slang GPT·DCM과 똑같이 팀 공용 1Password 금고에서 읽어 ~/.zshrc에 적어준다.
 #
 #   ZenHub(8.5)·Jira(8.6)·Slang GPT(8.7)·DCM(8.8)과 동일한 방식이며, op 계정 설정(앱 CLI 통합)
@@ -2244,6 +2271,7 @@ echo "  python  : $(pyenv exec python --version 2>/dev/null || echo '❌')"
 echo "  node    : $(node --version 2>/dev/null || echo '❌')"
 echo "  npm     : $(npm --version 2>/dev/null || echo '❌')"
 echo "  claude  : $(claude --version 2>/dev/null || echo '❌ (수동 설치: curl -fsSL https://claude.ai/install.sh | bash)')"
+echo "  opencode: $(opencode --version 2>/dev/null || echo '❌ (수동 설치: npm install -g opencode-ai)')"
 echo "  codex   : $(codex --version 2>/dev/null || echo '❌ (수동 설치: brew install --cask codex)')"
 # agy는 최초 실행이 대화형 로그인 마법사라, 검증에서는 버전 호출 대신 바이너리 존재만 확인한다.
 echo "  agy(antigravity): $(have agy && echo '✓ 설치됨 (최초 실행 시 agy 로 Google 로그인)' || echo '❌ (수동 설치: curl -fsSL https://antigravity.google/cli/install.sh | bash)')"
@@ -2261,7 +2289,21 @@ echo "  git email: $(git config --global user.email 2>/dev/null || echo '❌ (gi
 echo "  GitHub 인증(gh): $(have gh && gh auth status >/dev/null 2>&1 \
   && echo '✓ 인증됨' \
   || echo '❌ (1Password "API Token" 볼트의 "GitHub API Token" 항목 확인 또는 gh auth login 후 재실행)')"
-echo "  mcp:figma: $(claude plugin list 2>/dev/null | grep -q 'figma@claude-plugins-official' && echo '✓ 설치됨 (/mcp 로그인 필요)' || echo '❌')"
+# 연결을 시도하지 않고 설정 파일의 등록 여부만 확인한다. 실제 인증은 새 세션에서 확인한다.
+for mcp_client in claude opencode; do
+  mcp_config="$HOME/.claude.json"; mcp_key="mcpServers"
+  if [[ "$mcp_client" == opencode ]]; then
+    mcp_config="${XDG_CONFIG_HOME:-$HOME/.config}/opencode/opencode.json"; mcp_key="mcp"
+  fi
+  for mcp_name in cob dart figma marionette atlassian mobbin slack zenhub chrome-devtools playwright; do
+    if have jq && jq -e --arg key "$mcp_key" --arg name "$mcp_name" \
+      '.[$key][$name] != null' "$mcp_config" >/dev/null 2>&1; then
+      echo "  mcp:$mcp_client:$mcp_name: ✓ 등록됨 (연결·인증은 새 세션에서 확인)"
+    else
+      echo "  mcp:$mcp_client:$mcp_name: ❌ 미등록 (./mac-setup.sh 재실행 · 6.6단계 확인)"
+    fi
+  done
+done
 # op는 '설치됨'과 '설정됨(1Password 앱 CLI 통합)'이 다르다 — 설치만 되고 통합이 꺼져 있으면 토큰을 못 읽는다.
 # 8.5단계에서 이미 판정한 OP_STATUS를 그대로 쓴다 (여기서 op를 다시 부르면 앱 승인 대기로 멈출 수 있음).
 case "${OP_STATUS:-missing}" in
@@ -2278,12 +2320,12 @@ esac
 ZH_VAL=$(grep '^export ZENHUB_API_TOKEN=' "$HOME/.zshrc" 2>/dev/null | tail -1 | sed 's/^export ZENHUB_API_TOKEN=//; s/^"//; s/"$//')
 # 토큰 유무는 ~/.zshrc 값으로 판단한다. `claude mcp list`의 'Connected'는 서버 연결만 뜻할 뿐
 # 인증 성공을 뜻하지 않는다 — 토큰이 비어도 Connected로 보이고 실제 호출만 실패한다.
-echo "  mcp:zenhub: $(claude mcp list 2>/dev/null | grep -q '^zenhub' \
+echo "  mcp:zenhub: $(jq -e '.mcpServers.zenhub != null' "$HOME/.claude.json" >/dev/null 2>&1 \
   && echo "✓ 등록됨$([[ -n "$ZH_VAL" ]] && echo ' + 토큰 주입됨 (새 터미널에서 적용)' || echo ' (⚠ 토큰 미주입 — 1Password 앱 CLI 통합 후 --env-only 재실행)')" \
   || echo '❌')"
 # jira(mcp-atlassian): Docker + Jira REST 직결 — zenhub와 동일 기준으로 등록/주입 상태를 본다.
 JIRA_VAL=$(grep '^export JIRA_API_TOKEN=' "$HOME/.zshrc" 2>/dev/null | tail -1 | sed 's/^export JIRA_API_TOKEN=//; s/^"//; s/"$//')
-echo "  mcp:mcp-atlassian(jira): $(claude mcp list 2>/dev/null | grep -q '^mcp-atlassian' \
+echo "  mcp:atlassian(jira): $(jq -e '.mcpServers.atlassian != null' "$HOME/.claude.json" >/dev/null 2>&1 \
   && echo "✓ 등록됨$([[ -n "$JIRA_VAL" ]] && echo ' + 토큰 주입됨 (새 터미널·docker 실행 중이어야 적용)' || echo ' (⚠ 토큰 미주입 — 1Password 앱 CLI 통합/볼트 권한 확인 후 --env-only 재실행)')" \
   || echo '❌')"
 # slang_gpt 키: MCP가 아니라 CLI가 셸 환경변수로 직접 읽는 값이라 등록 여부 없이 주입 여부만 본다.
@@ -2301,7 +2343,7 @@ echo "  DCM_EMAIL/DCM_CI_KEY: $([[ -n "$DCM_EMAIL_VAL" && -n "$DCM_CI_KEY_VAL" ]
 # slack: MCP가 등록됐어도 SLACK_TEAM_ID·SLACK_BOT_TOKEN 둘 다 있어야 실제 호출이 된다 (DCM과 동일 기준).
 SLACK_TEAM_ID_VAL=$(grep '^export SLACK_TEAM_ID=' "$HOME/.zshrc" 2>/dev/null | tail -1 | sed 's/^export SLACK_TEAM_ID=//; s/^"//; s/"$//')
 SLACK_BOT_TOKEN_VAL=$(grep '^export SLACK_BOT_TOKEN=' "$HOME/.zshrc" 2>/dev/null | tail -1 | sed 's/^export SLACK_BOT_TOKEN=//; s/^"//; s/"$//')
-echo "  mcp:slack: $(claude mcp list 2>/dev/null | grep -q '^slack' \
+echo "  mcp:slack: $(jq -e '.mcpServers.slack != null' "$HOME/.claude.json" >/dev/null 2>&1 \
   && echo "✓ 등록됨$([[ -n "$SLACK_TEAM_ID_VAL" && -n "$SLACK_BOT_TOKEN_VAL" ]] && echo ' + 토큰 주입됨 (새 터미널에서 적용)' || echo ' (⚠ 토큰 미주입 — 1Password 앱 CLI 통합/볼트 권한 확인 후 --env-only 재실행)')" \
   || echo '❌')"
 # TypeSafe Jev 키: MCP가 아니라 TypeSafe SDK가 셸 환경변수로 직접 읽는 값이라 등록 여부 없이 주입 여부만 본다 (Slang GPT와 동일).
@@ -2340,7 +2382,9 @@ echo "  5. Claude Code 로그인: claude"
 echo "     ↳ 함께 설치된 다른 AI 코딩 CLI도 최초 1회 로그인이 필요합니다: codex(실행: codex, ChatGPT 계정) · agy(실행: agy, Antigravity=Google 계정)"
 echo "     ↳ Slack CLI로 직접 앱을 개발하려면 최초 1회 워크스페이스 로그인이 필요합니다: slack login (slack MCP는 아래 7번의 팀 공용 토큰으로 별도 인증)"
 echo "     ↳ Claude Code 하단 상태줄(모델·비용·컨텍스트·git 상태)은 6.5단계에서 이미 자동으로 설정됐을 겁니다 — ccstatusline이 대화형이라 등록에 실패하면 Awesome CC Statusline(size: small)이 자동으로 대신 등록됩니다. 직접 위젯을 골라 커스터마이징하고 싶다면 \`npx -y ccstatusline@latest\`를, 다른 크기로 바꾸고 싶다면 \`curl -fsSL https://raw.githubusercontent.com/AwesomeJun/CC-statusline/main/install.sh | bash -s -- <크기>\`를 실행하면 됩니다(크기: xs/s/m/l/xl). 되돌리려면 settings.json의 statusLine 키만 지우면 됩니다"
-echo "  6. Claude Code에서 /mcp 실행 → figma를 팀 계정으로 OAuth 로그인 (최초 1회)"
+echo "  6. Claude Code에서 /mcp 실행 → figma·mobbin OAuth 로그인 (최초 1회, Mobbin 유료 플랜 필요)"
+echo "     ↳ OpenCode도 재시작한 뒤 /connect로 모델 계정 연결, opencode mcp auth figma · opencode mcp auth mobbin 실행"
+echo "     ↳ 두 도구에서 claude mcp list · opencode mcp list 로 기본 MCP 10개의 실제 연결을 확인하세요"
 echo "     ↳ jira(atlassian)는 더 이상 OAuth 로그인이 필요 없습니다 — zenhub처럼 1Password 팀 공용 토큰으로 인증합니다"
 echo "  7. zenhub·jira·slang_gpt·DCM·slack·TypeSafe 토큰(1Password CLI): 실행 중 8.5~8.10단계에서 설정 안내가 나오면 아래를 마친 뒤 Enter를 누르면 자동 주입됩니다"
 echo "     ↳ 1Password 앱 로그인(team-cocodeinc) → 설정(⌘,) > 개발자 > '1Password CLI와 통합' 체크"
@@ -2356,7 +2400,7 @@ echo "     ↳ SLACK_TEAM_ID·SLACK_BOT_TOKEN(slack MCP용)은 같은 볼트 > '
 echo "       두 필드에서 읽어 주입됩니다. slack MCP는 @modelcontextprotocol/server-slack(npx) — 새 터미널에서 claude 실행 시 적용"
 echo "     ↳ TYPESAFE_API_KEY(TypeSafe Jev 판단형 AI 모델용)는 같은 볼트 > 'TypeSafe Jev' > 'credential' 필드에서"
 echo "       읽어 주입됩니다. MCP가 아니라 TypeSafe SDK(Python·JavaScript)가 환경변수로 직접 읽는 값이라 별도 로그인이 없습니다"
-echo "     ↳ 주입 후에는 반드시 '새 터미널'에서 claude를 실행하세요."
+echo "     ↳ 주입 후에는 반드시 '새 터미널'에서 claude·opencode를 다시 실행하세요."
 echo "       claude 실행 시점의 환경변수에서 토큰을 읽으므로, 예전 터미널에서 띄운 claude는 토큰을 못 읽습니다."
 echo "       (jira MCP가 docker로 뜨는데, colima가 꺼져 있으면 새 .zshrc의 claude/cld 함수가 자동으로 'colima start'를 시도합니다 — 최초 콜드 스타트는 수십 초 걸릴 수 있으니 미리 켜두면 더 빠릅니다)"
 echo "  8. GitHub 인증(gh)이 '❌'이면 cocode-skills·cob(co-bricks) 둘 다 설치되지 않습니다 (3.4단계에서 시도)"

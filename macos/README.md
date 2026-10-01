@@ -299,7 +299,18 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 
 <br>
 
-<sub>※ Slack · Dia · Orca · Lumide · Stats · codex(OpenAI) · agy(Antigravity)는 Simple Icons에 없어, 실제 브랜드 아이콘(파비콘)을 받아 사용했습니다. awscli, pyenv, colima, direnv, jq, maestro, oh-my-zsh, powerlevel10k, MesloLGS NF, Pretendard는 공식 브랜드 아이콘이 없어 텍스트로만 표기했습니다. DCM · coverage · melos · mason_cli · flutter_gen · jaspr_cli · serverpod_cli · marionette_mcp · mcp_server_dart · cob(co-bricks)는 Dart 생태계 도구라 Dart 아이콘으로 대신 표기했습니다. op(1Password CLI)는 1Password의 커맨드라인 버전이라 1Password 아이콘을 함께 사용했습니다. ccstatusline · awesome-statusline은 둘 다 Claude Code 상태줄 도구라 Claude 아이콘으로 대신 표기했습니다.</sub>
+**🔌 AI 도구 · 기본 MCP 추가 항목**
+
+<table><tr>
+<td align="center" width="100"><img src="assets/icons/opencode.svg" width="36" height="36" alt="OpenCode"><br><sub><b>OpenCode</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/mobbin.png" width="36" height="36" alt="Mobbin MCP"><br><sub><b>Mobbin MCP</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/atlassian.svg" width="36" height="36" alt="Atlassian MCP"><br><sub><b>Atlassian MCP</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/zenhub.png" width="36" height="36" alt="ZenHub MCP"><br><sub><b>ZenHub MCP</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/chrome.svg" width="36" height="36" alt="Chrome DevTools MCP"><br><sub><b>Chrome DevTools</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/playwright.png" width="36" height="36" alt="Playwright MCP"><br><sub><b>Playwright MCP</b></sub></td>
+</tr></table>
+
+<sub>※ OpenCode·Atlassian의 SVG는 [Simple Icons](https://simpleicons.org), Mobbin·ZenHub·Playwright의 PNG는 공식 사이트 파비콘입니다. Slack · Dia · Orca · Lumide · Stats · codex(OpenAI) · agy(Antigravity)도 실제 브랜드 아이콘(파비콘)을 사용합니다. awscli, pyenv, colima, direnv, jq, maestro, oh-my-zsh, powerlevel10k, MesloLGS NF, Pretendard는 공식 브랜드 아이콘이 없어 텍스트로만 표기했습니다. DCM · coverage · melos · mason_cli · flutter_gen · jaspr_cli · serverpod_cli · marionette_mcp · mcp_server_dart · cob(co-bricks)는 Dart 아이콘, op는 1Password 아이콘, ccstatusline · awesome-statusline은 Claude 아이콘을 공용으로 사용합니다.</sub>
 
 <br>
 
@@ -313,13 +324,13 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 | 🖥 GUI 앱 | Android Studio, Slack, Figma, Claude Desktop, Google Chrome, Dia, 1Password, Tailscale, Orca, Lumide, Zed, Rive, Stats(메뉴막대 시스템 모니터 — 최초 1회 직접 실행 필요), Pretendard 폰트(9개 스타일: Thin~Black) |
 | 🍎 Xcode 개발자 도구 | Xcode.app이 없으면 `mas`(App Store CLI)로 자동 설치 시도(App Store 로그인 필요 · 수십 GB라 오래 걸릴 수 있음). Command Line Tools만 활성화돼 있으면(`xcodebuild` "requires Xcode" 에러 원인) `xcode-select`를 Xcode.app으로 자동 전환하고 최초 실행 동의(`xcodebuild -runFirstLaunch`)까지 진행 (sudo 암호 입력 필요) |
 | 🧩 브라우저 확장 프로그램 | Chrome·Dia에 [ZenHub for GitHub](https://chromewebstore.google.com/detail/zenhub-for-github/ogcgkffhplmphkaahpmffcafajaocjbd) 확장을 자동 등록(External Extensions 드롭인 방식, sudo 암호 입력 필요) — Dia는 동작이 보장되지 않아 실패해도 경고만 남기고 계속 진행 |
-| 🔌 Claude MCP | figma 플러그인 자동 설치 + marionette·dart MCP, zenhub·jira·slack MCP 자동 등록. `ZENHUB_API_TOKEN`·`JIRA_API_TOKEN`·`SLACK_TEAM_ID`·`SLACK_BOT_TOKEN`(팀 공용 토큰)은 1Password CLI(`op`)로 `~/.zshrc`에 자동 주입 — git에 커밋 안 됨 (⚠️ figma는 최초 1회 `/mcp` OAuth 로그인. zenhub·jira·slack은 OAuth 대신 1Password 팀 공용 토큰으로 인증 — 1Password 앱의 CLI 통합만 되면 자동 주입. jira는 `sooperset/mcp-atlassian`(Docker)로 **Jira REST API에 직접** 붙어(개발팀 공용 계정 토큰) 조직 Rovo 권한이 필요 없음 — 런타임에 colima/docker 데몬 필요. slack은 `@modelcontextprotocol/server-slack`(npx)로 뜨며 팀 ID+봇 토큰 두 값이 모두 있어야 인증됨 — [설정 방법](#after-install)) |
+| 🔌 OpenCode·Claude Code MCP | **6.6단계**에서 OpenCode CLI(`npm install -g opencode-ai`) 설치 + 두 도구에 `cob` · `dart` · `figma` · `marionette` · `atlassian` · `mobbin` · `slack` · `zenhub` · `chrome-devtools` · `playwright` 직접 등록. 기존 설정은 백업 후 병합합니다. Figma 보조 플러그인도 설치합니다. 인증·실행 조건은 [기본 MCP 표](#default-mcp)를 참고하세요 |
 | 🔑 팀 공용 토큰 | 위 `ZENHUB_API_TOKEN`·`JIRA_API_TOKEN`·`SLACK_TEAM_ID`·`SLACK_BOT_TOKEN`에 더해, 다국어 자동 번역 도구 `slang_gpt`가 쓰는 `SLANG_GPT_API_KEY`, DCM을 CI 모드로 인증하는 `DCM_EMAIL`·`DCM_CI_KEY`(1Password 항목 `DCM CI CD`의 이메일+키 한 쌍), TypeSafe(판단형 AI 모델 Jev) SDK가 쓰는 `TYPESAFE_API_KEY`(1Password 항목 `TypeSafe Jev`)도 같은 방식(1Password CLI → `~/.zshrc`)으로 자동 주입 — `SLANG_GPT_API_KEY`·`DCM_EMAIL`·`DCM_CI_KEY`·`TYPESAFE_API_KEY`는 MCP가 아니라 명령줄 도구·SDK가 직접 읽는 값이라 등록·로그인 과정이 없음 ([설정 방법](#after-install)) |
 | 🔑 GitHub 인증(gh) | coco-de 조직의 비공개 레포(`co-bricks`·`skills`) 접근용 GitHub 로그인을 팀 공용 1Password 토큰으로 자동 처리(`gh auth login` + `gh auth setup-git`) — 이미 인증돼 있으면 건너뜀. 실패해도 계속 진행하며, 아래 cocode-skills·cob(co-bricks)가 각자 인증 상태를 다시 확인해 건너뜀([설정 방법](#after-install)) |
 | 🔏 서명 키체인 (선택) | `--keychains-only`로 laputa·fastlane_tmp의 자동 잠금 설정·서명 도구 ACL을 확인하고, **1Password → login 암호화 캐시 → 사용자 로그인 후 자동 해제**를 등록합니다. 전체 설치에서는 자동으로 켜지지 않습니다 ([등록·검증·제거](#signing-keychains)) |
 | 🧩 cocode-skills 팀 플러그인 | 사설 레포 `coco-de/skills`의 `install.sh`로 cc-* 플러그인 번들(marionette·dart·figma·dev-cycle·coui 등) 자동 동기화 (⚠️ GitHub 인증 필요 — 보통 위 단계에서 1Password로 자동 처리되며, 안 됐다면 `gh auth login` 수동 실행 후 재실행) |
 | 📱 Android SDK | cmdline-tools, platform-tools, build-tools, platforms, NDK, 에뮬레이터 시스템 이미지, AVD까지 전부 자동 설치·구성 (Android Studio 첫 실행 마법사 불필요) |
-| 🛠 CLI 도구 | go, pyenv, nvm, git, gh, jq, cocoapods, fastlane, awscli, colima, docker, docker-compose, zsh-syntax-highlighting, direnv, openjdk@17, lefthook(Git 훅 관리자 — 레포별로 최초 1회 `lefthook install` 필요), Claude Code, ccstatusline(Claude Code 상태줄) → 실패 시 awesome-statusline(size: small)으로 자동 대체, codex, agy(Antigravity CLI), slack(Slack CLI), maestro(모바일 UI 자동화 CLI), op(1Password CLI), mas(App Store CLI — **Xcode.app이 없을 때만** 설치, Xcode 자동 설치용) |
+| 🛠 CLI 도구 | go, pyenv, nvm, git, gh, jq, cocoapods, fastlane, awscli, colima, docker, docker-compose, zsh-syntax-highlighting, direnv, openjdk@17, lefthook(Git 훅 관리자 — 레포별로 최초 1회 `lefthook install` 필요), Claude Code, **OpenCode**, ccstatusline(Claude Code 상태줄) → 실패 시 awesome-statusline(size: small)으로 자동 대체, codex, agy(Antigravity CLI), slack(Slack CLI), maestro(모바일 UI 자동화 CLI), op(1Password CLI), mas(App Store CLI — **Xcode.app이 없을 때만** 설치, Xcode 자동 설치용) |
 | ✉️ Git 설정 | 커밋에 사용할 회사 이메일을 실행 중에 입력받아 전역 설정(`git config --global user.email`) — 이미 설정돼 있으면 묻지 않고 건너뜀 |
 | 🌐 브라우저 번역 언어 | Chrome·Dia의 번역 대상 언어를 한국어로, "번역 안 함" 목록을 영어로 자동 설정(`dia://settings/languages` = `chrome://settings/languages`를 매번 손으로 누를 필요 없음) — 브라우저가 실행 중이면 건너뛰고 경고만 표시 |
 | 🐦 Flutter | fvm(버전 관리자)으로 Flutter stable 채널 글로벌 설정, DCM(Dart 코드 품질 검사 도구 — CI 인증 키 `DCM_EMAIL`·`DCM_CI_KEY`는 1Password에서 자동 주입) |
@@ -405,6 +416,7 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 | | maestro | 모바일 앱 화면을 자동으로 조작·촬영하는 CLI. Claude Code의 pixel-loop MCP가 이 도구를 통해 실행 중인 앱 화면을 확인합니다 (공식 설치 스크립트 `get.maestro.mobile.dev`로 설치) |
 | <img src="assets/icons/lefthook.svg" width="20" height="20"> | lefthook | 커밋·푸시하기 직전에 코드 정리·검사·테스트를 자동으로 돌려주는 **Git 훅 관리자**([evilmartians/lefthook](https://github.com/evilmartians/lefthook)). 실수로 형식이 어긋나거나 깨진 코드가 올라가는 걸 미리 막아 줍니다. 이 스크립트는 도구만 설치하며, 실제로 켜는 건 레포마다 한 번씩입니다 — `lefthook.yml`이 있는 프로젝트 폴더에서 `lefthook install`을 실행하세요(설정 파일이 없는 레포에서는 할 일 없음) |
 | <img src="assets/icons/claude.svg" width="20" height="20"> | Claude Code | 터미널에서 대화하듯 코드를 작성·수정하는 Claude CLI (공식 설치 스크립트 `claude.ai/install.sh`로 설치, `~/.local/bin`) |
+| <img src="assets/icons/opencode.svg" width="20" height="20"> | OpenCode | 여러 AI 모델을 연결해 쓰는 코딩 CLI (`npm install -g opencode-ai`, 6.6단계) · 최초 실행 후 `/connect`로 모델 계정을 연결합니다 |
 | <img src="assets/icons/claude.svg" width="20" height="20"> | ccstatusline | Claude Code 하단 상태줄을 모델·세션 비용·컨텍스트 사용량·git 상태까지 보여주는 두 줄짜리 정보 표시줄로 바꿔 주는 대화형 TUI 도구입니다([sirmalloc/ccstatusline](https://github.com/sirmalloc/ccstatusline)). 별도 설치가 필요 없고 `npx -y ccstatusline@latest`로 그때그때 실행하며(Node.js 필요), 뜨는 화면에서 위젯을 고르고 저장하면 `~/.claude/settings.json`에 자동 등록됩니다. 대화형 도구라 이 스크립트에서는 자동 등록되지 않는 경우가 대부분이며, 그때는 아래 awesome-statusline이 자동으로 대신 설치됩니다 |
 | <img src="assets/icons/claude.svg" width="20" height="20"> | awesome-statusline | ccstatusline이 대화형이라 자동 등록에 실패했을 때 대신 설치되는 상태줄 도구입니다([AwesomeJun/CC-statusline](https://github.com/AwesomeJun/CC-statusline)). 크기를 인자로 주면(`curl -fsSL https://raw.githubusercontent.com/AwesomeJun/CC-statusline/main/install.sh \| bash -s -- small`) 완전 비대화형으로 설치되어 `~/.claude/settings.json`에 바로 등록됩니다. 이 스크립트는 크기 `small`로 자동 설치합니다 — 다른 크기(xs/s/m/l/xl)를 원하면 위 명령의 마지막 인자만 바꿔 다시 실행하면 됩니다 |
 | <img src="assets/icons/codex.png" width="20" height="20"> | codex | OpenAI의 터미널 AI 코딩 에이전트. `brew install --cask codex`로 설치하며, 처음 실행할 때 ChatGPT 계정으로 로그인합니다 |
@@ -425,8 +437,8 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 | <img src="assets/icons/dart.svg" width="20" height="20"> | flutter_gen | 이미지·폰트 같은 파일과 색상을 코드에서 오타 없이 쓰도록 Dart 코드로 자동 생성해 줍니다 (`dart pub global activate`로 설치) |
 | <img src="assets/icons/dart.svg" width="20" height="20"> | jaspr_cli | Dart로 웹사이트를 만드는 Jaspr 프레임워크의 CLI(개발 서버 실행·빌드) (`dart pub global activate`로 설치) |
 | <img src="assets/icons/dart.svg" width="20" height="20"> | serverpod_cli | Serverpod 백엔드 프레임워크 CLI. pub.dev API로 지금 시점 실제 최신 버전(안정판 latest에 안 잡히는 베타·RC 포함)을 조회해 그 버전으로 설치하므로, 4.x → 5.x처럼 major가 올라가도 손대지 않아도 자동으로 따라갑니다 (jq/curl 조회 실패 시에만 안정판으로 대체 설치, `dart pub global activate`로 설치) |
-| <img src="assets/icons/dart.svg" width="20" height="20"> | marionette_mcp | Claude Code의 `marionette` MCP 서버 — 실행 중인 Flutter 앱을 위젯 단위로 조작합니다 (`dart pub global activate`로 설치) |
-| <img src="assets/icons/dart.svg" width="20" height="20"> | mcp_server_dart | Claude Code의 `dart` MCP 서버 — 코드 분석·핫 리로드·패키지 탐색을 Claude가 직접 하게 해줍니다 (`dart pub global activate`로 설치) |
+| <img src="assets/icons/dart.svg" width="20" height="20"> | marionette_mcp | 두 도구의 `marionette` MCP 서버 — 실행 중인 Flutter 앱을 위젯 단위로 조작합니다 (`dart pub global activate`로 설치) |
+| <img src="assets/icons/dart.svg" width="20" height="20"> | mcp_server_dart | 추가 Dart MCP 패키지 (`dart pub global activate`로 설치). 기본 `dart` MCP는 SDK에 포함된 공식 `dart mcp-server`로 등록합니다 |
 | <img src="assets/icons/firebase.svg" width="20" height="20"> | flutterfire_cli | Flutter 프로젝트를 Firebase 프로젝트와 연동해주는 CLI(`flutterfire configure` 등). pub.dev 공개 패키지라 GitHub 인증 없이 설치됩니다 (`dart pub global activate`로 설치) |
 | <img src="assets/icons/dart.svg" width="20" height="20"> | cob (co-bricks) | Mason bricks(코드 스캐폴딩 템플릿) 동기화·관리 CLI. `cc-bricks` 플러그인이 Feature/프로젝트를 빠르게 생성할 때 사용합니다 (`dart pub global activate --source git`로 설치 — 비공개 레포라 GitHub 인증 필요, 보통 위 `gh`에서 1Password로 자동 처리됨) |
 
@@ -476,6 +488,36 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 
 ## ✅ 설치 후 확인할 것
 
+<a id="default-mcp"></a>
+
+### 🔌 OpenCode·Claude Code 기본 MCP 10개
+
+| | 등록 이름 | 하는 일 · 실행 방법 | 인증·준비 |
+|---|---|---|---|
+| <img src="assets/icons/dart.svg" width="20"> | `cob` | 팀 코드 템플릿 생성 · `dart pub global run cob:cob_mcp` | 4-b단계의 비공개 `co-bricks` 설치, GitHub 인증 필요 |
+| <img src="assets/icons/dart.svg" width="20"> | `dart` | 코드 분석·핫 리로드 · `dart mcp-server` | FVM의 Flutter/Dart SDK |
+| <img src="assets/icons/figma.svg" width="20"> | `figma` | Figma 디자인 읽기 · `https://mcp.figma.com/mcp` | 최초 OAuth 로그인 |
+| <img src="assets/icons/dart.svg" width="20"> | `marionette` | Flutter 앱 화면 조작 · `dart pub global run marionette_mcp:marionette_mcp` | 앱의 `MarionetteBinding` 설정 + debug 실행 |
+| <img src="assets/icons/atlassian.svg" width="20"> | `atlassian` | Jira 작업 · Docker `ghcr.io/sooperset/mcp-atlassian:latest` | `JIRA_API_TOKEN` + `colima start` |
+| <img src="assets/icons/mobbin.png" width="20"> | `mobbin` | 실제 제품의 디자인 사례 검색 · `https://api.mobbin.com/mcp` | 최초 OAuth 로그인 + Mobbin Pro·Team·Enterprise 플랜 |
+| <img src="assets/icons/slack.png" width="20"> | `slack` | 팀 메시지 읽기·쓰기 · `npx -y @modelcontextprotocol/server-slack` | `SLACK_TEAM_ID` + `SLACK_BOT_TOKEN` |
+| <img src="assets/icons/zenhub.png" width="20"> | `zenhub` | 이슈 보드 관리 · `https://api.zenhub.com/mcp` | `ZENHUB_API_TOKEN`, 팀 워크스페이스 자동 지정 |
+| <img src="assets/icons/chrome.svg" width="20"> | `chrome-devtools` | 브라우저·네트워크·성능 분석 · `npx -y chrome-devtools-mcp@latest` | Node.js LTS + Chrome |
+| <img src="assets/icons/playwright.png" width="20"> | `playwright` | 웹 화면 자동 조작·검증 · `npx -y @playwright/mcp@latest --browser chrome` | Node.js LTS + Chrome |
+
+등록 위치는 Claude Code의 `~/.claude.json`(`mcpServers`, 사용자 범위)과 OpenCode의 `~/.config/opencode/opencode.json`(`mcp`)입니다. `XDG_CONFIG_HOME`을 지정했다면 OpenCode는 그 아래에 저장합니다. 기존 파일은 최초 한 번 `.bak`으로 백업하고, 기본 10개 정의만 갱신하며 다른 설정·MCP는 유지합니다. 기존 `opencode.jsonc`에 같은 이름의 MCP가 있으면 그 설정이 우선합니다. 예전 팀 Docker 등록명 `mcp-atlassian`은 `atlassian`으로 통합합니다.
+
+실제 토큰 대신 Claude Code에는 `${VAR}`, OpenCode에는 `{env:VAR}` 참조가 저장됩니다. ZenHub·Jira·Slack 토큰은 기존 1Password 단계에서 `~/.zshrc`에 주입됩니다. **새 터미널에서 두 도구를 완전히 종료했다 다시 실행**하고 아래를 확인하세요. OpenCode 모델 계정은 `/connect`로 연결합니다.
+
+```bash
+claude mcp list               # 실제 연결 상태 확인 · Claude Code 안에서는 /mcp
+opencode mcp auth figma       # 최초 Figma 로그인
+opencode mcp auth mobbin      # 최초 Mobbin 로그인
+opencode mcp list             # 실제 연결 상태 확인
+```
+
+Claude Code에서는 `/mcp`에서 `figma`·`mobbin`을 각각 인증합니다. 스크립트의 `✓ 등록됨`은 설정 저장 확인이며 로그인·서버 연결 성공과는 다릅니다. 브라우저 MCP 패키지는 최초 연결 때 `npx`가 내려받습니다. 전체 스크립트를 재실행하면 이 등록도 갱신됩니다(`--dart-only`·`--env-only`는 각자의 단계만 실행합니다).
+
 스크립트 맨 마지막에 아래 항목들의 버전을 자동으로 출력해서, 잘 설치됐는지 바로 확인할 수 있게 해줍니다.
 
 ```
@@ -491,6 +533,7 @@ python  : ...
 node    : ...
 npm     : ...
 claude  : ...
+opencode: ...
 codex   : ...
 agy(antigravity): ...
 slack   : ...
@@ -498,10 +541,11 @@ lefthook: ...
 상태줄(statusline): ...
 git email: ...
 GitHub 인증(gh): ...
-mcp:figma: ...
+mcp:claude:figma: ✓ 등록됨 (연결·인증은 새 세션에서 확인)
+mcp:opencode:figma: ✓ 등록됨 (연결·인증은 새 세션에서 확인)
 op(1Password CLI): ...
 mcp:zenhub: ...
-mcp:mcp-atlassian(jira): ...
+mcp:atlassian(jira): ...
 SLANG_GPT_API_KEY: ...
 DCM_EMAIL/DCM_CI_KEY: ...
 mcp:slack: ...
@@ -528,7 +572,7 @@ Orca 전체 디스크 접근: ...
 >
 > `op(1Password CLI)`는 **설치 여부와 설정 여부를 따로** 보여줍니다. `⚠ 설치됨 (설정 미완료 — 토큰을 읽지 못했습니다)`라면 CLI는 깔렸지만 금고에서 토큰을 읽지 못한 상태입니다. 원인은 두 가지이고, 스크립트가 화면에 확인 순서(① 앱 CLI 통합 체크 → ② 금고 접근 권한)를 함께 출력해 줍니다 — 아래 **ZenHub·Jira·Slang GPT·DCM·Slack·TypeSafe 토큰 · 1Password CLI 설정**을 참고해 주세요.
 
-> `mcp:zenhub`·`mcp:mcp-atlassian`·`mcp:slack`이 `✓ 등록됨`인데 뒤에 `(⚠ 토큰 미주입)`이 붙어 있다면, MCP 서버는 등록됐지만 인증 토큰이 없는 상태입니다. 아래 **ZenHub·Jira·Slang GPT·DCM·Slack·TypeSafe 토큰** 안내대로 1Password(앱 CLI 통합 + 팀 'API Token' 볼트 권한)를 준비한 뒤 스크립트를 다시 실행해 주세요.
+> `mcp:zenhub`·`mcp:atlassian`·`mcp:slack`이 `✓ 등록됨`인데 뒤에 `(⚠ 토큰 미주입)`이 붙어 있다면, MCP 서버는 등록됐지만 인증 토큰이 없는 상태입니다. 아래 **ZenHub·Jira·Slang GPT·DCM·Slack·TypeSafe 토큰** 안내대로 1Password(앱 CLI 통합 + 팀 'API Token' 볼트 권한)를 준비한 뒤 스크립트를 다시 실행해 주세요.
 
 > `SLANG_GPT_API_KEY`는 Flutter 다국어 문구를 자동 번역해 주는 도구 `slang_gpt`가 쓰는 키입니다. MCP가 아니라 명령줄 도구가 환경변수로 바로 읽는 값이라 등록 여부 없이 **주입됐는지만** 표시합니다. `❌ 미주입`이면 다른 토큰과 같은 원인(앱 CLI 통합 · 'API Token' 볼트 권한)이니 아래 안내를 따라 주세요.
 
@@ -549,7 +593,7 @@ Orca 전체 디스크 접근: ...
 5. Android Studio 실행 후 `flutter doctor`로 최종 확인 — SDK/NDK/에뮬레이터/AVD는 스크립트가 이미 자동으로 설치·구성해 두었으므로 첫 실행 설치 마법사를 따로 진행할 필요는 없습니다
 6. **(선택) `colima start` 미리 실행 — Jira(Atlassian) MCP를 쓰려면 필요합니다** (아래 🐳 안내 참고). Jira MCP는 docker 컨테이너로 뜨는데, colima가 그 docker 데몬입니다. 이제 `claude`/`cld` 실행 시 꺼져 있으면 자동으로 켜주지만, 최초 기동엔 수십 초가 걸릴 수 있어 미리 켜두면 더 빠릅니다
 7. `claude` 실행 후 Claude Code 로그인 (함께 설치된 `codex`는 ChatGPT 계정, `agy`(Antigravity)는 Google 계정으로 각각 처음 실행할 때 한 번 로그인). Claude Code 하단 상태줄(모델·비용·컨텍스트·git 상태)은 6.5단계에서 이미 자동으로 설정됐을 겁니다 — `ccstatusline`이 대화형이라 등록에 실패하면 `awesome-statusline`(size: small)이 자동으로 대신 등록됩니다. 직접 위젯을 골라 커스터마이징하고 싶다면 `npx -y ccstatusline@latest`를, 다른 크기로 바꾸고 싶다면 `curl -fsSL https://raw.githubusercontent.com/AwesomeJun/CC-statusline/main/install.sh | bash -s -- <크기>`를 실행하면 됩니다(크기: xs/s/m/l/xl). 되돌리려면 `~/.claude/settings.json`의 `statusLine` 키만 지우면 됩니다
-8. **Claude Code에서 `/mcp` 실행 → figma를 팀 계정으로 OAuth 로그인 (최초 1회)** — 이걸 하지 않으면 figma MCP가 동작하지 않습니다. zenhub·jira·slack MCP는 아래 팀 공용 토큰으로 인증되므로 별도 로그인이 필요 없습니다
+8. **두 AI 도구를 재시작하고 Figma·Mobbin OAuth 로그인**을 마치세요([기본 MCP 표](#default-mcp)). Claude Code에서는 `/mcp`, OpenCode에서는 `opencode mcp auth figma`·`opencode mcp auth mobbin`을 실행합니다. zenhub·atlassian·slack은 아래 팀 공용 토큰으로 인증됩니다
 9. **설치 검증에 `GitHub 인증(gh): ❌`가 찍혔다면** — `cob(co-bricks)`·`cocode-skills` 둘 다 설치되지 않습니다. 팀 공용 1Password 항목("API Token" 볼트 > "GitHub API Token")으로 자동 로그인을 시도하니, 항목이 없다면 팀 관리자에게 생성을 요청하세요. 그래도 안 되면 `gh auth login`으로 직접 로그인한 뒤 스크립트를 다시 실행하면 됩니다 (`cob(co-bricks)`만 다시 깔면 되는 상황이라면 `./mac-setup.sh --dart-only`가 더 빠릅니다 — `cocode-skills`는 전체 재실행이 필요합니다)
 10. Slack CLI로 직접 앱/워크플로를 개발하려면 `slack login`으로 워크스페이스 인증(최초 1회) — Claude Code의 `slack` MCP는 이 로그인과 무관하게 아래 팀 공용 토큰으로 별도 인증됩니다
 11. **Git 훅(lefthook)은 레포마다 한 번씩 켜기** — `lefthook.yml`이 있는 프로젝트 폴더에서 `lefthook install`을 실행하면, 그 레포에서 커밋·푸시할 때 포맷/린트/테스트가 자동으로 돌아갑니다 (설정 파일이 없는 레포에서는 할 일 없음)
@@ -604,7 +648,7 @@ Orca 전체 디스크 접근: ...
 >
 > - **왜 docker가 필요한가?** Jira MCP는 파이썬 서버라서, 팀 전원이 똑같이 동작하도록 **docker 컨테이너**로 실행됩니다. colima가 그 docker 엔진입니다.
 > - **자동 기동이 안 보이면**: 최초 콜드 스타트는 수십 초가 걸릴 수 있습니다 — `🐳 colima(docker) 데몬이 꺼져 있어 ...` 메시지가 뜨면 정상 동작 중이니 기다려 주세요. 미리 켜두고 싶다면 터미널에서 `colima start`를 직접 실행해도 됩니다.
-> - **그래도 안 될 때**: `claude` 안에서 `/mcp`를 보면 `mcp-atlassian`이 연결 실패로 뜨거나 Jira를 물어보면 "연결할 수 없다"는 답이 옵니다 → `colima start`를 직접 실행한 뒤(`docker info`가 에러 없이 나오면 데몬이 켜진 것, `colima status`로도 확인 가능) **새 터미널**에서 `claude`를 다시 켜세요. (자동 기동 함수는 `.zshrc`를 반영한 새 터미널에서만 동작합니다 — `mac-setup.sh`를 처음 돌렸거나 갱신했다면 `source ~/.zshrc` 또는 새 터미널이 필요합니다.)
+> - **그래도 안 될 때**: Claude Code의 `/mcp` 또는 `opencode mcp list`에서 `atlassian`이 연결 실패로 뜨면 `colima start`를 직접 실행하고 **새 터미널에서 두 도구를 다시 켜세요**. `docker info`가 에러 없이 나오면 데몬이 켜진 상태입니다. `.zshrc`의 자동 기동 함수는 Claude Code용이므로 OpenCode 사용 전에는 `colima start`가 필요합니다.
 > - 참고: ZenHub·figma·slack 등 다른 MCP는 docker가 필요 없습니다. **Jira MCP만** docker로 뜹니다.
 
 > 🔑 **ZenHub·Jira·Slang GPT·DCM·Slack·TypeSafe·GitHub 토큰 · 1Password CLI 설정 (실행 중 안내됨)**
@@ -637,7 +681,7 @@ Orca 전체 디스크 접근: ...
 > | `op: command not found` | CLI가 설치되지 않았습니다 → `brew install --cask 1password-cli` 후 `./mac-setup.sh --env-only` 실행 |
 > | 설치 검증에 `op(1Password CLI): ⚠ 설치됨 (설정 미완료 …)` | 토큰을 읽지 못한 상태입니다 → ① 위 2번(앱 CLI 통합)이 켜져 있는지 확인 후 `./mac-setup.sh --env-only` 실행, ② 이미 켜져 있다면 "API Token" 금고 권한 문제이니 관리자에게 공유 요청 |
 > | `op account list`가 한참(수십 초) 멈춰 있음 | 1Password 앱이 승인(Touch ID)을 기다리는 중입니다 → 1Password 창에서 잠금 해제하면 바로 진행됩니다 |
-> | `mcp:mcp-atlassian(jira): ✓ 등록됨 (⚠ 토큰 미주입 …)` | op는 되지만 팀 'API Token' 볼트의 'Laputa Atlassian API Token > Jira API Token'을 못 읽는 경우입니다 → 볼트 접근 권한을 팀 관리자에게 요청 후 `./mac-setup.sh --env-only` 실행 |
+> | `mcp:atlassian(jira): ✓ 등록됨 (⚠ 토큰 미주입 …)` | op는 되지만 팀 'API Token' 볼트의 'Laputa Atlassian API Token > Jira API Token'을 못 읽는 경우입니다 → 볼트 접근 권한을 팀 관리자에게 요청 후 `./mac-setup.sh --env-only` 실행 |
 > | jira MCP가 연결 안 됨 (docker 관련) | jira MCP는 Docker로 뜹니다 → `claude`/`cld` 실행 시 `~/.zshrc`가 자동으로 `colima start`를 시도합니다(최초 콜드 스타트는 수십 초 소요). 그래도 안 되면 **`colima start`를 직접 실행**한 뒤 새 터미널에서 `claude` |
 > | 설치 검증에 `SLANG_GPT_API_KEY: ❌ 미주입` | op는 되지만 팀 'API Token' 볼트의 'Slang GPT API Token > credential'을 못 읽는 경우입니다 → 볼트 접근 권한을 팀 관리자에게 요청 후 `./mac-setup.sh --env-only` 실행 |
 > | 설치 검증에 `DCM_EMAIL/DCM_CI_KEY: ❌ 미주입` | op는 되지만 팀 'API Token' 볼트의 'DCM CI CD' 항목(사용자명·자격 증명 필드)을 못 읽는 경우입니다 → 볼트 접근 권한을 팀 관리자에게 요청 후 `./mac-setup.sh --env-only` 실행 (이메일·키 중 하나만 읽혀도 미주입으로 표시됩니다) |
@@ -663,7 +707,7 @@ Orca 전체 디스크 접근: ...
 >
 > **Slack MCP 토큰(SLACK_TEAM_ID·SLACK_BOT_TOKEN)은 무엇에 쓰나요**
 >
-> `SLACK_TEAM_ID`·`SLACK_BOT_TOKEN`은 Claude Code에 등록되는 **`slack` MCP**(`@modelcontextprotocol/server-slack`, npx로 실행)가 Slack 워크스페이스에 접속할 때 쓰는 **팀 ID + 봇 토큰** 한 쌍입니다. zenhub·jira처럼 MCP 인증용 토큰이라 `claude mcp add slack`에는 `${SLACK_BOT_TOKEN}`·`${SLACK_TEAM_ID}` 리터럴만 등록되고, 실제 값은 `~/.zshrc`에서 런타임에 채워집니다. 두 값은 팀 공용 1Password **"API Token" 볼트 > "Cocode Slack" 항목**의 **SLACK_TEAM_ID · SLACK_BOT_TOKEN** 필드에 있고, op 설정만 되어 있으면 8.9단계에서 자동으로 주입됩니다 (화면을 멈추지 않고, 실패하면 경고만 남기고 넘어갑니다). DCM과 마찬가지로 **두 값이 모두 읽혀야** 주입되며, 하나라도 못 읽으면 반쪽 인증을 막기 위해 아무것도 넣지 않습니다. (Slack CLI로 직접 앱을 개발할 때 쓰는 `slack login`은 이 토큰과 별개입니다.)
+> `SLACK_TEAM_ID`·`SLACK_BOT_TOKEN`은 두 AI 도구의 **`slack` MCP**(`@modelcontextprotocol/server-slack`, npx로 실행)가 Slack 워크스페이스에 접속할 때 쓰는 **팀 ID + 봇 토큰** 한 쌍입니다. Claude Code 설정에는 `${VAR}`, OpenCode 설정에는 `{env:VAR}` 참조만 저장되며 실제 값은 `~/.zshrc`에서 런타임에 채워집니다. 두 값은 팀 공용 1Password **"API Token" 볼트 > "Cocode Slack" 항목**의 **SLACK_TEAM_ID · SLACK_BOT_TOKEN** 필드에 있고, op 설정만 되어 있으면 8.9단계에서 자동으로 주입됩니다. **두 값이 모두 읽혀야** 주입되며, 하나라도 못 읽으면 반쪽 인증을 막기 위해 아무것도 넣지 않습니다. Slack CLI의 `slack login`은 이 토큰과 별개입니다.
 >
 > **TypeSafe 키(TYPESAFE_API_KEY)는 무엇에 쓰나요**
 >
@@ -683,7 +727,7 @@ Orca 전체 디스크 접근: ...
 
 네, 안전하게 다시 실행할 수 있도록 설계되어 있습니다.
 
-- **이미 설치된 건 다시 건드리지 않습니다.** 앱/도구별로 설치 여부를 먼저 확인하고, 이미 있으면 `✓ 이미 설치됨`을 출력하고 건너뜁니다. 스크립트를 여러 번 실행해도 문제없습니다. 다만 두 가지는 예외입니다 — **팀 표준에서 빠진 항목**(예전 atlassian OAuth 플러그인, flutter-mcp-toolkit 플러그인)은 재실행 시 **자동으로 정리(제거)** 되고, **zenhub·jira·slack MCP 등록**은 설정이 최신으로 유지되도록 매번 지웠다가 다시 등록합니다. **Dart 글로벌 패키지**(`melos`·`mason_cli` 등)도 매번 최신으로 다시 활성화되는데, 이건 의도된 동작입니다 — 그래서 `./mac-setup.sh --dart-only`가 재설치이자 **업데이트** 역할을 합니다.
+- **이미 설치된 앱/CLI는 건너뜁니다.** 재실행 시 기본 MCP 10개는 두 도구의 설정에 다시 병합해 갱신합니다(기존 파일은 최초 한 번 백업, 다른 설정·MCP는 유지). 예전 atlassian OAuth·flutter-mcp-toolkit 플러그인은 자동 정리됩니다. **Dart 글로벌 패키지**도 최신으로 다시 활성화되므로 `./mac-setup.sh --dart-only`는 재설치이자 업데이트 역할을 합니다.
 - **일부가 실패해도 전체가 멈추지 않습니다.** 개별 항목 설치가 실패하면 `⚠` 표시와 함께 건너뛰고 나머지를 계속 진행합니다.
 - **설치 중 y/n 질문에 자동으로 답합니다.** (`NONINTERACTIVE=1`, `CI=true` 설정) 터미널 앞에서 계속 기다리지 않아도 되도록 하기 위함입니다. 사람 입력을 기다리는 곳은 두 종류뿐입니다 — ① **관리자(맥 로그인) 암호**: Homebrew 설치(0) · Xcode 전환(1.5) · 브라우저 확장 등록(1.6), ② **직접 답해야 하는 질문**: **Git 이메일 입력(3.2)** · **ZenHub 토큰 주입(8.5)** · **Orca 권한 안내(9)** 에서만 잠깐 멈춥니다 — 각각 `s`로 건너뛸 수 있고, 이미 설정된 맥이라면 묻지 않습니다. (Jira 토큰 주입(8.6)·Slang GPT 키 주입(8.7)·DCM 키 주입(8.8)·Slack 토큰 주입(8.9)·TypeSafe 키 주입(8.10)은 ZenHub에서 켠 op 설정을 그대로 재사용하므로 따로 멈추지 않습니다.) (터미널이 아닌 파이프 실행이면 멈추지 않고 건너뜁니다.)
 - **Homebrew 자동 설치(0단계)에서 관리자 암호를 한 번 물어볼 수 있습니다.** Homebrew는 이미 있으면 건드리지 않고, 없을 때만 [공식 설치 스크립트](https://brew.sh)를 그대로 실행합니다(비공식 경로를 쓰지 않습니다). **여기만은 실패하면 `⚠` 후 계속이 아니라 스크립트가 멈춥니다** — 이후 단계 대부분이 Homebrew로 설치되기 때문에, 계속 진행하면 전부 실패해서 원인을 알아보기 어려워지기 때문입니다.
