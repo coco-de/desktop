@@ -193,7 +193,20 @@ chmod +x linux-setup.sh
 </tr>
 </table>
 
-**💙 Flutter · Dart**
+**🔌 AI 도구 · 기본 MCP 추가 항목**
+
+<table><tr>
+<td align="center" width="100"><img src="assets/icons/opencode.svg" width="36" height="36" alt="OpenCode"><br><sub><b>OpenCode</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/mobbin.png" width="36" height="36" alt="Mobbin MCP"><br><sub><b>Mobbin MCP</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/atlassian.svg" width="36" height="36" alt="Atlassian MCP"><br><sub><b>Atlassian MCP</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/zenhub.png" width="36" height="36" alt="ZenHub MCP"><br><sub><b>ZenHub MCP</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/chrome.svg" width="36" height="36" alt="Chrome DevTools MCP"><br><sub><b>Chrome DevTools</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/playwright.png" width="36" height="36" alt="Playwright MCP"><br><sub><b>Playwright MCP</b></sub></td>
+</tr></table>
+
+<sub>※ OpenCode·Atlassian의 SVG는 [Simple Icons](https://simpleicons.org), Mobbin·ZenHub·Playwright의 PNG는 공식 사이트 파비콘입니다.</sub>
+
+**💙 Flutter · Dart 패키지**
 
 <table>
 <tr>
@@ -264,7 +277,7 @@ chmod +x linux-setup.sh
 | **1.7** | Pretendard 폰트 9개 스타일 |
 | **1.8** | 1Password CLI(`op`) — 화면 없는 환경에서 1단계를 건너뛴 경우에만 동작 |
 | **2** | Claude Code CLI |
-| **2.5** | Claude MCP 서버 등록 — figma · zenhub · jira(mcp-atlassian) · slack |
+| **2.5** | Claude Code Figma 보조 플러그인 |
 | **2.6** | 다른 AI 코딩 CLI — codex(OpenAI) · agy(Google Antigravity) |
 | **2.7** | Slack CLI |
 | **3** | CLI 도구 — go · git · gh · jq · docker · direnv · JDK 17 · awscli · lefthook |
@@ -277,6 +290,7 @@ chmod +x linux-setup.sh
 | **6** | Node.js (nvm으로 LTS) |
 | **6.1** | codex 재설치 시도 — 2.6단계는 Node.js보다 앞이라 그때 건너뛰었기 때문 |
 | **6.5** | Claude Code 상태줄 (ccstatusline) |
+| **6.6** | OpenCode CLI(`npm install -g opencode-ai`) + 두 도구에 `cob` · `dart` · `figma` · `marionette` · `atlassian` · `mobbin` · `slack` · `zenhub` · `chrome-devtools` · `playwright` 직접 등록 ([인증·실행 조건](#default-mcp)) |
 | **7** | oh-my-zsh + powerlevel10k |
 | **7.5** | 터미널 폰트 자동 적용 (MesloLGS NF) |
 | **8** | `~/.zshrc`·`~/.p10k.zsh` 반영 + 기본 셸을 zsh로 변경 |
@@ -322,6 +336,7 @@ chmod +x linux-setup.sh
 | <img src="assets/icons/openjdk.svg" width="20"> | **JDK 17** | 안드로이드 빌드·`sdkmanager` 구동 (`apt install openjdk-17-jdk`) |
 | | **KVM** | 안드로이드 에뮬레이터 하드웨어 가속 (맥의 HVF, 윈도우의 WHPX에 해당) |
 | <img src="assets/icons/claude.svg" width="20"> | **Claude Code** | AI 코딩 CLI (공식 설치 스크립트) |
+| <img src="assets/icons/opencode.svg" width="20"> | **OpenCode** | 여러 AI 모델을 연결해 쓰는 코딩 CLI (`npm install -g opencode-ai`, 6.6단계) · 최초 실행 후 `/connect`로 모델 계정을 연결합니다 |
 | <img src="assets/icons/codex.png" width="20"> | **codex** | OpenAI 코딩 CLI (`npm install -g @openai/codex` · ⚠ Node 설치 후에 깔립니다) |
 | <img src="assets/icons/antigravity.png" width="20"> | **agy** | Google Antigravity CLI |
 | <img src="assets/icons/slack.png" width="20"> | **slack** | Slack 앱·워크플로 개발 CLI |
@@ -342,7 +357,7 @@ chmod +x linux-setup.sh
 | <img src="assets/icons/firebase.svg" width="20"> | **flutterfire_cli** | Firebase 연동 설정 |
 | <img src="assets/icons/dart.svg" width="20"> | **coverage** | 테스트 커버리지 측정 |
 | | **DCM** | Dart 코드 품질 분석 (공식 apt 저장소) |
-| <img src="assets/icons/dart.svg" width="20"> | **marionette_mcp** / **mcp_server_dart** | Flutter 앱 제어·MCP 서버 |
+| <img src="assets/icons/dart.svg" width="20"> | **marionette_mcp** / **mcp_server_dart** | Flutter 앱 제어·추가 MCP 패키지. 기본 `dart` MCP는 SDK에 포함된 공식 `dart mcp-server`로 등록합니다 |
 | <img src="assets/icons/androidstudio.svg" width="20"> | **Android SDK** | cmdline-tools · platform-tools · build-tools · NDK · 시스템 이미지 · AVD |
 
 ### ☁️ 클라우드 · 런타임 · 터미널
@@ -395,7 +410,7 @@ chmod +x linux-setup.sh
 | **Xcode · iOS 빌드** | Apple 툴체인은 macOS에서만 동작합니다 | **iOS 빌드·배포는 맥이 필요합니다.** 안드로이드·웹·리눅스 데스크톱 빌드는 전부 됩니다 |
 | **CocoaPods** | iOS 의존성 관리 도구입니다 | 위와 같음 |
 | **fastlane** | 팀에서는 주로 iOS 배포에 씁니다 | 안드로이드 배포만 필요하면 `gem install fastlane`으로 직접 설치할 수 있습니다 |
-| **Figma 데스크톱 앱** | 리눅스 빌드가 없습니다 | [figma.com](https://figma.com) 웹에서 동일하게 사용 (기능 차이 없음) |
+| **Figma 데스크톱 앱** | 리눅스 빌드가 없습니다 | [figma.com](https://figma.com) 웹 사용. 원격 `figma` MCP는 리눅스에서도 두 AI 도구에 동일하게 등록됩니다 |
 | **Rive 데스크톱 앱** | 리눅스 빌드가 없습니다 | [editor.rive.app](https://editor.rive.app) 웹 에디터 — 공식 문서상 데스크톱과 기능이 같습니다 |
 | **Dia 브라우저** | 리눅스 빌드가 없습니다 | Chrome을 씁니다 |
 | **mas (App Store CLI)** | App Store가 없습니다 | apt·snap이 그 역할을 합니다 |
@@ -417,6 +432,36 @@ chmod +x linux-setup.sh
 
 ## ✅ 설치 후 확인할 것
 
+<a id="default-mcp"></a>
+
+### 🔌 OpenCode·Claude Code 기본 MCP 10개
+
+| | 등록 이름 | 하는 일 · 실행 방법 | 인증·준비 |
+|---|---|---|---|
+| <img src="assets/icons/dart.svg" width="20"> | `cob` | 팀 코드 템플릿 생성 · `dart pub global run cob:cob_mcp` | 4-b단계의 비공개 `co-bricks` 설치, GitHub 인증 필요 |
+| <img src="assets/icons/dart.svg" width="20"> | `dart` | 코드 분석·핫 리로드 · `dart mcp-server` | FVM의 Flutter/Dart SDK |
+| <img src="assets/icons/figma.svg" width="20"> | `figma` | Figma 디자인 읽기 · `https://mcp.figma.com/mcp` | 최초 OAuth 로그인 |
+| <img src="assets/icons/dart.svg" width="20"> | `marionette` | Flutter 앱 화면 조작 · `dart pub global run marionette_mcp:marionette_mcp` | 앱의 `MarionetteBinding` 설정 + debug 실행 |
+| <img src="assets/icons/atlassian.svg" width="20"> | `atlassian` | Jira 작업 · Docker `ghcr.io/sooperset/mcp-atlassian:latest` | `JIRA_API_TOKEN` + Docker 서비스 실행·docker 그룹 적용 |
+| <img src="assets/icons/mobbin.png" width="20"> | `mobbin` | 실제 제품의 디자인 사례 검색 · `https://api.mobbin.com/mcp` | 최초 OAuth 로그인 + Mobbin Pro·Team·Enterprise 플랜 |
+| <img src="assets/icons/slack.png" width="20"> | `slack` | 팀 메시지 읽기·쓰기 · `npx -y @modelcontextprotocol/server-slack` | `SLACK_TEAM_ID` + `SLACK_BOT_TOKEN` |
+| <img src="assets/icons/zenhub.png" width="20"> | `zenhub` | 이슈 보드 관리 · `https://api.zenhub.com/mcp` | `ZENHUB_API_TOKEN`, 팀 워크스페이스 자동 지정 |
+| <img src="assets/icons/chrome.svg" width="20"> | `chrome-devtools` | 브라우저·네트워크·성능 분석 · `npx -y chrome-devtools-mcp@latest` | Node.js LTS + Chrome |
+| <img src="assets/icons/playwright.png" width="20"> | `playwright` | 웹 화면 자동 조작·검증 · `npx -y @playwright/mcp@latest --browser chrome` | Node.js LTS + Chrome |
+
+등록 위치는 Claude Code의 `~/.claude.json`(`mcpServers`, 사용자 범위)과 OpenCode의 `~/.config/opencode/opencode.json`(`mcp`)입니다. `XDG_CONFIG_HOME`을 지정했다면 OpenCode는 그 아래에 저장합니다. 기존 파일은 최초 한 번 `.bak`으로 백업하고, 기본 10개 정의만 갱신하며 다른 설정·MCP는 유지합니다. 기존 `opencode.jsonc`에 같은 이름의 MCP가 있으면 그 설정이 우선합니다. 예전 팀 Docker 등록명 `mcp-atlassian`은 `atlassian`으로 통합합니다.
+
+실제 토큰 대신 Claude Code에는 `${VAR}`, OpenCode에는 `{env:VAR}` 참조가 저장됩니다. ZenHub·Jira·Slack 토큰은 기존 1Password 단계에서 `~/.zshrc`에 주입됩니다. **새 터미널에서 두 도구를 완전히 종료했다 다시 실행**하고 아래를 확인하세요. OpenCode 모델 계정은 `/connect`로 연결합니다.
+
+```bash
+claude mcp list               # 실제 연결 상태 확인 · Claude Code 안에서는 /mcp
+opencode mcp auth figma       # 최초 Figma 로그인
+opencode mcp auth mobbin      # 최초 Mobbin 로그인
+opencode mcp list             # 실제 연결 상태 확인
+```
+
+Claude Code에서는 `/mcp`에서 `figma`·`mobbin`을 각각 인증합니다. 스크립트의 `✓ 등록됨`은 설정 저장 확인이며 로그인·서버 연결 성공과는 다릅니다. 브라우저 MCP 패키지는 최초 연결 때 `npx`가 내려받습니다. 전체 스크립트를 재실행하면 이 등록도 갱신됩니다(`--dart-only`·`--env-only`는 각자의 단계만 실행합니다).
+
 스크립트가 끝나면 마지막에 설치 검증 결과를 보여줍니다. 이런 모양입니다.
 
 ```
@@ -433,6 +478,9 @@ chmod +x linux-setup.sh
   ✓ gcloud       503.0.0
   ✓ node         v22.11.0 / npm 10.9.0
   ✓ python       3.13.1 (pyenv)
+  opencode: ...
+  mcp:claude:figma: ✓ 등록됨 (연결·인증은 새 세션에서 확인)
+  mcp:opencode:figma: ✓ 등록됨 (연결·인증은 새 세션에서 확인)
   ✓ adb          35.0.2
   ✓ AVD          Pixel_7_API_35
   ❌ dcm         → 수동 설치: https://dcm.dev/docs/getting-started/
@@ -449,6 +497,7 @@ chmod +x linux-setup.sh
 | **3** | `p10k configure` | 프롬프트 모양을 취향대로 (선택) |
 | **4** | 레포마다 최초 1회 `lefthook install` | 커밋 훅은 레포별로 등록해야 동작합니다 |
 | **5** | 1Password 연동이 안 됐다면 → 켠 뒤 `./linux-setup.sh --env-only` | 팀 공용 토큰(ZenHub·Jira 등) 주입이 건너뛰어졌을 수 있습니다 |
+| **6** | 두 도구 재시작 + Figma·Mobbin OAuth 로그인 ([기본 MCP 표](#default-mcp)) | 원격 MCP는 최초 인증이 필요합니다. OpenCode 모델 계정도 `/connect`로 연결합니다 |
 
 <details>
 <summary>1Password CLI(op) 연동하는 법</summary>
