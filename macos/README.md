@@ -22,6 +22,7 @@
 - [🧰 우리 팀의 기술 스택](#tech-stack)
 - [📦 무엇이 설치되나요](#whats-installed)
 - [✅ 설치 후 확인할 것](#after-install)
+- [🔏 서명 키체인 로그인 자동 해제 (선택)](#signing-keychains)
 - [🔒 안전한가요](#is-it-safe)
 - [🐛 문제가 생겼나요](#troubleshooting)
 - [💬 도움이 필요하신가요](#get-help)
@@ -135,6 +136,10 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 > ```
 >
 > 설치·토큰 주입은 전부 건너뛰고, **Orca의 '전체 디스크 접근 권한'** 상태만 확인해 시스템 설정 창까지 열어 안내해 줍니다(9단계). 이미 켜져 있으면 아무것도 묻지 않고 바로 끝납니다. 자세한 내용은 아래 [🔐 Orca 전체 디스크 접근 권한](#orca-full-disk-access)을 봐주세요.
+
+> 🔏 **앱 서명 때 키체인 암호를 반복해서 묻거나, 재부팅 후 자동으로 열고 싶다면**
+>
+> `./mac-setup.sh --keychains-only --help`로 선택형 설정을 확인하세요. **1Password 원본 + login 키체인의 암호화 사본 + 로그인 전용 helper**를 사용합니다. 실제 암호를 `.zshrc`나 plist에 적지 않습니다. 아래 [서명 키체인 로그인 자동 해제](#signing-keychains)에 준비·등록·검증·제거 방법이 있습니다.
 
 <details>
 <summary>예전에 쓰던 맥이 있다면 (선택 사항)</summary>
@@ -311,6 +316,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 | 🔌 Claude MCP | figma 플러그인 자동 설치 + marionette·dart MCP, zenhub·jira·slack MCP 자동 등록. `ZENHUB_API_TOKEN`·`JIRA_API_TOKEN`·`SLACK_TEAM_ID`·`SLACK_BOT_TOKEN`(팀 공용 토큰)은 1Password CLI(`op`)로 `~/.zshrc`에 자동 주입 — git에 커밋 안 됨 (⚠️ figma는 최초 1회 `/mcp` OAuth 로그인. zenhub·jira·slack은 OAuth 대신 1Password 팀 공용 토큰으로 인증 — 1Password 앱의 CLI 통합만 되면 자동 주입. jira는 `sooperset/mcp-atlassian`(Docker)로 **Jira REST API에 직접** 붙어(개발팀 공용 계정 토큰) 조직 Rovo 권한이 필요 없음 — 런타임에 colima/docker 데몬 필요. slack은 `@modelcontextprotocol/server-slack`(npx)로 뜨며 팀 ID+봇 토큰 두 값이 모두 있어야 인증됨 — [설정 방법](#after-install)) |
 | 🔑 팀 공용 토큰 | 위 `ZENHUB_API_TOKEN`·`JIRA_API_TOKEN`·`SLACK_TEAM_ID`·`SLACK_BOT_TOKEN`에 더해, 다국어 자동 번역 도구 `slang_gpt`가 쓰는 `SLANG_GPT_API_KEY`, DCM을 CI 모드로 인증하는 `DCM_EMAIL`·`DCM_CI_KEY`(1Password 항목 `DCM CI CD`의 이메일+키 한 쌍), TypeSafe(판단형 AI 모델 Jev) SDK가 쓰는 `TYPESAFE_API_KEY`(1Password 항목 `TypeSafe Jev`)도 같은 방식(1Password CLI → `~/.zshrc`)으로 자동 주입 — `SLANG_GPT_API_KEY`·`DCM_EMAIL`·`DCM_CI_KEY`·`TYPESAFE_API_KEY`는 MCP가 아니라 명령줄 도구·SDK가 직접 읽는 값이라 등록·로그인 과정이 없음 ([설정 방법](#after-install)) |
 | 🔑 GitHub 인증(gh) | coco-de 조직의 비공개 레포(`co-bricks`·`skills`) 접근용 GitHub 로그인을 팀 공용 1Password 토큰으로 자동 처리(`gh auth login` + `gh auth setup-git`) — 이미 인증돼 있으면 건너뜀. 실패해도 계속 진행하며, 아래 cocode-skills·cob(co-bricks)가 각자 인증 상태를 다시 확인해 건너뜀([설정 방법](#after-install)) |
+| 🔏 서명 키체인 (선택) | `--keychains-only`로 laputa·fastlane_tmp의 자동 잠금 설정·서명 도구 ACL을 확인하고, **1Password → login 암호화 캐시 → 사용자 로그인 후 자동 해제**를 등록합니다. 전체 설치에서는 자동으로 켜지지 않습니다 ([등록·검증·제거](#signing-keychains)) |
 | 🧩 cocode-skills 팀 플러그인 | 사설 레포 `coco-de/skills`의 `install.sh`로 cc-* 플러그인 번들(marionette·dart·figma·dev-cycle·coui 등) 자동 동기화 (⚠️ GitHub 인증 필요 — 보통 위 단계에서 1Password로 자동 처리되며, 안 됐다면 `gh auth login` 수동 실행 후 재실행) |
 | 📱 Android SDK | cmdline-tools, platform-tools, build-tools, platforms, NDK, 에뮬레이터 시스템 이미지, AVD까지 전부 자동 설치·구성 (Android Studio 첫 실행 마법사 불필요) |
 | 🛠 CLI 도구 | go, pyenv, nvm, git, gh, jq, cocoapods, fastlane, awscli, colima, docker, docker-compose, zsh-syntax-highlighting, direnv, openjdk@17, lefthook(Git 훅 관리자 — 레포별로 최초 1회 `lefthook install` 필요), Claude Code, ccstatusline(Claude Code 상태줄) → 실패 시 awesome-statusline(size: small)으로 자동 대체, codex, agy(Antigravity CLI), slack(Slack CLI), maestro(모바일 UI 자동화 CLI), op(1Password CLI), mas(App Store CLI — **Xcode.app이 없을 때만** 설치, Xcode 자동 설치용) |
@@ -388,6 +394,7 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 | <img src="assets/icons/github.svg" width="20" height="20"> | gh | GitHub를 터미널에서 다루는 도구. coco-de 비공개 레포(co-bricks·skills) 접근에 필요한 로그인은 팀 공용 1Password 토큰으로 자동 처리됩니다(`gh auth login` + `gh auth setup-git`) — 안 되면 `gh auth login`으로 직접 로그인 |
 | <img src="assets/icons/cocoapods.svg" width="20" height="20"> | cocoapods | iOS 라이브러리 의존성 관리자 |
 | <img src="assets/icons/fastlane.svg" width="20" height="20"> | fastlane | 앱 빌드·배포 자동화 도구 |
+| <img src="assets/icons/1password.svg" width="20" height="20"> | 서명 키체인 자동 해제 (선택) | 서명된 전용 helper만 읽는 login 키체인 암호화 사본으로 재부팅 후 사용자 로그인 때 laputa·fastlane_tmp를 엽니다. 설치: `--keychains-only install`, 확인: `--keychains-only status` |
 | | awscli | AWS(아마존 클라우드)를 터미널에서 다루는 도구 |
 | | colima | Docker Desktop 없이 가볍게 컨테이너를 실행하는 도구 |
 | <img src="assets/icons/docker.svg" width="20" height="20"> | docker / docker-compose | 컨테이너 실행 및 관리 CLI (colima와 함께 사용) |
@@ -444,6 +451,26 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 </details>
 
 <br>
+
+<a id="signing-keychains"></a>
+
+## 🔏 서명 키체인 로그인 자동 해제 (선택)
+
+`laputa`·`fastlane_tmp`를 재부팅 후 사용자 로그인 때 자동으로 열고, 서명 도구의 반복 암호 요청을 줄이는 설정입니다. 전체 설치에서는 켜지지 않으며 아래처럼 따로 실행합니다.
+
+```bash
+./mac-setup.sh --keychains-only install \
+  --laputa-ref 'op://개발환경/이 Mac/laputa' \
+  --fastlane-ref 'op://개발환경/이 Mac/fastlane_tmp'
+./mac-setup.sh --keychains-only status
+./mac-setup.sh --keychains-only verify
+```
+
+위 참조는 실제 1Password 항목으로 바꿉니다. fastlane 암호가 실제로 비어 있으면 `--fastlane-ref` 대신 `--fastlane-empty`로 명시합니다. 원본은 1Password에, 로컬 사본은 **전용 helper만 읽는 login 키체인**에 암호화 보관합니다. 로그인 실행은 `op`·암호 입력 창을 호출하지 않습니다.
+
+기존 신뢰 앱·`teamid:` 등은 보존하고 누락된 서명 도구·partition만 보완합니다. 검증은 실제 잠금→자동 해제와 코드·설치 패키지 반복 서명까지 수행하고 임시 파일을 정리합니다. `refresh`로 원본을 갱신하고 `uninstall`로 자동 해제·캐시를 제거할 수 있습니다.
+
+**준비·원본 등록·공유 항목 이전·재생성·검증·제거의 상세 안내:** [signing-keychains/README.md](signing-keychains/README.md). 사용자 로그인 후 정상적으로 login 키체인이 열리는 환경을 전제로 합니다. 이 설정은 macOS 전용입니다.
 
 <a id="after-install"></a>
 

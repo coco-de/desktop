@@ -394,6 +394,7 @@ chmod +x linux-setup.sh
 |---|---|---|
 | **Xcode · iOS 빌드** | Apple 툴체인은 macOS에서만 동작합니다 | **iOS 빌드·배포는 맥이 필요합니다.** 안드로이드·웹·리눅스 데스크톱 빌드는 전부 됩니다 |
 | **CocoaPods** | iOS 의존성 관리 도구입니다 | 위와 같음 |
+| **서명 키체인 로그인 자동 해제** (`--keychains-only`) | macOS의 login 키체인·Security.framework·LaunchAgent를 사용하는 설정입니다 | Apple 앱·패키지 서명용 Mac에서 [선택형 설정](../macos/signing-keychains/)을 실행합니다 |
 | **fastlane** | 팀에서는 주로 iOS 배포에 씁니다 | 안드로이드 배포만 필요하면 `gem install fastlane`으로 직접 설치할 수 있습니다 |
 | **Figma 데스크톱 앱** | 리눅스 빌드가 없습니다 | [figma.com](https://figma.com) 웹에서 동일하게 사용 (기능 차이 없음) |
 | **Rive 데스크톱 앱** | 리눅스 빌드가 없습니다 | [editor.rive.app](https://editor.rive.app) 웹 에디터 — 공식 문서상 데스크톱과 기능이 같습니다 |

@@ -11,6 +11,7 @@
 #     0.5단계에서 같은 레포에서 따로 내려받는다.
 #   └ 이미 세팅한 맥에서 토큰(환경변수)만 다시 주입하려면: ./mac-setup.sh --env-only
 #   └ Dart 글로벌 패키지만 다시 설치/업데이트하려면:    ./mac-setup.sh --dart-only
+#   └ 서명 키체인 로그인 자동 해제(선택): ./mac-setup.sh --keychains-only --help
 #
 # 기존 맥의 테마/설정을 그대로 가져오려면, 기존 맥에서
 #   ~/.zshrc, ~/.p10k.zsh
@@ -57,11 +58,36 @@ copy_dotfile() {
 }
 
 # ------------------------------------------------------------
+# 서명 키체인은 선택형이다. 명시적으로 요청한 경우에만 별도 macOS 설정을 실행한다.
+# Security.framework helper가 암호를 메모리로 처리하므로 셸·.zshrc·plist에 값이 남지 않는다.
+# 기존 --env-only 등의 옵션과 섞으면 아래 일반 파서가 오류로 처리한다.
+if [[ "${1:-}" == "--keychains-only" ]]; then
+  shift
+  if ! xcode-select -p >/dev/null 2>&1; then
+    echo "⚠ 서명 키체인 설정에는 Xcode 명령줄 도구가 필요합니다. 전체 설치를 먼저 실행하세요."
+    exit 1
+  fi
+  if [[ -n "$SCRIPT_DIR" && -f "$SCRIPT_DIR/signing-keychains/setup.py" ]]; then
+    exec /usr/bin/python3 "$SCRIPT_DIR/signing-keychains/setup.py" "$@"
+  fi
+  # curl 한 줄 실행도 지원한다. 임시 다운로드에는 공개 소스 코드만 들어간다.
+  keychain_bundle="$(mktemp -d)"
+  trap 'rm -rf "$keychain_bundle"' EXIT
+  for source in setup.py helper.m; do
+    curl -fsSL "https://raw.githubusercontent.com/coco-de/desktop/main/macos/signing-keychains/$source" \
+      -o "$keychain_bundle/$source" || { echo "⚠ 서명 키체인 설정 소스를 받지 못했습니다."; exit 1; }
+  done
+  /usr/bin/python3 "$keychain_bundle/setup.py" "$@"
+  exit $?
+fi
+
+# ------------------------------------------------------------
 # 실행 옵션 파싱
 #   (옵션 없음)  : 전체 설치 (0~10단계)
 #   --env-only   : 1Password(op)에서 팀 공용 토큰만 다시 읽어 ~/.zshrc에 주입 (8.5~8.10단계만)
 #   --perms-only : Orca 전체 디스크 접근 권한 점검·안내만 다시 실행 (9단계만)
 #   --dart-only  : Dart 글로벌 패키지만 다시 설치/업데이트 (4-b단계만)
+#   --keychains-only: 서명 키체인 설정만 실행 (첫 번째 옵션으로 지정, 위에서 처리)
 #   -h, --help   : 사용법 출력
 #   모르는 옵션은 즉시 에러 종료한다 — 오탈자(예: --env-onyl)가 조용히
 #   수 분짜리 전체 설치로 이어지는 사고를 막기 위함이다.
@@ -86,6 +112,12 @@ usage() {
                 앱 설치·토큰 주입·권한 단계는 전부 건너뜁니다.
                 (팀 패키지 목록이 바뀌었거나, 패키지만 최신으로 올리고 싶을 때 사용
                  — Flutter/Dart(fvm)는 이미 설치돼 있어야 합니다)
+  --keychains-only [install|refresh|status|verify|uninstall] [옵션]
+                서명 키체인 로그인 자동 해제만 설정·확인합니다 (선택형).
+                install에는 --laputa-ref / --fastlane-ref의 op:// 참조가 필요합니다.
+                fastlane 암호가 실제로 비어 있으면 --fastlane-empty로 명시합니다.
+                암호는 login 키체인에 암호화 보관하며 .zshrc·plist에 적지 않습니다.
+                상세 도움말: ./mac-setup.sh --keychains-only --help
   -h, --help    이 도움말을 표시합니다
 USAGE
 }
@@ -2197,6 +2229,7 @@ run_orca_permission_step
 log "설치 검증"
 echo "  brew    : $(brew --version 2>/dev/null | head -1 || echo '❌ (수동 설치: https://brew.sh)')"
 echo "  Xcode.app: $([[ -d /Applications/Xcode.app ]] && echo '✓ 설치됨' || echo '❌ (App Store에서 설치: https://apps.apple.com/app/xcode/id497799835, 또는 mas 로그인 후 재실행)')"
+echo "  서명 키체인 자동 해제: $([[ -f "$HOME/Library/LaunchAgents/im.cocode.desktop.signing-keychains.plist" ]] && echo '등록 파일 있음 (상태 확인: ./mac-setup.sh --keychains-only status)' || echo '선택형·미등록 (설정 안내: ./mac-setup.sh --keychains-only --help)')"
 echo "  xcode-select: $(xcode-select -p 2>/dev/null || echo '❌ (Xcode.app 설치 필요 — App Store)')"
 # ZenHub for GitHub 확장(External Extensions 드롭인) 등록 여부 — Chrome은 공식 지원,
 # Dia는 동작이 보장되지 않아 파일이 없어도 오류가 아니라 "미보장" 문구로만 안내한다.
@@ -2335,3 +2368,5 @@ echo "  9. lefthook(Git 훅)은 레포마다 한 번씩 켜야 합니다 — lef
 echo "     ↳ 이걸 해야 커밋·푸시할 때 포맷/린트/테스트가 자동으로 돌아갑니다 (설정 파일이 없는 레포에서는 할 일 없음)"
 echo " 10. Stats(시스템 모니터)는 최초 1회 직접 실행해야 메뉴막대에 나타납니다: open -a Stats"
 echo "     ↳ 실행 후 Stats 설정에서 '로그인 시 시작'을 켜 두면 다음부터는 자동으로 떠 있습니다"
+echo " 11. 재부팅 후 서명 키체인을 자동 해제하려면(선택): ./mac-setup.sh --keychains-only --help"
+echo "     ↳ 1Password 원본을 login 키체인에 암호화 보관합니다. 등록 후에는 --keychains-only verify로 반복 서명을 검증하세요"
