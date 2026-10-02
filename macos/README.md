@@ -333,7 +333,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 | 🛠 CLI 도구 | go, pyenv, nvm, git, gh, jq, cocoapods, fastlane, awscli, colima, docker, docker-compose, zsh-syntax-highlighting, direnv, openjdk@17, lefthook(Git 훅 관리자 — 레포별로 최초 1회 `lefthook install` 필요), Claude Code, **OpenCode**, ccstatusline(Claude Code 상태줄) → 실패 시 awesome-statusline(size: small)으로 자동 대체, codex, agy(Antigravity CLI), slack(Slack CLI), maestro(모바일 UI 자동화 CLI), op(1Password CLI), mas(App Store CLI — **Xcode.app이 없을 때만** 설치, Xcode 자동 설치용) |
 | ✉️ Git 설정 | 커밋에 사용할 회사 이메일을 실행 중에 입력받아 전역 설정(`git config --global user.email`) — 이미 설정돼 있으면 묻지 않고 건너뜀 |
 | 🌐 브라우저 번역 언어 | Chrome·Dia의 번역 대상 언어를 한국어로, "번역 안 함" 목록을 영어로 자동 설정(`dia://settings/languages` = `chrome://settings/languages`를 매번 손으로 누를 필요 없음) — 브라우저가 실행 중이면 건너뛰고 경고만 표시 |
-| 🐦 Flutter | fvm(버전 관리자)으로 Flutter stable 채널 글로벌 설정, DCM(Dart 코드 품질 검사 도구 — CI 인증 키 `DCM_EMAIL`·`DCM_CI_KEY`는 1Password에서 자동 주입) |
+| 🐦 Flutter | fvm(버전 관리자)으로 팀 표준 Flutter **3.47.6**을 설치해 글로벌(기본) 버전으로 고정, DCM(Dart 코드 품질 검사 도구 — CI 인증 키 `DCM_EMAIL`·`DCM_CI_KEY`는 1Password에서 자동 주입) |
 | 🎯 Dart 글로벌 패키지 | coverage, melos, mason_cli, flutter_gen, jaspr_cli, serverpod_cli(pub.dev 최신 베타/RC 버전 자동 조회), flutterfire_cli, marionette_mcp, mcp_server_dart, cob(co-bricks) (⚠️ cob은 비공개 레포라 GitHub 인증 필요 — 보통 위 단계에서 1Password로 자동 처리되며, 안 됐다면 `gh auth login` 수동 실행 후 재실행) · 나중에 이 목록만 다시 깔려면 `./mac-setup.sh --dart-only` |
 | ☁️ 클라우드 | Google Cloud CLI (gcloud) |
 | 🐍 언어 런타임 | Python 최신 3.x (pyenv), Node.js LTS + npm (nvm) |
@@ -388,7 +388,7 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 | platform-tools | `adb` 등 기기·에뮬레이터와 통신하는 도구 |
 | build-tools | 최신 안정 버전을 자동으로 찾아 설치 |
 | platforms | 최신 안정 Android API 플랫폼을 자동으로 찾아 설치 |
-| NDK | 네이티브(C/C++) 코드가 포함된 안드로이드 빌드에 필요. 최신이 아니라 **Flutter stable이 요구하는 버전으로 고정 설치**합니다 — 목록상의 최신 NDK는 프리뷰(r30-beta 등)라 그대로 깔면 Gradle 빌드에서 버전 불일치가 납니다 (요구 버전을 못 읽으면 검증된 기본값 사용) |
+| NDK | 네이티브(C/C++) 코드가 포함된 안드로이드 빌드에 필요. 최신이 아니라 **설치된 Flutter가 요구하는 버전으로 고정 설치**합니다 — 목록상의 최신 NDK는 프리뷰(r30-beta 등)라 그대로 깔면 Gradle 빌드에서 버전 불일치가 납니다 (요구 버전을 못 읽으면 검증된 기본값 사용) |
 | 에뮬레이터 + 시스템 이미지 | Mac 칩 종류(Apple Silicon/Intel)에 맞는 이미지를 자동 선택해 설치. 최신 platform에는 이미지가 아직 없을 수 있어, 실제 배포된 이미지 중 가장 최신 API 버전을 골라 설치합니다 |
 | AVD | 위 시스템 이미지로 `Pixel_6_API_<버전>` 이름의 에뮬레이터를 자동 생성 (이미 있으면 건너뜀) |
 
@@ -429,7 +429,7 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 
 | | 도구 | 용도 |
 |---|---|---|
-| <img src="assets/icons/flutter.svg" width="20" height="20"> | fvm | Flutter 버전 관리자. `fvm global stable`로 stable 채널을 글로벌 설정 |
+| <img src="assets/icons/flutter.svg" width="20" height="20"> | fvm | Flutter 버전 관리자. 팀 표준 버전 **3.47.6**을 `fvm install 3.47.6` → `fvm global 3.47.6`으로 설치해 글로벌(기본) 버전으로 고정합니다. 예전에 stable로 세팅한 맥도 스크립트를 다시 실행하면 3.47.6으로 바뀝니다 |
 | <img src="assets/icons/dart.svg" width="20" height="20"> | DCM (Dart Code Metrics) | Dart 코드 품질 검사 도구. CI/자동화 모드 인증에 쓰는 이메일+키(`DCM_EMAIL`·`DCM_CI_KEY`)는 팀 공용 1Password 항목 `DCM CI CD`에서 자동 주입됩니다 |
 | <img src="assets/icons/dart.svg" width="20" height="20"> | coverage | 테스트가 코드의 어느 부분까지 확인했는지(커버리지)를 측정해 리포트로 만들어 줍니다 (`dart pub global activate`로 설치) |
 | <img src="assets/icons/dart.svg" width="20" height="20"> | melos | 여러 패키지를 한 레포에 담은 프로젝트(모노레포)의 의존성 설치·스크립트 실행을 한 번에 처리해 줍니다 (`dart pub global activate`로 설치) |
@@ -876,7 +876,7 @@ sudo xcodebuild -runFirstLaunch
 `❌ dart 명령을 찾지 못했습니다` 가 뜬다면 Flutter/Dart가 아직 준비되지 않은 것입니다. 화면에 뜨는 안내가 두 가지로 갈립니다.
 
 - **fvm도 없는 맥** — 옵션 없이 `./mac-setup.sh`로 전체 설치를 먼저 해주세요.
-- **fvm은 있는데 기본 버전이 안 잡힌 맥** — 안내대로 `fvm global stable`을 먼저 실행한 뒤 `./mac-setup.sh --dart-only`를 다시 실행하면 됩니다.
+- **fvm은 있는데 기본 버전이 안 잡힌 맥** — 안내대로 `fvm global 3.47.6`을 먼저 실행한 뒤 `./mac-setup.sh --dart-only`를 다시 실행하면 됩니다.
 
 </details>
 

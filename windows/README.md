@@ -278,10 +278,10 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned -Force
 | 🔑 팀 공용 토큰 | MCP용 `ZENHUB_API_TOKEN`·`JIRA_API_TOKEN`·`SLACK_TEAM_ID`·`SLACK_BOT_TOKEN`에 더해, 다국어 자동 번역 도구 `slang_gpt`가 쓰는 `SLANG_GPT_API_KEY`, DCM을 CI 모드로 인증하는 `DCM_EMAIL`·`DCM_CI_KEY`, TypeSafe SDK가 쓰는 `TYPESAFE_API_KEY`도 1Password CLI → 윈도우 사용자 환경변수로 자동 주입 ([설정 방법](#after-install)) |
 | 🔑 GitHub 인증(gh) | coco-de 조직의 비공개 레포(`co-bricks`·`skills`) 접근용 로그인을 팀 공용 1Password 토큰으로 자동 처리(`gh auth login` + `gh auth setup-git`) — 이미 인증돼 있으면 건너뜀 |
 | 🧩 cocode-skills 팀 플러그인 | 사설 레포 `coco-de/skills` 설치 스크립트로 cc-\* 플러그인 번들 동기화 (⚠️ **현재 윈도우에서는 자동 설치가 되지 않습니다** — 아래 [알려진 제약](#known-gap) 참고) |
-| 📱 Android SDK | cmdline-tools, platform-tools, build-tools, platforms, NDK, 에뮬레이터 시스템 이미지, AVD까지 전부 자동 설치·구성 (Android Studio 첫 실행 마법사 불필요). NDK는 최신이 아니라 **Flutter stable이 요구하는 버전으로 고정** 설치 |
+| 📱 Android SDK | cmdline-tools, platform-tools, build-tools, platforms, NDK, 에뮬레이터 시스템 이미지, AVD까지 전부 자동 설치·구성 (Android Studio 첫 실행 마법사 불필요). NDK는 최신이 아니라 **설치된 Flutter가 요구하는 버전으로 고정** 설치 |
 | 🛠 CLI 도구 | git(Git for Windows — Flutter가 요구하는 심볼릭 링크·줄바꿈 옵션까지 지정), go, pyenv-win, nvm-windows, gh, jq, awscli, Docker Desktop, direnv, lefthook(레포별로 최초 1회 `lefthook install` 필요), JDK 17(Temurin), Visual Studio 2022 Build Tools(C++ 워크로드 — 윈도우 데스크톱 앱 빌드용), Claude Code, **OpenCode**, ccstatusline → 실패 시 Awesome CC Statusline(small), codex, agy(Antigravity CLI), slack(Slack CLI), op(1Password CLI) |
 | ✉️ Git 설정 | 커밋에 사용할 회사 이메일을 실행 중에 입력받아 전역 설정(`git config --global user.email`) — 이미 설정돼 있으면 묻지 않고 건너뜀 |
-| 🐦 Flutter | fvm(버전 관리자 · 공식 zip을 `%LOCALAPPDATA%\fvm-bin`에 설치)으로 Flutter stable 채널 글로벌 설정, DCM(Dart 코드 품질 검사 도구) |
+| 🐦 Flutter | fvm(버전 관리자 · 공식 zip을 `%LOCALAPPDATA%\fvm-bin`에 설치)으로 팀 표준 Flutter **3.47.6**을 설치해 기본 버전으로 고정, DCM(Dart 코드 품질 검사 도구) |
 | 🎯 Dart 글로벌 패키지 | coverage, melos, mason_cli, flutter_gen, jaspr_cli, serverpod_cli(pub.dev 최신 베타/RC 버전 자동 조회), flutterfire_cli, marionette_mcp, mcp_server_dart, cob(co-bricks) (⚠️ cob은 비공개 레포라 GitHub 인증 필요) · 나중에 이 목록만 다시 깔려면 `.\win-setup.ps1 -DartOnly` |
 | ☁️ 클라우드 | Google Cloud CLI (gcloud) |
 | 🐍 언어 런타임 | Python 최신 3.x (pyenv-win), Node.js LTS + npm (nvm-windows — ⚠️ 설치에 관리자 권한 필요, 없으면 fnm으로 자동 대체) |
@@ -349,7 +349,7 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 | cmdline-tools | Android SDK를 터미널에서 다루는 도구 모음 (`sdkmanager`, `avdmanager`). 구글 공식 zip을 부트스트랩으로 쓴 뒤, 그것으로 최신본을 표준 위치에 정식 설치합니다 |
 | platform-tools | `adb` 등 기기·에뮬레이터와 통신하는 도구 |
 | build-tools / platforms | 최신 안정 버전을 `sdkmanager --list` 출력에서 자동으로 찾아 설치 (rc·beta 같은 프리뷰는 제외) |
-| NDK | 네이티브(C/C++) 코드가 포함된 안드로이드 빌드에 필요. 최신이 아니라 **Flutter stable이 요구하는 버전으로 고정 설치**합니다 — 목록상의 최신 NDK는 프리뷰라 그대로 깔면 Gradle 빌드에서 버전 불일치가 납니다 |
+| NDK | 네이티브(C/C++) 코드가 포함된 안드로이드 빌드에 필요. 최신이 아니라 **설치된 Flutter가 요구하는 버전으로 고정 설치**합니다 — 목록상의 최신 NDK는 프리뷰라 그대로 깔면 Gradle 빌드에서 버전 불일치가 납니다 |
 | 에뮬레이터 + 시스템 이미지 | 실제로 배포된 `google_apis` 이미지 중 가장 최신 API 버전을 골라 설치. **일반 x64 PC에서만** 설치합니다 |
 | AVD | 위 시스템 이미지로 `Pixel_6_API_<버전>` 이름의 가상 기기를 자동 생성 (이미 있으면 건너뜀) |
 | 라이선스 자동 동의 | 맥의 `yes |` 대신, 'y'를 여러 줄 적은 임시 파일을 표준 입력으로 물려 처리합니다. 성공 판정은 종료 코드가 아니라 `licenses` 폴더에 파일이 생겼는지로 합니다 |
@@ -385,7 +385,7 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 
 | | 도구 | 용도 |
 |---|---|---|
-| <img src="assets/icons/flutter.svg" width="20" height="20"> | fvm | Flutter 버전 관리자. `fvm global stable --force`로 stable 채널을 기본 버전으로 지정합니다. 공식 zip을 `%LOCALAPPDATA%\fvm-bin`에 풀고 PATH 등록 (관리자 권한 불필요) |
+| <img src="assets/icons/flutter.svg" width="20" height="20"> | fvm | Flutter 버전 관리자. 팀 표준 버전 **3.47.6**을 `fvm install 3.47.6` → `fvm global 3.47.6 --force`로 설치해 기본 버전으로 고정합니다(예전에 stable로 세팅한 PC도 다시 실행하면 3.47.6으로 바뀝니다). 공식 zip을 `%LOCALAPPDATA%\fvm-bin`에 풀고 PATH 등록 (관리자 권한 불필요) |
 | <img src="assets/icons/dart.svg" width="20" height="20"> | DCM (Dart Code Metrics) | Dart 코드 품질 검사 도구. Chocolatey가 있으면 `choco install dcm`, 없으면 공식 GitHub 배포 zip을 `%LOCALAPPDATA%\dcm`에 풀고 PATH 등록. CI 인증 키(`DCM_EMAIL`·`DCM_CI_KEY`)는 1Password 항목 `DCM CI CD`에서 자동 주입 |
 | <img src="assets/icons/dart.svg" width="20" height="20"> | coverage | 테스트가 코드의 어느 부분까지 확인했는지(커버리지)를 측정해 리포트로 만들어 줍니다 |
 | <img src="assets/icons/dart.svg" width="20" height="20"> | melos | 여러 패키지를 한 레포에 담은 프로젝트(모노레포)의 의존성 설치·스크립트 실행을 한 번에 처리해 줍니다 |

@@ -539,6 +539,17 @@ function Get-OpSecret {
 }
 
 # ------------------------------------------------------------
+# 팀 표준 Flutter 버전
+#
+#   4-a단계가 fvm 으로 이 버전을 설치하고 기본(global) 버전으로 고정한다.
+#   'stable' 채널을 따라가면 PC마다 설치한 날의 최신판이 깔려 팀원끼리 버전이 어긋나므로
+#   숫자로 못 박는다. 4-a보다 먼저 실행되는 -DartOnly 안내와 10단계 설치 검증도 이 값을
+#   쓰므로 여기 둔다.
+#   버전을 올릴 때는 맥·리눅스 스크립트의 같은 값과 세 README 의 Flutter 버전 표기를 함께 바꾼다.
+# ------------------------------------------------------------
+$TeamFlutterVersion = '3.47.6'
+
+# ------------------------------------------------------------
 # CPU 종류 판정 — 이 PC가 ARM64(Snapdragon X 등)인가
 #
 #   ⚠ $env:PROCESSOR_ARCHITECTURE 만 보면 안 된다. ARM64 노트북에서 PowerShell이
@@ -587,7 +598,7 @@ if ([string]::IsNullOrWhiteSpace($CpuArch)) {
 #   3.2. Git 사용자 이메일 (git config --global user.email)
 #   3.4. GitHub 인증 자동화 (1Password 팀 공용 토큰 → gh auth login)
 #   3.5. cocode-skills 팀 플러그인 (사설 레포 install.sh — Git Bash로 실행)
-#   4-a. FVM + Flutter stable  (+ 4-a-7 Windows 데스크톱 빌드 도구 — Visual Studio Build Tools)
+#   4-a. FVM + 팀 표준 Flutter($TeamFlutterVersion)  (+ 4-a-7 Windows 데스크톱 빌드 도구 — Visual Studio Build Tools)
 #   4-b. Dart 글로벌 패키지
 #   4-c. Google Cloud CLI
 #   4-d. DCM
@@ -2901,12 +2912,12 @@ if (-not (Test-CoGhAuth)) {
 # ============================================================
 
 # ------------------------------------------------------------
-# 4-a. FVM 설치 + Flutter stable 글로벌 설정 (+ Windows 선행 조건)
+# 4-a. FVM 설치 + 팀 표준 Flutter($TeamFlutterVersion) 글로벌 설정 (+ Windows 선행 조건)
 # ------------------------------------------------------------
-Write-Step "4-a. FVM 설치 및 Flutter stable 글로벌 설정 (Windows 선행 조건 포함)"
+Write-Step "4-a. FVM 설치 및 Flutter $TeamFlutterVersion 글로벌 설정 (Windows 선행 조건 포함)"
 
 # --- 4-a-1. Windows 선행 조건 ① 개발자 모드 (심볼릭 링크 허용) ---
-#   fvm 은 'fvm global stable' 을 할 때 바로가기(심볼릭 링크)를 만들고, Flutter 본체도
+#   fvm 은 'fvm global <버전>' 을 할 때 바로가기(심볼릭 링크)를 만들고, Flutter 본체도
 #   플러그인을 쓰는 앱을 빌드할 때 같은 걸 만든다. 개발자 모드가 꺼져 있으면 둘 다 실패한다.
 #   Flutter 가 내는 에러 문구도 "Please enable Developer Mode" 라고 이걸 지목한다.
 #   레지스트리 수정은 관리자 권한이 필요하므로, 권한이 없으면 켜는 방법만 알려주고 넘어간다.
@@ -3034,33 +3045,34 @@ if (Test-Cmd 'fvm') {
   }
 }
 
-# --- 4-a-5. Flutter stable 설치 + 기본 버전으로 지정 ---
-#   맥의 'yes | fvm install stable' 에 해당한다. Windows 에는 yes 명령이 없어서, fvm 이
+# --- 4-a-5. 팀 표준 Flutter($TeamFlutterVersion) 설치 + 기본 버전으로 지정 ---
+#   맥의 'yes | fvm install <버전>' 에 해당한다. Windows 에는 yes 명령이 없어서, fvm 이
 #   'CI 환경에서는 물어보지 않는다'는 성질을 이용해 $env:CI 를 잠깐 켜 두고 실행한다.
 #   (이 값을 켜면 fvm 의 내려받기 캐시 최적화도 같이 꺼지므로, 이 단계에서만 켰다 되돌린다)
+#   예전에 stable 로 세팅한 PC도 재실행하면 이 버전이 설치되고 기본 버전도 이 버전으로 바뀐다.
 if (Test-Cmd 'fvm') {
   $prevCI = $env:CI
   try {
     $env:CI = 'true'
 
-    & fvm install stable
+    & fvm install $TeamFlutterVersion
     if ($LASTEXITCODE -eq 0) {
-      Write-Ok "Flutter stable 설치 완료"
+      Write-Ok "Flutter $TeamFlutterVersion 설치 완료"
     } else {
-      Write-Warn "Flutter stable 설치 실패 → 건너뜀 (수동 설치: fvm install stable)"
+      Write-Warn "Flutter $TeamFlutterVersion 설치 실패 → 건너뜀 (수동 설치: fvm install $TeamFlutterVersion)"
     }
 
-    & fvm global stable --force
+    & fvm global $TeamFlutterVersion --force
     if ($LASTEXITCODE -eq 0) {
-      Write-Ok "Flutter stable 을 기본 버전으로 지정했습니다"
+      Write-Ok "Flutter $TeamFlutterVersion 을 기본 버전으로 지정했습니다"
     } else {
-      Write-Warn "Flutter stable 기본 지정 실패 → 건너뜀 (수동 설정: fvm global stable --force)"
+      Write-Warn "Flutter $TeamFlutterVersion 기본 지정 실패 → 건너뜀 (수동 설정: fvm global $TeamFlutterVersion --force)"
       if (-not $devModeOn) {
         Write-Info "개발자 모드가 꺼져 있어 실패했을 가능성이 큽니다 — 위 안내대로 켠 뒤 다시 실행해 주세요"
       }
     }
   } catch {
-    Write-Warn "Flutter stable 설치/지정 중 오류 → 건너뜀 (수동 설치: fvm install stable ; fvm global stable --force)"
+    Write-Warn "Flutter $TeamFlutterVersion 설치/지정 중 오류 → 건너뜀 (수동 설치: fvm install $TeamFlutterVersion ; fvm global $TeamFlutterVersion --force)"
   } finally {
     # 원래 값으로 되돌린다 (원래 없던 값이면 아예 지운다)
     if ($null -eq $prevCI) {
@@ -3070,7 +3082,7 @@ if (Test-Cmd 'fvm') {
     }
   }
 } else {
-  Write-Warn "fvm 이 없어 Flutter stable 설치를 건너뜁니다 (수동 설치: https://fvm.app/documentation/getting-started/installation)"
+  Write-Warn "fvm 이 없어 Flutter $TeamFlutterVersion 설치를 건너뜁니다 (수동 설치: https://fvm.app/documentation/getting-started/installation)"
 }
 
 # --- 4-a-6. flutter/dart 와 Dart 도구들의 PATH 등록 ---
@@ -3107,7 +3119,7 @@ if ($null -ne $fvmDefaultBin) {
   Add-UserPath $fvmDefaultBin -Front
   Write-Ok "Flutter/Dart 경로를 등록했습니다 ($fvmDefaultBin)"
 } else {
-  Write-Warn "Flutter 기본 버전 폴더를 찾지 못해 PATH 등록을 건너뜁니다 (수동 확인: fvm global stable --force 실행 후 fvm api context)"
+  Write-Warn "Flutter 기본 버전 폴더를 찾지 못해 PATH 등록을 건너뜁니다 (수동 확인: fvm global $TeamFlutterVersion --force 실행 후 fvm api context)"
 }
 
 # --- 4-a-7. Windows 데스크톱 앱 빌드용 C++ 도구 (Visual Studio Build Tools) ---
@@ -3194,7 +3206,7 @@ if ($DartOnly) {
         if (Test-Cmd 'fvm') {
             Write-Host '❌ dart 명령을 찾지 못했습니다 — fvm은 있지만 기본 Flutter 버전이 지정돼 있지 않습니다.' -ForegroundColor Red
             Write-Host '   → 아래를 먼저 실행한 뒤 다시 시도해 주세요:'
-            Write-Host '        fvm global stable --force'
+            Write-Host "        fvm global $TeamFlutterVersion --force"
             Write-Host '        .\win-setup.ps1 -DartOnly'
         } else {
             Write-Host '❌ dart 명령을 찾지 못했습니다 — Flutter/Dart(fvm)가 아직 준비되지 않은 PC로 보입니다.' -ForegroundColor Red
@@ -3255,7 +3267,7 @@ function Invoke-DartGlobalActivate {
 
 if (-not (Test-Cmd 'dart')) {
   Write-Warn "dart 명령을 찾지 못해 Dart 글로벌 패키지 설치를 통째로 건너뜁니다"
-  Write-Info "위 4-a 단계(fvm · Flutter stable)가 성공했는지 확인한 뒤 이 스크립트를 다시 실행해 주세요"
+  Write-Info "위 4-a 단계(fvm · Flutter $TeamFlutterVersion)가 성공했는지 확인한 뒤 이 스크립트를 다시 실행해 주세요"
   Write-Info "이미 깔려 있다면 터미널을 완전히 닫았다 새로 열면 인식되는 경우가 많습니다 (PATH 는 새 창부터 반영)"
 } else {
   # 어떤 dart 로 깔고 있는지 한 줄 남긴다 — 여러 dart 가 섞여 있을 때
@@ -5130,9 +5142,9 @@ Write-Host ("  개발자 모드   : " + $(if ((Get-ItemProperty 'HKLM:\SOFTWARE\
 Write-Host ("  긴 경로 해제  : " + $(if ((Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -Name LongPathsEnabled -ErrorAction SilentlyContinue).LongPathsEnabled -eq 1) { '✓ 적용됨 (재부팅 후 유효)' } else { '❌ 미적용 (관리자 PowerShell 에서 New-ItemProperty -Path ''HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem'' -Name LongPathsEnabled -Value 1 -PropertyType DWORD -Force)' }))
 Write-Host ("  git 안전 폴더 : " + $(if ((& git config --global --get-all safe.directory 2>$null) -contains '*') { '✓ 설정됨' } else { '❌ 미설정 (git config --global --add safe.directory "*") — 없으면 fvm 이 unable to find git 오류를 냅니다' }))
 Write-Host ("  fvm     : " + $(if (Test-Cmd 'fvm') { ((& fvm --version 2>$null) | Select-Object -First 1) } else { '❌ (수동 설치: https://fvm.app/documentation/getting-started/installation)' }))
-Write-Host ("  flutter : " + $(if (Test-Cmd 'flutter') { ((& flutter --version 2>$null) | Select-Object -First 1) } else { '❌ (fvm global stable --force 실행 후 새 터미널에서 확인)' }))
+Write-Host ("  flutter : " + $(if (Test-Cmd 'flutter') { ((& flutter --version 2>$null) | Select-Object -First 1) } else { "❌ (fvm global $TeamFlutterVersion --force 실행 후 새 터미널에서 확인)" }))
 Write-Host ("  dart    : " + $(if (Test-Cmd 'dart') { (((& dart --version 2>$null) | Out-String).Trim()) } else { '❌ (새 터미널에서 다시 확인)' }))
-Write-Host ("  Flutter PATH: " + $(if ($env:Path -like '*fvm*default*bin*') { '✓ 등록됨' } else { '❌ 미등록 (새 터미널에서 확인 — 그래도 없으면 fvm global stable --force 재실행)' }))
+Write-Host ("  Flutter PATH: " + $(if ($env:Path -like '*fvm*default*bin*') { '✓ 등록됨' } else { "❌ 미등록 (새 터미널에서 확인 — 그래도 없으면 fvm global $TeamFlutterVersion --force 재실행)" }))
 Write-Host ("  Windows 빌드도구: " + $(if ($vsFound) { '✓ 설치됨 (C++ 빌드 도구 확인됨 · 자세한 확인: flutter doctor -v)' } else { '❌ 미설치 — Windows 데스크톱 앱 빌드에 필요 (수동 설치: winget install --id Microsoft.VisualStudio.2022.BuildTools -e --source winget · 설치 화면에서 ''C++를 사용한 데스크톱 개발'' 선택 · 자세한 확인: flutter doctor -v)' }))
 $dartList = $(if (Test-Cmd 'dart') { ((& dart pub global list 2>$null) | Out-String) } else { '' })
 $dartMissing = @('coverage','melos','mason_cli','flutter_gen','jaspr_cli','serverpod_cli','flutterfire_cli','marionette_mcp','mcp_server_dart') | Where-Object { $dartList -notmatch ('(?m)^' + [regex]::Escape($_) + ' ') }

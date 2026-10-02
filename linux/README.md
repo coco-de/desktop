@@ -210,7 +210,7 @@ chmod +x linux-setup.sh
 
 <table>
 <tr>
-<td align="center" width="100"><img src="assets/icons/flutter.svg" width="36" height="36" alt="Flutter"><br><sub><b>Flutter</b><br>(stable)</sub></td>
+<td align="center" width="100"><img src="assets/icons/flutter.svg" width="36" height="36" alt="Flutter"><br><sub><b>Flutter</b><br>(3.47.6)</sub></td>
 <td align="center" width="100"><img src="assets/icons/dart.svg" width="36" height="36" alt="Dart"><br><sub><b>Dart</b></sub></td>
 <td align="center" width="100"><img src="assets/icons/dart.svg" width="36" height="36" alt="fvm"><br><sub><b>fvm</b><br>(버전 관리)</sub></td>
 <td align="center" width="100"><img src="assets/icons/dart.svg" width="36" height="36" alt="melos"><br><sub><b>melos</b><br>(모노레포)</sub></td>
@@ -346,7 +346,7 @@ chmod +x linux-setup.sh
 
 | | 도구 | 용도 |
 |---|---|---|
-| <img src="assets/icons/flutter.svg" width="20"> | **Flutter (stable)** | fvm으로 설치·관리 |
+| <img src="assets/icons/flutter.svg" width="20"> | **Flutter (3.47.6)** | 팀 표준 버전. fvm으로 설치해 기본 버전으로 고정 (`fvm global 3.47.6` — 예전에 stable로 세팅한 PC도 다시 실행하면 3.47.6으로 바뀝니다) |
 | <img src="assets/icons/dart.svg" width="20"> | **fvm** | Flutter 버전 관리 (공식 설치 스크립트) |
 | <img src="assets/icons/dart.svg" width="20"> | **melos** | 모노레포 패키지 관리 |
 | <img src="assets/icons/dart.svg" width="20"> | **mason_cli** | 코드 템플릿(brick) 생성 |
@@ -474,8 +474,8 @@ Claude Code에서는 `/mcp`에서 `figma`·`mobbin`을 각각 인증합니다. �
   ✓ docker       27.3.1  ⚠ 그룹 반영을 위해 재로그인 필요
   ✓ go           1.22.2
   ✓ java         17.0.13
-  ✓ fvm/flutter  3.27.1
-  ✓ dart         3.6.0 (글로벌 패키지 10/10)
+  ✓ fvm/flutter  3.47.6
+  ✓ dart         3.13.5 (글로벌 패키지 10/10)
   ✓ gcloud       503.0.0
   ✓ node         v22.11.0 / npm 10.9.0
   ✓ python       3.13.1 (pyenv)
