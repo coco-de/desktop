@@ -107,7 +107,7 @@ function Show-Usage {
                 OpenCode·Claude Code에 기본 MCP 10개를 함께 등록합니다(6.6단계).
   -EnvOnly      1Password(op)에서 팀 공용 토큰(ZENHUB_API_TOKEN·JIRA_API_TOKEN·
                 SLANG_GPT_API_KEY·DCM_EMAIL·DCM_CI_KEY·SLACK_TEAM_ID·
-                SLACK_BOT_TOKEN·TYPESAFE_API_KEY)만 다시 읽어
+                SLACK_BOT_TOKEN·TYPESAFE_API_KEY·OPENAI_API_KEY)만 다시 읽어
                 윈도우 사용자 환경변수에 주입합니다.
                 앱/도구 설치 단계는 전부 건너뜁니다.
                 (토큰이 바뀌었거나, 설치 때 토큰 주입을 건너뛴 경우에 사용)
@@ -610,7 +610,7 @@ if ([string]::IsNullOrWhiteSpace($CpuArch)) {
 #   7.   PowerShell 프로필 + PSReadLine (맥의 oh-my-zsh 자리)
 #   7.3. Oh My Posh 프롬프트 테마 (맥의 powerlevel10k 자리)
 #   7.5. MesloLGS NF 폰트  (+ 7.5-a Windows Terminal 폰트 자동 적용)
-#   8.5. 팀 공용 토큰 주입 (1Password → 윈도우 사용자 환경변수 — 8.5-a ~ 8.5-f 여섯 묶음)
+#   8.5. 팀 공용 토큰 주입 (1Password → 윈도우 사용자 환경변수 — 8.5-a ~ 8.5-g 일곱 묶음)
 #   10.  설치 검증 + 다음 단계 안내
 #
 # 공통 규칙: 모든 단계 멱등(이미 설치 시 스킵) · 실패해도 ⚠ 후 계속 · 시크릿 미커밋
@@ -4869,6 +4869,7 @@ $DcmCiKeyOpRef = 'op://API Token/DCM CI CD/credential'
 $SlackTeamIdOpRef = 'op://API Token/Cocode Slack/SLACK_TEAM_ID'
 $SlackBotTokenOpRef = 'op://API Token/Cocode Slack/SLACK_BOT_TOKEN'
 $TypesafeTokenOpRef = 'op://API Token/TypeSafe Jev/credential'
+$OpenaiTokenOpRef = 'op://API Token/OPENAI_API_KEY/credential'
 
 # 화면 안내에만 쓰는 팀 계정 이름 (비밀 아님). 스크립트 상단에 이미 있으면 그 값을 씁니다.
 $opAccountLabel = 'team-cocodeinc.1password.com'
@@ -5028,6 +5029,13 @@ Write-Step "8.5-f. TYPESAFE_API_KEY 주입 (1Password 팀 공용 항목 'TypeSaf
 # TypeSafe(판단형 AI 모델 Jev) 공식 SDK(Python·JavaScript)가 이 환경변수를 알아서 읽습니다.
 # MCP 등록이 없는 단일 값이라 Slang GPT(8.5-c)와 같은 방식으로 넣기만 하면 됩니다.
 Set-CocodeTeamSecret -Names @('TYPESAFE_API_KEY') -Refs @($TypesafeTokenOpRef) -Label 'TYPESAFE_API_KEY' -Hint "팀 'API Token' 금고 > 'TypeSafe Jev' > credential 필드" | Out-Null
+
+Write-Step "8.5-g. OPENAI_API_KEY 주입 (1Password 팀 공용 항목 'OPENAI_API_KEY', OpenAI SDK용)"
+# OpenAI 공식 SDK(Python·JavaScript)가 이 환경변수를 알아서 읽습니다.
+# MCP 등록이 없는 단일 값이라 Slang GPT(8.5-c)·TypeSafe(8.5-f)와 같은 방식으로 넣기만 하면 됩니다.
+# slang_gpt(8.5-c)는 이 변수가 아니라 자기 전용 SLANG_GPT_API_KEY를 읽습니다 — 두 변수는 서로 별개입니다.
+# ⚠ 이미 사용자 환경변수 OPENAI_API_KEY 를 직접 설정해 두었다면 팀 키로 바뀝니다 (다른 팀 토큰과 같은 동작).
+Set-CocodeTeamSecret -Names @('OPENAI_API_KEY') -Refs @($OpenaiTokenOpRef) -Label 'OPENAI_API_KEY' -Hint "팀 'API Token' 금고 > 'OPENAI_API_KEY' > credential 필드" | Out-Null
 
 # ★맥의 `source ~/.zshrc`에 해당하는 수단이 윈도우에는 없습니다.
 #   프로그램은 실행되는 순간의 환경변수를 복사해 갖고 있을 뿐이라, 이미 열려 있던 창은
@@ -5217,6 +5225,7 @@ Write-Host "  SLANG_GPT_API_KEY: $(if ([Environment]::GetEnvironmentVariable('SL
 Write-Host "  DCM_EMAIL/DCM_CI_KEY: $(if (([Environment]::GetEnvironmentVariable('DCM_EMAIL','User')) -and ([Environment]::GetEnvironmentVariable('DCM_CI_KEY','User'))) { '✓ 주입됨 (DCM CI 라이선스 인증용)' } else { '❌ 미주입 (.\win-setup.ps1 -EnvOnly 재실행)' })"
 Write-Host "  SLACK_TEAM_ID/SLACK_BOT_TOKEN: $(if (([Environment]::GetEnvironmentVariable('SLACK_TEAM_ID','User')) -and ([Environment]::GetEnvironmentVariable('SLACK_BOT_TOKEN','User'))) { '✓ 주입됨 (slack MCP용)' } else { '❌ 미주입 (.\win-setup.ps1 -EnvOnly 재실행)' })"
 Write-Host "  TYPESAFE_API_KEY: $(if ([Environment]::GetEnvironmentVariable('TYPESAFE_API_KEY','User')) { '✓ 주입됨 (TypeSafe Jev SDK용)' } else { '❌ 미주입 (.\win-setup.ps1 -EnvOnly 재실행)' })"
+Write-Host "  OPENAI_API_KEY: $(if ([Environment]::GetEnvironmentVariable('OPENAI_API_KEY','User')) { '✓ 주입됨 (OpenAI SDK용)' } else { '❌ 미주입 (.\win-setup.ps1 -EnvOnly 재실행)' })"
 
 # ------------------------------------------------------------
 # 완료 안내 — 사람이 직접 해야만 하는 일만 남긴다
@@ -5274,12 +5283,14 @@ if ($EnvOnly) {
     $eoSlkT  = [Environment]::GetEnvironmentVariable('SLACK_TEAM_ID','User')
     $eoSlkB  = [Environment]::GetEnvironmentVariable('SLACK_BOT_TOKEN','User')
     $eoTs    = [Environment]::GetEnvironmentVariable('TYPESAFE_API_KEY','User')
+    $eoOai   = [Environment]::GetEnvironmentVariable('OPENAI_API_KEY','User')
     Write-Host ("  ZENHUB_API_TOKEN             : " + $(if ($eoZh)    { '✓ 주입됨' } else { '❌ 미주입' }))
     Write-Host ("  JIRA_API_TOKEN               : " + $(if ($eoJira)  { '✓ 주입됨' } else { '❌ 미주입' }))
     Write-Host ("  SLANG_GPT_API_KEY            : " + $(if ($eoSlang) { '✓ 주입됨' } else { '❌ 미주입' }))
     Write-Host ("  DCM_EMAIL/DCM_CI_KEY         : " + $(if ($eoDcmE -and $eoDcmK) { '✓ 주입됨' } else { '❌ 미주입' }))
     Write-Host ("  SLACK_TEAM_ID/SLACK_BOT_TOKEN: " + $(if ($eoSlkT -and $eoSlkB) { '✓ 주입됨' } else { '❌ 미주입' }))
     Write-Host ("  TYPESAFE_API_KEY             : " + $(if ($eoTs)    { '✓ 주입됨' } else { '❌ 미주입' }))
+    Write-Host ("  OPENAI_API_KEY               : " + $(if ($eoOai)   { '✓ 주입됨' } else { '❌ 미주입' }))
 
     $eoMissing = @()
     if (-not $eoZh)    { $eoMissing += 'ZENHUB_API_TOKEN' }
@@ -5288,6 +5299,7 @@ if ($EnvOnly) {
     if (-not ($eoDcmE -and $eoDcmK)) { $eoMissing += 'DCM_EMAIL/DCM_CI_KEY' }
     if (-not ($eoSlkT -and $eoSlkB)) { $eoMissing += 'SLACK_TEAM_ID/SLACK_BOT_TOKEN' }
     if (-not $eoTs)    { $eoMissing += 'TYPESAFE_API_KEY' }
+    if (-not $eoOai)   { $eoMissing += 'OPENAI_API_KEY' }
 
     Write-Host ''
     if ($eoMissing.Count -eq 0) {
