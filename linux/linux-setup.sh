@@ -475,6 +475,14 @@ op_read() {
   return 0
 }
 
+# ------------------------------------------------------------
+# 팀 표준 Flutter 버전 — 4-a단계가 fvm으로 이 버전을 설치하고 기본(global) 버전으로 고정한다.
+#   'stable' 채널을 따라가면 PC마다 설치한 날의 최신판이 깔려 팀원끼리 버전이 어긋나므로 숫자로 못 박는다.
+#   4-a보다 먼저 실행되는 --dart-only 안내와 10단계 설치 검증도 이 값을 쓰므로 여기 둔다.
+#   버전을 올릴 때는 맥·윈도우 스크립트의 같은 값과 세 README의 Flutter 버전 표기를 함께 바꾼다.
+# ------------------------------------------------------------
+TEAM_FLUTTER_VERSION="3.47.6"
+
 # ============================================================
 # 0. apt 기반 구성 + 빌드 필수 패키지  /  0.5. 팀 셸 설정 확보
 # ============================================================
@@ -947,11 +955,11 @@ if (( DART_ONLY )); then
   if ! have dart; then
     echo ""
     if have fvm; then
-      # fvm 은 있는데 기본 버전이 지정되지 않은 PC — 4-a의 `fvm global stable` 이 예전 실행에서
+      # fvm 은 있는데 기본 버전이 지정되지 않은 PC — 4-a의 `fvm global $TEAM_FLUTTER_VERSION` 이 예전 실행에서
       # ⚠ 로 건너뛰어진 경우다. 여기서 대신 깔아주지 않고 복붙할 명령을 그대로 알려준다.
       echo "❌ dart 명령을 찾지 못했습니다 — fvm은 있지만 기본 Flutter 버전이 지정돼 있지 않습니다."
       echo "   → 아래를 먼저 실행한 뒤 다시 시도해 주세요:"
-      echo "        fvm global stable"
+      echo "        fvm global $TEAM_FLUTTER_VERSION"
       echo "        ./linux-setup.sh --dart-only"
     else
       echo "❌ dart 명령을 찾지 못했습니다 — Flutter/Dart(fvm)가 아직 준비되지 않은 PC로 보입니다."
@@ -1816,11 +1824,12 @@ fi
 
 
 # ------------------------------------------------------------
-# 4-a. FVM + Flutter stable 글로벌 설치
+# 4-a. FVM + 팀 표준 Flutter(TEAM_FLUTTER_VERSION) 글로벌 설치
 #   FVM은 프로젝트마다 다른 Flutter 버전을 골라 쓰게 해 주는 도구다. 팀은 FVM으로 버전을
 #   맞추므로 Flutter를 직접 내려받지 않고 FVM을 먼저 깐다.
+#   예전에 stable 로 세팅한 PC도 재실행하면 이 버전이 설치되고 기본 버전도 이 버전으로 바뀐다.
 # ------------------------------------------------------------
-log "4-a. FVM 설치 및 Flutter stable 글로벌 설정"
+log "4-a. FVM 설치 및 Flutter $TEAM_FLUTTER_VERSION 글로벌 설정"
 if have fvm; then
   ok "fvm 이미 설치됨"
 else
@@ -1840,13 +1849,14 @@ path_prepend "$HOME/.pub-cache/bin"
 
 if have fvm; then
   # `yes |` 는 설치 중 나오는 확인 질문에 자동으로 y를 눌러 준다 (사람이 지켜보지 않아도 진행).
-  yes | fvm install stable || warn "Flutter stable 설치 실패 → 건너뜀 (수동 설치: fvm install stable)"
-  yes | fvm global stable --force 2>/dev/null || yes | fvm global stable \
-    || warn "Flutter stable 글로벌 설정 실패 → 건너뜀 (수동 설정: fvm global stable)"
+  yes | fvm install "$TEAM_FLUTTER_VERSION" \
+    || warn "Flutter $TEAM_FLUTTER_VERSION 설치 실패 → 건너뜀 (수동 설치: fvm install $TEAM_FLUTTER_VERSION)"
+  yes | fvm global "$TEAM_FLUTTER_VERSION" --force 2>/dev/null || yes | fvm global "$TEAM_FLUTTER_VERSION" \
+    || warn "Flutter $TEAM_FLUTTER_VERSION 글로벌 설정 실패 → 건너뜀 (수동 설정: fvm global $TEAM_FLUTTER_VERSION)"
   # fvm global 이 만든 기본 버전 바로가기(~/fvm/default/bin)에 flutter·dart 가 들어 있다.
   path_prepend "$HOME/fvm/default/bin"
 else
-  warn "fvm 을 찾지 못해 Flutter stable 설치를 건너뜁니다"
+  warn "fvm 을 찾지 못해 Flutter $TEAM_FLUTTER_VERSION 설치를 건너뜁니다"
 fi
 
 # ------------------------------------------------------------
@@ -1991,7 +2001,7 @@ else
     LATEST_BUILD_TOOLS=$(echo "$SDK_LIST" | grep -oE '^[[:space:]]*build-tools;[0-9]+\.[0-9]+\.[0-9]+' | tr -d ' ' | sort -t';' -k2 -V | tail -1)
 
     # NDK는 sdkmanager 목록의 '최신'이 아니라 Flutter가 요구하는 버전으로 고정한다.
-    # (목록 최신값은 r30-beta 같은 프리뷰라 Flutter stable 빌드의 android.ndkVersion과 어긋나
+    # (목록 최신값은 r30-beta 같은 프리뷰라 Flutter 빌드의 android.ndkVersion과 어긋나
     #  Gradle NDK 불일치를 유발한다. Flutter SDK에 박힌 핀 값을 그대로 사용한다.)
     FLUTTER_ROOT=""
     FLUTTER_NDK=""
@@ -3390,8 +3400,8 @@ echo "  direnv  : $(ver direnv '(수동 설치: sudo apt install direnv)' --vers
 echo "  java    : $(ver java '(수동 설치: sudo apt install openjdk-17-jdk)' -version)"
 echo "  lefthook: $(ver lefthook '(수동 설치: 3단계 참고)' version)"
 echo "  fvm     : $(ver fvm '(수동 설치: curl -fsSL https://fvm.app/install.sh | bash)' --version)"
-echo "  flutter : $(ver flutter '(fvm install stable && fvm global stable)' --version)"
-echo "  dart    : $(ver dart '(fvm global stable 후 새 터미널에서 확인)' --version)"
+echo "  flutter : $(ver flutter "(fvm install $TEAM_FLUTTER_VERSION && fvm global $TEAM_FLUTTER_VERSION)" --version)"
+echo "  dart    : $(ver dart "(fvm global $TEAM_FLUTTER_VERSION 후 새 터미널에서 확인)" --version)"
 echo "  gcloud  : $(ver gcloud '(수동 설치: 4-c단계 참고)' --version)"
 echo "  dcm     : $(ver dcm '(수동 설치: https://dcm.dev/docs/getting-started/)' --version)"
 echo "  node    : $(ver node '(수동 설치: nvm install --lts)' --version)"
