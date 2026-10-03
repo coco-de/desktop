@@ -413,7 +413,7 @@ chmod +x linux-setup.sh
 | **fastlane** | 팀에서는 주로 iOS 배포에 씁니다 | 안드로이드 배포만 필요하면 `gem install fastlane`으로 직접 설치할 수 있습니다 |
 | **Figma 데스크톱 앱** | 리눅스 빌드가 없습니다 | [figma.com](https://figma.com) 웹 사용. 원격 `figma` MCP는 리눅스에서도 두 AI 도구에 동일하게 등록됩니다 |
 | **Rive 데스크톱 앱** | 리눅스 빌드가 없습니다 | [editor.rive.app](https://editor.rive.app) 웹 에디터 — 공식 문서상 데스크톱과 기능이 같습니다 |
-| **Dia 브라우저** | 리눅스 빌드가 없습니다 | Chrome을 씁니다 |
+| **Dia 브라우저·리모트 디버깅 연결** | 리눅스 빌드가 없습니다 | `chrome-devtools` MCP가 별도 Chrome을 실행합니다. 맥 전용 `--autoConnect`·Dia 프로필 경로는 지정하지 않습니다 |
 | **mas (App Store CLI)** | App Store가 없습니다 | apt·snap이 그 역할을 합니다 |
 
 > ⚠️ **iOS 개발이 업무에 포함된다면 리눅스 PC만으로는 부족합니다.** Flutter 앱의 iOS 빌드·시뮬레이터·App Store 배포는 macOS에서만 가능하므로, 맥이 별도로 필요합니다.
@@ -462,6 +462,8 @@ opencode mcp list             # 실제 연결 상태 확인
 ```
 
 Claude Code에서는 `/mcp`에서 `figma`·`mobbin`을 각각 인증합니다. 스크립트의 `✓ 등록됨`은 설정 저장 확인이며 로그인·서버 연결 성공과는 다릅니다. 브라우저 MCP 패키지는 최초 연결 때 `npx`가 내려받습니다. 전체 스크립트를 재실행하면 이 등록도 갱신됩니다(`--dart-only`·`--env-only`는 각자의 단계만 실행합니다).
+
+브라우저 디버깅은 **`chrome-devtools` MCP가 별도 Chrome을 실행**하는 방식입니다. [macOS의 Dia 연결](../macos/README.md#dia-remote-debugging)은 Dia 실행·리모트 디버깅 허용이 필요하지만, 리눅스에는 Dia 빌드가 없어 해당 설정을 넣지 않습니다. `playwright`도 Chrome을 사용합니다.
 
 스크립트가 끝나면 마지막에 설치 검증 결과를 보여줍니다. 이런 모양입니다.
 

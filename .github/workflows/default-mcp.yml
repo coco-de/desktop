@@ -1,0 +1,28 @@
+name: MCP 설정 검사
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  mcp-config:
+    runs-on: ubuntu-latest
+    # 신규 경량 검사: 로컬 검사 시간 + 러너 준비 여유. 첫 CI 실측 후 최대 소요 × 2로 재산정합니다.
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: Bash 문법 검사
+        run: |
+          bash -n macos/mac-setup.sh
+          bash -n linux/linux-setup.sh
+      - name: MCP 설정 병합·Dia 연결 인자 회귀 검사
+        run: |
+          python3 -m unittest discover -s tests -v
+      - name: Windows 문법·MCP 설정 검사
+        shell: pwsh
+        run: |
+          ./tests/default-mcp.Tests.ps1

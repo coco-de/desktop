@@ -12,6 +12,8 @@ co:code는 엔지니어뿐 아니라 디자이너, PM도 하나의 엔지니어�
 
 **OpenCode·Claude Code에는 기본 MCP 10개가 함께 등록됩니다:** `cob` · `dart` · `figma` · `marionette` · `atlassian` · `mobbin` · `slack` · `zenhub` · `chrome-devtools` · `playwright`. 설치 후 두 도구를 새 터미널에서 다시 실행하고, Figma·Mobbin의 최초 OAuth 로그인을 마쳐 주세요. 자세한 인증·확인 방법은 각 OS 안내에 있습니다.
 
+**브라우저 디버깅(`chrome-devtools`)은 macOS에서 실행 중인 Dia에 연결**합니다. [Dia 리모트 디버깅 허용 순서](./macos/README.md#dia-remote-debugging)를 따라 주세요. Windows·Linux에서는 별도 Chrome을 실행합니다.
+
 <br>
 
 ## 🍎 맥북 (macOS)
@@ -65,6 +67,8 @@ d="$(mktemp -d)" && curl -fsSL https://raw.githubusercontent.com/coco-de/desktop
 ## 🧪 설치 스크립트 변경 검증
 
 MCP 등록 코드는 전체 설치 대신 임시 홈 폴더에서 검증할 수 있습니다. Python 3·bash·jq가 있는 환경에서 아래를 실행하세요. 개인 설정이나 실제 토큰은 사용하지 않습니다.
+
+PR과 `main` 푸시에서도 [MCP 설정 검사](.github/workflows/default-mcp.yml)가 Python 회귀·Bash 문법·Windows PowerShell 검사를 자동 실행합니다.
 
 ```bash
 python3 -m unittest discover -s tests -v

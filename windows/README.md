@@ -432,6 +432,7 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 |---|---|---|
 | Homebrew | **winget + Scoop** | 윈도우 공식 앱 설치 관리자 + 관리자 권한 없이 쓰는 보조 도구 |
 | Dia (브라우저) | **Google Chrome / Edge** | Dia는 아직 윈도우 정식 빌드가 없습니다(비공개 베타 단계) |
+| `chrome-devtools`의 Dia 리모트 디버깅 연결 | **MCP가 별도 Chrome을 실행** | Dia가 없으므로 맥 전용 `--autoConnect`·Dia 프로필 경로를 지정하지 않습니다 |
 | Stats (메뉴막대) | **TrafficMonitor** | 메뉴막대는 macOS 개념. 작업표시줄에 같은 정보를 띄웁니다 |
 | colima + docker | **Docker Desktop** | colima는 맥/리눅스 전용. 윈도우는 WSL2가 그 역할을 합니다 |
 | oh-my-zsh + powerlevel10k | **PowerShell 프로필 + Oh My Posh** | zsh 자체가 없습니다. 테마는 p10k를 옮겨 온 공식 테마 `powerlevel10k_rainbow` |
@@ -528,6 +529,8 @@ opencode mcp list             # 실제 연결 상태 확인
 ```
 
 Claude Code에서는 `/mcp`에서 `figma`·`mobbin`을 각각 인증합니다. 스크립트의 `✓ 등록됨`은 설정 저장 확인이며 로그인·서버 연결 성공과는 다릅니다. 브라우저 MCP 패키지는 최초 연결 때 `npx`가 내려받습니다. 전체 스크립트를 재실행하면 이 등록도 갱신됩니다(`-DartOnly`·`-EnvOnly`는 각자의 단계만 실행합니다).
+
+브라우저 디버깅은 **`chrome-devtools` MCP가 별도 Chrome을 실행**하는 방식입니다. [macOS의 Dia 연결](../macos/README.md#dia-remote-debugging)은 Dia 실행·리모트 디버깅 허용이 필요하지만, 윈도우에는 Dia 정식 빌드가 없어 해당 설정을 넣지 않습니다. `playwright`도 Chrome을 사용합니다.
 
 ### 사람이 직접 해야 하는 일 목록
 
