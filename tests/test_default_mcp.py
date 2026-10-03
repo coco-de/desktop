@@ -45,6 +45,13 @@ class DefaultMcpTests(unittest.TestCase):
                 self.assertFalse(opencode["mcp"]["zenhub"]["oauth"])
                 self.assertEqual(opencode["mcp"]["dart"]["command"], ["dart", "mcp-server"])
                 self.assertIn("cob:cob_mcp", opencode["mcp"]["cob"]["command"])
+                browser_args = ["-y", "chrome-devtools-mcp@latest"]
+                if script == SCRIPTS[0]:
+                    browser_args += ["--autoConnect", f"--user-data-dir={Path(tmp) / 'Library/Application Support/Dia/User Data'}"]
+                self.assertEqual(claude["mcpServers"]["chrome-devtools"]["args"], browser_args)
+                self.assertEqual(opencode["mcp"]["chrome-devtools"]["command"], ["npx"] + browser_args)
+                self.assertEqual(opencode["mcp"]["playwright"]["command"],
+                                 ["npx", "-y", "@playwright/mcp@latest", "--browser", "chrome"])
                 for entry in opencode["mcp"].values():
                     self.assertTrue(entry["enabled"])
                     self.assertIn(entry["type"], {"local", "remote"})
@@ -64,9 +71,13 @@ class DefaultMcpTests(unittest.TestCase):
                     "personal": {"type": "stdio", "command": "user-server", "args": []},
                     "mcp-atlassian": {"command": "docker", "args": ["run", IMAGE]},
                     "dart": {"command": "old-dart", "args": [], "env": {"STALE": "remove"}},
+                    "chrome-devtools": {"command": "npx", "args": ["-y", "chrome-devtools-mcp@latest"]},
                 }}
                 claude.write_text(json.dumps(original))
-                custom = {"username": "팀원", "permission": {"edit": "ask"}, "mcp": {"personal": {"type": "remote", "url": "https://example.com/mcp"}}}
+                custom = {"username": "팀원", "permission": {"edit": "ask"}, "mcp": {
+                    "personal": {"type": "remote", "url": "https://example.com/mcp"},
+                    "chrome-devtools": {"type": "local", "command": ["npx", "-y", "chrome-devtools-mcp@latest"]},
+                }}
                 opencode.write_text(json.dumps(custom))
                 comment_config = opencode.with_suffix(".jsonc")
                 comment_config.write_text('{ // 사용자 설정\n "mcp": {"personal": {"enabled": false}}\n}')
@@ -78,6 +89,12 @@ class DefaultMcpTests(unittest.TestCase):
                 self.assertNotIn("env", after["mcpServers"]["dart"])
                 self.assertEqual(json.loads(opencode.read_text())["permission"], custom["permission"])
                 self.assertIn("// 사용자 설정", comment_config.read_text())
+                if script == SCRIPTS[0]:
+                    profile_arg = f"--user-data-dir={home / 'Library/Application Support/Dia/User Data'}"
+                    self.assertIn(profile_arg, after["mcpServers"]["chrome-devtools"]["args"])
+                    self.assertIn("--autoConnect", after["mcpServers"]["chrome-devtools"]["args"])
+                    self.assertIn(profile_arg, json.loads(opencode.read_text())["mcp"]["chrome-devtools"]["command"])
+                    self.assertIn("--autoConnect", json.loads(opencode.read_text())["mcp"]["chrome-devtools"]["command"])
                 before_repeat = [path.read_bytes() for path in (claude, opencode)]
                 self.run_step(script, home)
                 self.assertEqual(before_repeat, [path.read_bytes() for path in (claude, opencode)])
@@ -104,12 +121,16 @@ class DefaultMcpTests(unittest.TestCase):
                 claude, _ = self.run_step(script, home)
                 self.assertEqual(json.loads(claude.read_text())["mcpServers"]["mcp-atlassian"], legacy)
 
-    def test_three_platform_definitions_match_except_windows_wrappers(self):
+    def test_three_platform_definitions_match_except_windows_wrappers_and_dia_connection(self):
         definitions = []
         for script in SCRIPTS + [WINDOWS]:
             source = script.read_text(encoding="utf-8-sig")
             match = re.search(r"\n(\{\n  \"cob\".*?\n\})\n(?:MCP_JSON|'@)", source, re.S)
             values = json.loads(match.group(1))
+            if script == SCRIPTS[0]:
+                self.assertEqual(values["chrome-devtools"]["args"],
+                                 ["-y", "chrome-devtools-mcp@latest", "--autoConnect"])
+                values["chrome-devtools"]["args"].remove("--autoConnect")
             for entry in values.values():
                 if entry.get("command") == "cmd":
                     self.assertEqual(entry["args"][0], "/c")
@@ -153,6 +174,10 @@ class DefaultMcpTests(unittest.TestCase):
             config = json.loads(result.stdout)
             self.assertEqual(set(config["mcp"]), NAMES)
             self.assertEqual(config["mcp"]["dart"]["command"], ["dart", "mcp-server"])
+            self.assertEqual(config["mcp"]["chrome-devtools"]["command"], [
+                "npx", "-y", "chrome-devtools-mcp@latest", "--autoConnect",
+                f"--user-data-dir={home / 'Library/Application Support/Dia/User Data'}",
+            ])
 
 
 if __name__ == "__main__":

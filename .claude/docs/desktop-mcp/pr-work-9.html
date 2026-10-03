@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>#9 작업내역 — Dia 브라우저 리모트 디버깅 연결</title>
+  <style>
+    :root { color-scheme: light dark; --fg: #1f2328; --bg: #fff; --line: #d1d9e0; --code: #f6f8fa; }
+    @media (prefers-color-scheme: dark) {
+      :root { --fg: #e6edf3; --bg: #0d1117; --line: #3d444d; --code: #151b23; }
+    }
+    body { margin: 0; color: var(--fg); background: var(--bg); font: 16px/1.65 system-ui, sans-serif; }
+    main { max-width: 76ch; margin: auto; padding: 24px 16px; }
+    h2 { margin-top: 32px; border-bottom: 1px solid var(--line); }
+    code { background: var(--code); padding: 2px 4px; border-radius: 4px; overflow-wrap: anywhere; }
+    li { margin: 8px 0; }
+    a { color: inherit; }
+  </style>
+</head>
+<body><main>
+  <h1>Dia 브라우저 리모트 디버깅 연결</h1>
+  <p>이슈 #9 · <code>chore/9-dia-remote-debugging</code> → <code>main</code></p>
+
+  <h2>무엇을 바꿨나</h2>
+  <p>macOS의 OpenCode·Claude Code 기본 <code>chrome-devtools</code> MCP를 실행 중인 Dia에 연결하도록 바꿨습니다. 설치 시 현재 사용자의 Dia 프로필 경로를 공백까지 포함한 하나의 실행 인자로 저장합니다.</p>
+  <p>구현 커밋 <code>cebe95f</code> · 구현·문서·검사 7개 파일: 111줄 추가, 9줄 삭제. 작업내역 HTML은 별도 문서 커밋으로 남깁니다.</p>
+  <ul>
+    <li><code>macos/mac-setup.sh</code>: <code>--autoConnect</code>와 Dia <code>--user-data-dir</code> 등록, 설정 확인 출력, 사용자 활성화·재연결 안내.</li>
+    <li><code>macos/README.md</code>: Dia에서 디버깅을 켜는 순서, 연결 허용 창, 등록과 실제 연결의 구분.</li>
+    <li><code>windows/README.md</code>·<code>linux/README.md</code>: Dia 미지원과 Chrome 대응 설명.</li>
+    <li><code>README.md</code>: 브라우저 디버깅의 플랫폼별 대상과 PR 검사 안내.</li>
+    <li><code>tests/test_default_mcp.py</code>: 두 클라이언트의 Dia 인자·기존 등록 갱신·경로 보존 검증. 세 플랫폼 비교에서 macOS 연결 인자만 좁게 정규화.</li>
+    <li><code>.github/workflows/default-mcp.yml</code>: 기존 회귀 검사·Bash 문법·PowerShell 검사의 최소 PR/푸시 실행 배선.</li>
+  </ul>
+
+  <h2>왜 이 연결 방식인가</h2>
+  <p>스크린샷의 Dia는 <code>127.0.0.1:9222</code>에서 서버를 실행합니다. 실제 리스너가 Dia임을 확인했지만 <code>/json/version</code>과 <code>/json/list</code>는 HTTP 404를 반환했습니다. 따라서 HTTP 주소로 조회하는 <code>--browser-url</code>만으로는 이 환경에 연결할 수 없습니다.</p>
+  <p>Dia는 <code>~/Library/Application Support/Dia/User Data/DevToolsActivePort</code>에 포트와 WebSocket 경로를 기록합니다. Chrome DevTools MCP의 자동 연결 구현은 사용자 데이터 경로를 지정하면 이 파일을 읽어 실행 중인 브라우저에 연결합니다. 포트·재시작마다 바뀌는 WebSocket 식별자를 고정하지 않는 방식입니다.</p>
+  <p>근거: <a href="https://github.com/ChromeDevTools/chrome-devtools-mcp/blob/main/src/BrowserManager.ts">Chrome DevTools MCP BrowserManager</a>, <a href="https://github.com/ChromeDevTools/chrome-devtools-mcp/blob/main/docs/configuration.md">공식 연결 옵션</a>, 로컬 Dia 서버·프로필 파일 확인.</p>
+
+  <h2>여기부터 리뷰하세요</h2>
+  <ol>
+    <li>설치 스크립트 6.6단계: 공통 정의에 Dia 연결 옵션만 추가하고 기존 백업·병합 경로를 재사용하는지 확인합니다.</li>
+    <li>Python 회귀 검사: 실제 설치 블록을 임시 홈에서 실행하며 신규 설치·기존 등록 갱신·멱등성·다른 설정 보존을 확인합니다.</li>
+    <li>세 플랫폼 README: macOS의 수동 활성화와 Windows·Linux 대응이 설정과 맞는지 확인합니다.</li>
+    <li>최소 CI: 설치 스크립트 전체나 실제 토큰·개인 브라우저를 사용하지 않고 기존 검사를 실행합니다.</li>
+  </ol>
+
+  <h2>로컬 검증</h2>
+  <ul>
+    <li>Python 회귀 검사 7개 통과. OpenCode CLI가 실제 생성된 설정과 Dia 실행 인자를 수용함을 확인했습니다.</li>
+    <li>Docker PowerShell에서 Windows 파서·MCP 병합·인코딩·멱등성·오류 격리 검사 통과.</li>
+    <li>macOS·Linux Bash 문법 검사, actionlint, diff 공백 검사 통과.</li>
+    <li>ShellCheck의 경고 3건은 기본 브랜치에도 같은 코드에 존재하며, 변경 부분의 신규 경고는 없습니다.</li>
+    <li>읽기 전용 코드 리뷰: 차단할 발견사항 없음.</li>
+    <li>실제 MCP 서버 초기화 성공. Dia 탭 조회는 연결 허용을 기다리다가 60초에 종료됐습니다. Dia에 접근 가능한 창이 없어 허용 창을 확인할 수 없었으므로 실제 탭 조회 성공은 미검증입니다.</li>
+  </ul>
+
+  <h2>실행 기록</h2>
+  <p>계획 승인 후 구현부터 머지까지 진행하는 정책입니다. ZenHub 워크스페이스 조회 실패로 작업 기록은 GitHub 이슈·PR에 남깁니다. 규모 보조 판정은 <code>scale=deliberate</code>였으며, 실제 변경 범위와 PM 정제로 단독 Task·3 SP를 확정했습니다. 제품 화면 개발이 없어 디자인 결정 기록은 없습니다.</p>
+  <p>기존 다른 MCP·Playwright의 Chrome 자동화는 그대로 사용합니다. Dia 허용 체크박스와 브라우저 설정 파일을 자동 조작하지 않습니다.</p>
+</main></body>
+</html>

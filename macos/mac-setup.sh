@@ -1398,12 +1398,15 @@ fi
 # 6.6. OpenCode CLI + OpenCode·Claude Code 기본 MCP
 #   기본 10개: cob, dart, figma, marionette, atlassian, mobbin, slack, zenhub,
 #              chrome-devtools, playwright
+#   chrome-devtools는 실행 중인 Dia에 연결한다 (--autoConnect + Dia 프로필 경로).
+#   dia://inspect/#remote-debugging의 허용 체크박스는 사용자가 직접 켠다.
+#   Dia의 DevToolsActivePort에서 현재 포트·WebSocket 주소를 읽으므로 재시작에도 대응한다.
 #   로컬 실행 파일은 4단계(Dart)·6단계(Node)에서 준비한다. Figma·Mobbin은 OAuth,
 #   Atlassian·Slack·ZenHub는 8.5~8.9단계에서 주입하는 팀 공용 토큰으로 인증한다.
 #   두 클라이언트의 설정을 백업 후 병합한다. 토큰 값 대신 각 클라이언트의 환경변수
 #   참조 문법을 저장하며, 등록 확인과 실제 연결·인증 확인은 구분한다.
 # ------------------------------------------------------------
-log "6.6. OpenCode CLI 설치 + 기본 MCP 10개 등록 (OpenCode·Claude Code)"
+log "6.6. OpenCode CLI 설치 + 기본 MCP 10개 등록 (OpenCode·Claude Code · 브라우저 디버깅: Dia)"
 if have opencode; then
   echo "  ✓ opencode 이미 설치됨"
 elif have npm; then
@@ -1424,11 +1427,16 @@ if have jq; then
   "mobbin": {"type":"http","url":"https://api.mobbin.com/mcp"},
   "slack": {"type":"stdio","command":"npx","args":["-y","@modelcontextprotocol/server-slack"],"env":{"SLACK_TEAM_ID":"${SLACK_TEAM_ID}","SLACK_BOT_TOKEN":"${SLACK_BOT_TOKEN}"}},
   "zenhub": {"type":"http","url":"https://api.zenhub.com/mcp","headers":{"Authorization":"${ZENHUB_API_TOKEN}","X-zh-workspace":"69ae742925c359000f5acf14"}},
-  "chrome-devtools": {"type":"stdio","command":"npx","args":["-y","chrome-devtools-mcp@latest"]},
+  "chrome-devtools": {"type":"stdio","command":"npx","args":["-y","chrome-devtools-mcp@latest","--autoConnect"]},
   "playwright": {"type":"stdio","command":"npx","args":["-y","@playwright/mcp@latest","--browser","chrome"]}
 }
 MCP_JSON
   )
+  # 공백이 있는 프로필 경로도 하나의 인자로 저장한다. Dia가 꺼져 있어도 등록은 계속한다.
+  MCP_DEFAULTS=$(printf '%s' "$MCP_DEFAULTS" | jq \
+    --arg dia_profile "$HOME/Library/Application Support/Dia/User Data" \
+    '."chrome-devtools".args += ["--user-data-dir=" + $dia_profile]') \
+    || echo "  ⚠ Dia MCP 프로필 경로 설정 실패 → 아래 MCP 등록 결과를 확인하세요"
   for mcp_client in claude opencode; do
     if [[ "$mcp_client" == claude ]]; then
       mcp_config="$HOME/.claude.json"
@@ -1479,6 +1487,8 @@ else
   echo "  ⚠ jq 없음 → 기본 MCP 등록 건너뜀 (수동: brew install jq 후 재실행)"
 fi
 echo "  · 새 터미널에서 두 도구를 재시작하세요. Claude Code: /mcp · OpenCode: opencode mcp auth figma · opencode mcp auth mobbin"
+echo "  · 브라우저 디버깅: Dia에서 dia://inspect/#remote-debugging → 'Allow remote debugging for this browser instance'를 켜고 서버 주소를 확인하세요"
+echo "    ↳ MCP가 Dia 연결 허용 창을 띄우면 허용하세요. Dia가 꺼져 있으면 실행 후 두 AI 도구에서 다시 연결하세요"
 
 # ------------------------------------------------------------
 # 7. oh-my-zsh + powerlevel10k + 플러그인
@@ -2388,7 +2398,18 @@ for mcp_client in claude opencode; do
   for mcp_name in cob dart figma marionette atlassian mobbin slack zenhub chrome-devtools playwright; do
     if have jq && jq -e --arg key "$mcp_key" --arg name "$mcp_name" \
       '.[$key][$name] != null' "$mcp_config" >/dev/null 2>&1; then
-      echo "  mcp:$mcp_client:$mcp_name: ✓ 등록됨 (연결·인증은 새 세션에서 확인)"
+      if [[ "$mcp_name" == chrome-devtools ]]; then
+        if jq -e --arg key "$mcp_key" \
+          --arg profile "--user-data-dir=$HOME/Library/Application Support/Dia/User Data" \
+          '(.[$key]["chrome-devtools"].args // .[$key]["chrome-devtools"].command) | arrays
+           | index("--autoConnect") != null and index($profile) != null' "$mcp_config" >/dev/null 2>&1; then
+          echo "  mcp:$mcp_client:$mcp_name: ✓ Dia 연결 설정 등록됨 (Dia에서 디버깅 허용 후 실제 연결 확인)"
+        else
+          echo "  mcp:$mcp_client:$mcp_name: ⚠ Dia 연결 설정 미반영 (./mac-setup.sh 재실행 · 6.6단계 확인)"
+        fi
+      else
+        echo "  mcp:$mcp_client:$mcp_name: ✓ 등록됨 (연결·인증은 새 세션에서 확인)"
+      fi
     else
       echo "  mcp:$mcp_client:$mcp_name: ❌ 미등록 (./mac-setup.sh 재실행 · 6.6단계 확인)"
     fi
@@ -2480,6 +2501,8 @@ echo "     ↳ Claude Code 하단 상태줄(모델·비용·컨텍스트·git �
 echo "  6. Claude Code에서 /mcp 실행 → figma·mobbin OAuth 로그인 (최초 1회, Mobbin 유료 플랜 필요)"
 echo "     ↳ OpenCode도 재시작한 뒤 /connect로 모델 계정 연결, opencode mcp auth figma · opencode mcp auth mobbin 실행"
 echo "     ↳ 두 도구에서 claude mcp list · opencode mcp list 로 기본 MCP 10개의 실제 연결을 확인하세요"
+echo "     ↳ chrome-devtools: Dia의 dia://inspect/#remote-debugging에서 'Allow remote debugging for this browser instance'를 켜고, MCP 연결 허용 창이 뜨면 허용하세요"
+echo "       서버 주소(예: 127.0.0.1:9222)는 Dia가 알려주며 MCP가 프로필에서 자동으로 읽습니다. 연결 실패 시 Dia 실행·허용 상태 확인 후 두 AI 도구를 재시작하세요"
 echo "     ↳ jira(atlassian)는 더 이상 OAuth 로그인이 필요 없습니다 — zenhub처럼 1Password 팀 공용 토큰으로 인증합니다"
 echo "  7. zenhub·jira·slang_gpt·DCM·slack·TypeSafe·OpenAI 토큰(1Password CLI): 실행 중 8.5~8.11단계에서 설정 안내가 나오면 아래를 마친 뒤 Enter를 누르면 자동 주입됩니다"
 echo "     ↳ 1Password 앱 로그인(team-cocodeinc) → 설정(⌘,) > 개발자 > '1Password CLI와 통합' 체크"

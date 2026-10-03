@@ -324,7 +324,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 | 🖥 GUI 앱 | Android Studio, Slack, Figma, Claude Desktop, Google Chrome, Dia, 1Password, Tailscale, Orca, Lumide, Zed, Rive, Stats(메뉴막대 시스템 모니터 — 최초 1회 직접 실행 필요), Pretendard 폰트(9개 스타일: Thin~Black) |
 | 🍎 Xcode 개발자 도구 | Xcode.app이 없으면 `mas`(App Store CLI)로 자동 설치 시도(App Store 로그인 필요 · 수십 GB라 오래 걸릴 수 있음). Command Line Tools만 활성화돼 있으면(`xcodebuild` "requires Xcode" 에러 원인) `xcode-select`를 Xcode.app으로 자동 전환하고 최초 실행 동의(`xcodebuild -runFirstLaunch`)까지 진행 (sudo 암호 입력 필요) |
 | 🧩 브라우저 확장 프로그램 | Chrome·Dia에 [ZenHub for GitHub](https://chromewebstore.google.com/detail/zenhub-for-github/ogcgkffhplmphkaahpmffcafajaocjbd) 확장을 자동 등록(External Extensions 드롭인 방식, sudo 암호 입력 필요) — Dia는 동작이 보장되지 않아 실패해도 경고만 남기고 계속 진행 |
-| 🔌 OpenCode·Claude Code MCP | **6.6단계**에서 OpenCode CLI(`npm install -g opencode-ai`) 설치 + 두 도구에 `cob` · `dart` · `figma` · `marionette` · `atlassian` · `mobbin` · `slack` · `zenhub` · `chrome-devtools` · `playwright` 직접 등록. 기존 설정은 백업 후 병합합니다. Figma 보조 플러그인도 설치합니다. 인증·실행 조건은 [기본 MCP 표](#default-mcp)를 참고하세요 |
+| 🔌 OpenCode·Claude Code MCP | **6.6단계**에서 OpenCode CLI(`npm install -g opencode-ai`) 설치 + 두 도구에 `cob` · `dart` · `figma` · `marionette` · `atlassian` · `mobbin` · `slack` · `zenhub` · `chrome-devtools` · `playwright` 직접 등록. `chrome-devtools`는 실행 중인 **Dia**에 연결합니다. 기존 설정은 백업 후 병합합니다. Figma 보조 플러그인도 설치합니다. 인증·실행 조건은 [기본 MCP 표](#default-mcp)를 참고하세요 |
 | 🔑 팀 공용 토큰 | 위 `ZENHUB_API_TOKEN`·`JIRA_API_TOKEN`·`SLACK_TEAM_ID`·`SLACK_BOT_TOKEN`에 더해, 다국어 자동 번역 도구 `slang_gpt`가 쓰는 `SLANG_GPT_API_KEY`, DCM을 CI 모드로 인증하는 `DCM_EMAIL`·`DCM_CI_KEY`(1Password 항목 `DCM CI CD`의 이메일+키 한 쌍), TypeSafe(판단형 AI 모델 Jev) SDK가 쓰는 `TYPESAFE_API_KEY`(1Password 항목 `TypeSafe Jev`), OpenAI SDK가 쓰는 `OPENAI_API_KEY`(1Password 항목 `OPENAI_API_KEY`)도 같은 방식(1Password CLI → `~/.zshrc`)으로 자동 주입 — `SLANG_GPT_API_KEY`·`DCM_EMAIL`·`DCM_CI_KEY`·`TYPESAFE_API_KEY`·`OPENAI_API_KEY`는 MCP가 아니라 명령줄 도구·SDK가 직접 읽는 값이라 등록·로그인 과정이 없음 ([설정 방법](#after-install)) |
 | 🔑 GitHub 인증(gh) | coco-de 조직의 비공개 레포(`co-bricks`·`skills`) 접근용 GitHub 로그인을 팀 공용 1Password 토큰으로 자동 처리(`gh auth login` + `gh auth setup-git`) — 이미 인증돼 있으면 건너뜀. 실패해도 계속 진행하며, 아래 cocode-skills·cob(co-bricks)가 각자 인증 상태를 다시 확인해 건너뜀([설정 방법](#after-install)) |
 | 🔏 서명 키체인 (선택) | `--keychains-only`로 laputa·fastlane_tmp의 자동 잠금 설정·서명 도구 ACL을 확인하고, **1Password → login 암호화 캐시 → 사용자 로그인 후 자동 해제**를 등록합니다. 전체 설치에서는 자동으로 켜지지 않습니다 ([등록·검증·제거](#signing-keychains)) |
@@ -502,7 +502,7 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 | <img src="assets/icons/mobbin.png" width="20"> | `mobbin` | 실제 제품의 디자인 사례 검색 · `https://api.mobbin.com/mcp` | 최초 OAuth 로그인 + Mobbin Pro·Team·Enterprise 플랜 |
 | <img src="assets/icons/slack.png" width="20"> | `slack` | 팀 메시지 읽기·쓰기 · `npx -y @modelcontextprotocol/server-slack` | `SLACK_TEAM_ID` + `SLACK_BOT_TOKEN` |
 | <img src="assets/icons/zenhub.png" width="20"> | `zenhub` | 이슈 보드 관리 · `https://api.zenhub.com/mcp` | `ZENHUB_API_TOKEN`, 팀 워크스페이스 자동 지정 |
-| <img src="assets/icons/chrome.svg" width="20"> | `chrome-devtools` | 브라우저·네트워크·성능 분석 · `npx -y chrome-devtools-mcp@latest` | Node.js LTS + Chrome |
+| <img src="assets/icons/dia.png" width="20"> | `chrome-devtools` | 실행 중인 Dia의 브라우저·네트워크·성능 분석 · `npx -y chrome-devtools-mcp@latest --autoConnect --user-data-dir="$HOME/Library/Application Support/Dia/User Data"` | Node.js LTS + Dia 실행·리모트 디버깅 허용 ([설정 순서](#dia-remote-debugging)) |
 | <img src="assets/icons/playwright.png" width="20"> | `playwright` | 웹 화면 자동 조작·검증 · `npx -y @playwright/mcp@latest --browser chrome` | Node.js LTS + Chrome |
 
 등록 위치는 Claude Code의 `~/.claude.json`(`mcpServers`, 사용자 범위)과 OpenCode의 `~/.config/opencode/opencode.json`(`mcp`)입니다. `XDG_CONFIG_HOME`을 지정했다면 OpenCode는 그 아래에 저장합니다. 기존 파일은 최초 한 번 `.bak`으로 백업하고, 기본 10개 정의만 갱신하며 다른 설정·MCP는 유지합니다. 기존 `opencode.jsonc`에 같은 이름의 MCP가 있으면 그 설정이 우선합니다. 예전 팀 Docker 등록명 `mcp-atlassian`은 `atlassian`으로 통합합니다.
@@ -517,6 +517,21 @@ opencode mcp list             # 실제 연결 상태 확인
 ```
 
 Claude Code에서는 `/mcp`에서 `figma`·`mobbin`을 각각 인증합니다. 스크립트의 `✓ 등록됨`은 설정 저장 확인이며 로그인·서버 연결 성공과는 다릅니다. 브라우저 MCP 패키지는 최초 연결 때 `npx`가 내려받습니다. 전체 스크립트를 재실행하면 이 등록도 갱신됩니다(`--dart-only`·`--env-only`는 각자의 단계만 실행합니다).
+
+<a id="dia-remote-debugging"></a>
+
+#### 🌐 Dia 리모트 디버깅 설정
+
+1. **Dia를 실행**하고 주소창에 `dia://inspect/#remote-debugging`을 입력하세요.
+2. **Allow remote debugging for this browser instance**를 켭니다. 화면에 **Server running at 127.0.0.1:9222**처럼 서버 주소가 표시되는지 확인하세요.
+3. **OpenCode·Claude Code를 완전히 종료했다 다시 실행**하세요. 연결 허용 창이 Dia에 뜨면 허용합니다.
+4. Claude Code의 `/mcp` 또는 `opencode mcp list`에서 연결을 확인하고, AI에 **“Dia에서 열린 탭 목록을 확인해 줘”**라고 요청해 실제 브라우저 연결까지 확인하세요. MCP 등록·서버 시작 성공만으로 Dia 탭에 연결됐다는 뜻은 아닙니다.
+
+설치 스크립트는 두 도구의 `chrome-devtools`에 `--autoConnect`와 **현재 사용자의 Dia 프로필 경로**(`~/Library/Application Support/Dia/User Data`)를 저장합니다. MCP는 이 폴더의 `DevToolsActivePort`에서 현재 포트와 WebSocket 주소를 읽으므로, `9222`나 재시작할 때 바뀌는 주소를 설정에 고정할 필요가 없습니다. Dia의 이 설정은 HTTP 조회(`/json/version`)가 `404`를 반환할 수 있어 `--browser-url=http://127.0.0.1:9222` 대신 이 연결 방식을 사용합니다.
+
+**연결이 안 되면:** Dia 실행 여부 → 허용 체크박스 → 연결 허용 창을 확인한 뒤 두 AI 도구를 재시작하세요. `DevToolsActivePort`를 찾지 못한다면 프로필 경로를 확인합니다. `opencode.jsonc`에 예전 `chrome-devtools`가 남아 있다면 위 인자에 맞게 갱신하세요. Dia가 꺼져 있거나 허용하지 않아도 나머지 설치·MCP 등록은 진행됩니다.
+
+`playwright`는 별도 Chrome을 사용하는 웹 자동화 도구입니다. Windows·Linux의 `chrome-devtools`도 각 OS에서 설치하는 Chrome을 사용합니다.
 
 스크립트 맨 마지막에 아래 항목들의 버전을 자동으로 출력해서, 잘 설치됐는지 바로 확인할 수 있게 해줍니다.
 
@@ -543,6 +558,8 @@ git email: ...
 GitHub 인증(gh): ...
 mcp:claude:figma: ✓ 등록됨 (연결·인증은 새 세션에서 확인)
 mcp:opencode:figma: ✓ 등록됨 (연결·인증은 새 세션에서 확인)
+mcp:claude:chrome-devtools: ✓ Dia 연결 설정 등록됨 (Dia에서 디버깅 허용 후 실제 연결 확인)
+mcp:opencode:chrome-devtools: ✓ Dia 연결 설정 등록됨 (Dia에서 디버깅 허용 후 실제 연결 확인)
 op(1Password CLI): ...
 mcp:zenhub: ...
 mcp:atlassian(jira): ...
@@ -596,7 +613,7 @@ Orca 전체 디스크 접근: ...
 5. Android Studio 실행 후 `flutter doctor`로 최종 확인 — SDK/NDK/에뮬레이터/AVD는 스크립트가 이미 자동으로 설치·구성해 두었으므로 첫 실행 설치 마법사를 따로 진행할 필요는 없습니다
 6. **(선택) `colima start` 미리 실행 — Jira(Atlassian) MCP를 쓰려면 필요합니다** (아래 🐳 안내 참고). Jira MCP는 docker 컨테이너로 뜨는데, colima가 그 docker 데몬입니다. 이제 `claude`/`cld` 실행 시 꺼져 있으면 자동으로 켜주지만, 최초 기동엔 수십 초가 걸릴 수 있어 미리 켜두면 더 빠릅니다
 7. `claude` 실행 후 Claude Code 로그인 (함께 설치된 `codex`는 ChatGPT 계정, `agy`(Antigravity)는 Google 계정으로 각각 처음 실행할 때 한 번 로그인). Claude Code 하단 상태줄(모델·비용·컨텍스트·git 상태)은 6.5단계에서 이미 자동으로 설정됐을 겁니다 — `ccstatusline`이 대화형이라 등록에 실패하면 `awesome-statusline`(size: small)이 자동으로 대신 등록됩니다. 직접 위젯을 골라 커스터마이징하고 싶다면 `npx -y ccstatusline@latest`를, 다른 크기로 바꾸고 싶다면 `curl -fsSL https://raw.githubusercontent.com/AwesomeJun/CC-statusline/main/install.sh | bash -s -- <크기>`를 실행하면 됩니다(크기: xs/s/m/l/xl). 되돌리려면 `~/.claude/settings.json`의 `statusLine` 키만 지우면 됩니다
-8. **두 AI 도구를 재시작하고 Figma·Mobbin OAuth 로그인**을 마치세요([기본 MCP 표](#default-mcp)). Claude Code에서는 `/mcp`, OpenCode에서는 `opencode mcp auth figma`·`opencode mcp auth mobbin`을 실행합니다. zenhub·atlassian·slack은 아래 팀 공용 토큰으로 인증됩니다
+8. **Dia 리모트 디버깅 허용 + 두 AI 도구 재시작 + Figma·Mobbin OAuth 로그인**을 마치세요([기본 MCP 표](#default-mcp)). Dia의 `dia://inspect/#remote-debugging`에서 허용 체크박스를 켜고 연결 허용 창을 확인합니다([설정 순서](#dia-remote-debugging)). Claude Code에서는 `/mcp`, OpenCode에서는 `opencode mcp auth figma`·`opencode mcp auth mobbin`을 실행합니다. zenhub·atlassian·slack은 아래 팀 공용 토큰으로 인증됩니다
 9. **설치 검증에 `GitHub 인증(gh): ❌`가 찍혔다면** — `cob(co-bricks)`·`cocode-skills` 둘 다 설치되지 않습니다. 팀 공용 1Password 항목("API Token" 볼트 > "GitHub API Token")으로 자동 로그인을 시도하니, 항목이 없다면 팀 관리자에게 생성을 요청하세요. 그래도 안 되면 `gh auth login`으로 직접 로그인한 뒤 스크립트를 다시 실행하면 됩니다 (`cob(co-bricks)`만 다시 깔면 되는 상황이라면 `./mac-setup.sh --dart-only`가 더 빠릅니다 — `cocode-skills`는 전체 재실행이 필요합니다)
 10. Slack CLI로 직접 앱/워크플로를 개발하려면 `slack login`으로 워크스페이스 인증(최초 1회) — Claude Code의 `slack` MCP는 이 로그인과 무관하게 아래 팀 공용 토큰으로 별도 인증됩니다
 11. **Git 훅(lefthook)은 레포마다 한 번씩 켜기** — `lefthook.yml`이 있는 프로젝트 폴더에서 `lefthook install`을 실행하면, 그 레포에서 커밋·푸시할 때 포맷/린트/테스트가 자동으로 돌아갑니다 (설정 파일이 없는 레포에서는 할 일 없음)
