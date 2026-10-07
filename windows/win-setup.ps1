@@ -107,7 +107,8 @@ function Show-Usage {
                 OpenCode·Claude Code에 기본 MCP 10개를 함께 등록합니다(6.6단계).
   -EnvOnly      1Password(op)에서 팀 공용 토큰(ZENHUB_API_TOKEN·JIRA_API_TOKEN·
                 SLANG_GPT_API_KEY·DCM_EMAIL·DCM_CI_KEY·SLACK_TEAM_ID·
-                SLACK_BOT_TOKEN·TYPESAFE_API_KEY·OPENAI_API_KEY)만 다시 읽어
+                SLACK_BOT_TOKEN·TYPESAFE_API_KEY·OPENAI_API_KEY·COCODE_ASC_*·
+                COCODE_APPLE_TEAM_ID)를 다시 읽어
                 윈도우 사용자 환경변수에 주입합니다.
                 앱/도구 설치 단계는 전부 건너뜁니다.
                 (토큰이 바뀌었거나, 설치 때 토큰 주입을 건너뛴 경우에 사용)
@@ -4870,6 +4871,7 @@ $SlackTeamIdOpRef = 'op://API Token/Cocode Slack/SLACK_TEAM_ID'
 $SlackBotTokenOpRef = 'op://API Token/Cocode Slack/SLACK_BOT_TOKEN'
 $TypesafeTokenOpRef = 'op://API Token/TypeSafe Jev/credential'
 $OpenaiTokenOpRef = 'op://API Token/OPENAI_API_KEY/credential'
+$CocodeAscOpRef = 'op://API Token/Cocode App Store Connect API'
 
 # 화면 안내에만 쓰는 팀 계정 이름 (비밀 아님). 스크립트 상단에 이미 있으면 그 값을 씁니다.
 $opAccountLabel = 'team-cocodeinc.1password.com'
@@ -4904,6 +4906,7 @@ function Set-CocodeTeamSecret {
         [string[]]$Refs,
         [string]$Label,
         [string]$Hint,
+        [hashtable]$ExpectedValues = @{},
         [switch]$Quiet
     )
 
@@ -4929,6 +4932,14 @@ function Set-CocodeTeamSecret {
             return $false
         }
         $values += $val
+    }
+
+    # 조직 전용 키는 팀·Issuer가 다르면 기존 환경변수를 바꾸지 않습니다.
+    for ($i = 0; $i -lt $Names.Count; $i++) {
+        if ($ExpectedValues.ContainsKey($Names[$i]) -and $values[$i] -cne $ExpectedValues[$Names[$i]]) {
+            if (-not $Quiet) { Write-Warn "$Label 조직 확인 실패 → 기존 값 보존" }
+            return $false
+        }
     }
 
     for ($i = 0; $i -lt $Names.Count; $i++) {
@@ -5036,6 +5047,14 @@ Write-Step "8.5-g. OPENAI_API_KEY 주입 (1Password 팀 공용 항목 'OPENAI_AP
 # slang_gpt(8.5-c)는 이 변수가 아니라 자기 전용 SLANG_GPT_API_KEY를 읽습니다 — 두 변수는 서로 별개입니다.
 # ⚠ 이미 사용자 환경변수 OPENAI_API_KEY 를 직접 설정해 두었다면 팀 키로 바뀝니다 (다른 팀 토큰과 같은 동작).
 Set-CocodeTeamSecret -Names @('OPENAI_API_KEY') -Refs @($OpenaiTokenOpRef) -Label 'OPENAI_API_KEY' -Hint "팀 'API Token' 금고 > 'OPENAI_API_KEY' > credential 필드" | Out-Null
+
+Write-Step '8.5-h. Cocode 조직 전용 App Store Connect API 키 주입'
+# Cocode Inc. Team API 키(Admin). 다른 회사·개인 키와 섞이지 않게 COCODE_ 접두사를 씁니다.
+# credential은 한 줄 base64 .p8입니다. Apple 로그인(OAuth) 서명 키와는 별개입니다.
+Set-CocodeTeamSecret -Names @('COCODE_ASC_KEY_ID', 'COCODE_ASC_ISSUER_ID', 'COCODE_ASC_PRIVATE_KEY_BASE64', 'COCODE_APPLE_TEAM_ID') `
+    -Refs @("$CocodeAscOpRef/key_id", "$CocodeAscOpRef/issuer_id", "$CocodeAscOpRef/credential", "$CocodeAscOpRef/team_id") `
+    -Label 'Cocode App Store Connect API 키' -Hint "팀 'API Token' 금고 > 'Cocode App Store Connect API'의 네 필드" `
+    -ExpectedValues @{ COCODE_APPLE_TEAM_ID = 'DNNK8RH9GY'; COCODE_ASC_ISSUER_ID = '1f078b74-be9f-4985-a055-aa7881dc293a' } | Out-Null
 
 # ★맥의 `source ~/.zshrc`에 해당하는 수단이 윈도우에는 없습니다.
 #   프로그램은 실행되는 순간의 환경변수를 복사해 갖고 있을 뿐이라, 이미 열려 있던 창은
@@ -5291,6 +5310,10 @@ if ($EnvOnly) {
     Write-Host ("  SLACK_TEAM_ID/SLACK_BOT_TOKEN: " + $(if ($eoSlkT -and $eoSlkB) { '✓ 주입됨' } else { '❌ 미주입' }))
     Write-Host ("  TYPESAFE_API_KEY             : " + $(if ($eoTs)    { '✓ 주입됨' } else { '❌ 미주입' }))
     Write-Host ("  OPENAI_API_KEY               : " + $(if ($eoOai)   { '✓ 주입됨' } else { '❌ 미주입' }))
+    foreach ($ascName in @('COCODE_ASC_KEY_ID', 'COCODE_ASC_ISSUER_ID', 'COCODE_ASC_PRIVATE_KEY_BASE64', 'COCODE_APPLE_TEAM_ID')) {
+        $ascValue = [Environment]::GetEnvironmentVariable($ascName, 'User')
+        Write-Host ("  $ascName : " + $(if ($ascValue) { '✓ 주입됨 (Cocode Inc. API용)' } else { '❌ 미주입' }))
+    }
 
     $eoMissing = @()
     if (-not $eoZh)    { $eoMissing += 'ZENHUB_API_TOKEN' }
@@ -5300,6 +5323,9 @@ if ($EnvOnly) {
     if (-not ($eoSlkT -and $eoSlkB)) { $eoMissing += 'SLACK_TEAM_ID/SLACK_BOT_TOKEN' }
     if (-not $eoTs)    { $eoMissing += 'TYPESAFE_API_KEY' }
     if (-not $eoOai)   { $eoMissing += 'OPENAI_API_KEY' }
+    foreach ($ascName in @('COCODE_ASC_KEY_ID', 'COCODE_ASC_ISSUER_ID', 'COCODE_ASC_PRIVATE_KEY_BASE64', 'COCODE_APPLE_TEAM_ID')) {
+        if (-not [Environment]::GetEnvironmentVariable($ascName, 'User')) { $eoMissing += $ascName }
+    }
 
     Write-Host ''
     if ($eoMissing.Count -eq 0) {

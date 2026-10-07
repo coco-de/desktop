@@ -295,6 +295,7 @@ chmod +x linux-setup.sh
 | **7.5** | 터미널 폰트 자동 적용 (MesloLGS NF) |
 | **8** | `~/.zshrc`·`~/.p10k.zsh` 반영 + 기본 셸을 zsh로 변경 |
 | **8.5~8.11** | 팀 공용 토큰 7종 주입 (ZenHub · Jira · slang_gpt · DCM · Slack · TypeSafe · OpenAI) |
+| **8.12** | Cocode Inc. 조직 App Store Connect API 키 4개 환경변수 주입 (팀·Issuer 확인 후 함께 반영) |
 | **9** | 시스템 권한 — docker·kvm 그룹 가입, Android 기기 인식 규칙 |
 | **10** | 설치 검증 + 다음 단계 안내 |
 
@@ -534,6 +535,14 @@ Claude Code에서는 `/mcp`에서 `figma`·`mobbin`을 각각 인증합니다. �
 
 - **스크립트 전체가 공개돼 있습니다.** [`linux-setup.sh`](./linux-setup.sh) 하나뿐이고, 무엇을 설치하는지 한국어 주석으로 전부 적혀 있습니다.
 - **비밀번호·토큰을 이 저장소에 저장하지 않습니다.** 팀 공용 토큰은 실행 시점에 **1Password에서 직접 읽어옵니다.** 저장소에는 "어느 항목을 읽을지"(`op://API Token/...`)만 적혀 있고 값은 없습니다.
+
+### Cocode 조직 App Store Connect API 키
+
+8.12단계는 팀 계정 `team-cocodeinc.1password.com`의 **`API Token` 금고 → `Cocode App Store Connect API`**에서 `key_id`·`issuer_id`·`credential`·`team_id`를 읽어 **`COCODE_ASC_KEY_ID`·`COCODE_ASC_ISSUER_ID`·`COCODE_ASC_PRIVATE_KEY_BASE64`·`COCODE_APPLE_TEAM_ID`**를 함께 주입합니다. `credential`은 `.p8` 개인 키의 한 줄 base64 보호 필드입니다.
+
+**Cocode Inc. Team API Key(Admin)**이며 팀 `DNNK8RH9GY`와 조직 Issuer가 맞아야 적용됩니다. 다른 회사·개인 키는 기존 값을 바꾸지 않고 건너뜁니다. 앱의 Sign in with Apple 로그인 서명 키와도 별개입니다. `./linux-setup.sh --env-only`로 갱신 후 새 터미널을 여세요. `~/.zshrc`는 `0600` 권한으로 기록됩니다.
+
+JWT·API 호출 방법과 필드 표는 [맥의 Cocode 조직 API 키 설명](../macos/README.md#cocode-asc)을 참고하세요. API 조회·관리는 Linux에서도 가능하고, Xcode 빌드는 여전히 macOS에서 수행합니다.
 - **GitHub 토큰은 파일로 떨어뜨리지 않습니다.** 메모리 파이프로만 `gh`에 넘기고, 쓰고 나면 바로 변수에서 지웁니다(`unset`).
 - **관리자 권한은 필요한 순간에만** 요청합니다. 스크립트 전체를 `sudo`로 돌리지 않습니다.
 - **몇 번을 실행해도 안전합니다.** 이미 설치된 것은 건너뛰고, 설정 파일도 같은 내용을 중복해서 덧붙이지 않습니다.

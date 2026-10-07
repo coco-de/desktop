@@ -107,7 +107,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 > /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coco-de/desktop/main/macos/mac-setup.sh)" -- --env-only
 > ```
 >
-> 앱·도구 설치는 전부 건너뛰고, 1Password(`op`)에서 팀 공용 토큰(`ZENHUB_API_TOKEN`·`JIRA_API_TOKEN`·`SLANG_GPT_API_KEY`·`DCM_EMAIL`·`DCM_CI_KEY`·`SLACK_TEAM_ID`·`SLACK_BOT_TOKEN`·`TYPESAFE_API_KEY`·`OPENAI_API_KEY`)만 다시 읽어 `~/.zshrc`에 넣어줍니다. 토큰이 바뀌었거나 설치 때 토큰 주입(8.5~8.11단계)을 건너뛴 경우, 전체 설치를 다시 돌릴 필요 없이 몇 초 만에 끝납니다. 사용법은 `./mac-setup.sh --help`로도 볼 수 있습니다.
+> 앱·도구 설치는 전부 건너뛰고, 1Password(`op`)에서 팀 공용 토큰(`ZENHUB_API_TOKEN`·`JIRA_API_TOKEN`·`SLANG_GPT_API_KEY`·`DCM_EMAIL`·`DCM_CI_KEY`·`SLACK_TEAM_ID`·`SLACK_BOT_TOKEN`·`TYPESAFE_API_KEY`·`OPENAI_API_KEY`)과 **Cocode 조직 App Store Connect 키**(`COCODE_ASC_*`·`COCODE_APPLE_TEAM_ID`)를 다시 읽어 `~/.zshrc`에 넣어줍니다. 토큰이 바뀌었거나 설치 때 주입(8.5~8.12단계)을 건너뛴 경우 사용합니다. 자세한 키·환경변수 설명은 [Cocode 조직 API 키](#cocode-asc)를 참고하세요.
 
 > 🎯 **팀 Dart 패키지 목록이 바뀌었거나, 패키지만 최신으로 올리고 싶다면**
 >
@@ -746,6 +746,25 @@ Orca 전체 디스크 접근: ...
 >
 > ⚠️ **주입 후에는 반드시 새 터미널에서 `claude`를 실행하세요(그리고 docker 데몬이 떠 있어야 합니다).** zenhub·jira·slack MCP는 `claude`를 실행한 시점의 환경변수에서 토큰을 읽습니다. 토큰을 넣기 전에 열어 둔 터미널에서 계속 쓰면 토큰이 전달되지 않습니다. 이때 `/mcp` 화면에는 `Connected`로 보여도 실제 호출은 인증 오류가 납니다.
 >
+<a id="cocode-asc"></a>
+
+### Cocode 조직 App Store Connect API 키
+
+**Cocode Inc. 회사 팀(`DNNK8RH9GY`)의 Team API Key(Admin)**를 사용합니다. 브라우저 로그인 없이 앱·Bundle ID·프로파일 API를 호출할 때 쓰며, 앱 사용자의 **Sign in with Apple 로그인 서명 키와는 별개**입니다. 같은 금고의 다른 회사 키와 섞이지 않도록 환경변수에 `COCODE_` 접두사를 붙입니다.
+
+1Password 팀 계정 **`team-cocodeinc.1password.com` → `API Token` 금고 → `Cocode App Store Connect API`**에 아래 네 필드가 있어야 합니다.
+
+| 환경변수 | 1Password 필드 | 내용 |
+|---|---|---|
+| `COCODE_ASC_KEY_ID` | `key_id` | Apple이 발급한 Key ID |
+| `COCODE_ASC_ISSUER_ID` | `issuer_id` | 조직 Issuer ID |
+| `COCODE_ASC_PRIVATE_KEY_BASE64` | `credential` | `.p8` 개인 키의 한 줄 base64 값(보호 필드) |
+| `COCODE_APPLE_TEAM_ID` | `team_id` | `DNNK8RH9GY` |
+
+8.12단계가 네 필드를 모두 읽고 **팀 ID와 Issuer ID가 Cocode 조직인지 확인한 뒤 함께 교체**합니다. 하나라도 없거나 다른 조직이면 기존 값을 보존하고 경고합니다. `./mac-setup.sh --env-only`로 갱신하고 새 터미널을 여세요. 로컬 `~/.zshrc`는 `0600` 권한으로 기록되며 실제 키는 저장소에 포함되지 않습니다.
+
+API를 호출할 때는 `credential`을 base64 디코딩한 `.p8`로 **ES256 JWT**를 만듭니다(`iss=COCODE_ASC_ISSUER_ID`, `kid=COCODE_ASC_KEY_ID`, `aud=appstoreconnect-v1`, 최대 20분). `https://api.appstoreconnect.apple.com/v1/`에 Bearer JWT로 요청합니다. 조직 API 키가 있어도 Apple이 공개 API로 제공하지 않는 콘솔 작업은 별도로 처리해야 합니다.
+
 > **GitHub 인증(gh)은 위 토큰들과 뭐가 다른가요**
 >
 > coco-de 조직의 `co-bricks`·`skills` 레포는 비공개라서, `cob(co-bricks)` 설치(4단계)와 `cocode-skills` 팀 플러그인 설치(3.5단계)에는 GitHub 로그인이 필요합니다. 위 토큰들처럼 `~/.zshrc`에 환경변수로 주입되는 대신, 같은 팀 공용 1Password **"API Token" 볼트 > "GitHub API Token" 항목 > "credential" 필드**(레포 read 권한이면 충분한 Personal Access Token)에서 읽은 값으로 `gh auth login` + `gh auth setup-git`을 대신 실행해 둡니다(3.4단계) — 이후 `git`이 github.com에 접근할 때도 이 인증을 그대로 씁니다. **이미 `gh auth login`이 돼 있다면 건너뜁니다(멱등)**. 위 8.5~8.11 토큰과 달리 이 단계는 준비가 안 돼 있어도 화면을 멈추지 않고 경고만 남긴 뒤 계속 진행하며, `--env-only`로는 재실행되지 않으므로(설치 단계에 속함) 안 됐다면 전체 스크립트를 다시 실행하거나 `gh auth login`을 직접 실행하세요. (`gh auth login`을 마친 뒤 `cob(co-bricks)`만 다시 깔면 되는 상황이라면 `./mac-setup.sh --dart-only`로 그 단계만 다시 돌릴 수 있습니다.)
