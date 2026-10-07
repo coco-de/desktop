@@ -118,6 +118,7 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned -Force
 |---|---|
 | (없음) | 전체 설치 (0~10단계) |
 | `-EnvOnly` | 1Password에서 팀 공용 토큰만 다시 읽어 환경변수에 주입 |
+| Cocode 조직 API 키 | `-EnvOnly`에도 포함: 조직 전용 `COCODE_ASC_*`·`COCODE_APPLE_TEAM_ID` 네 필드를 함께 주입 |
 | `-DartOnly` | Dart 글로벌 패키지만 다시 설치/업데이트 |
 | `-SystemOnly` | 윈도우 시스템 설정(개발자 모드·긴 경로·브라우저 확장)만 다시 점검 — 관리자 권한 필요 |
 | `-DefenderExclusions` | 빌드 캐시 폴더를 Defender 실시간 검사에서 제외 (**기본 꺼짐** · 보안 담당자 승인 후 · **관리자 권한 필요**) — 이 옵션을 붙이면 전체 설치는 시작되지 않고 윈도우 시스템 설정 단계만 돕니다 |
@@ -423,6 +424,14 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 <a id="vs-mac"></a>
 
 ## 🍎 맥과 무엇이 다른가요
+
+### Cocode 조직 App Store Connect API 키
+
+팀 계정 `team-cocodeinc.1password.com`의 **`API Token` 금고 → `Cocode App Store Connect API`**에서 `key_id`·`issuer_id`·`credential`·`team_id`를 읽어 **`COCODE_ASC_KEY_ID`·`COCODE_ASC_ISSUER_ID`·`COCODE_ASC_PRIVATE_KEY_BASE64`·`COCODE_APPLE_TEAM_ID`**를 사용자 환경변수에 함께 기록합니다. `credential`은 `.p8` 개인 키의 한 줄 base64 보호 필드입니다.
+
+**Cocode Inc. Team API Key(Admin)**이며 팀 `DNNK8RH9GY`와 조직 Issuer가 맞아야 적용됩니다. 다른 회사·개인 키는 기존 값을 바꾸지 않고 건너뜁니다. 앱의 Sign in with Apple 로그인 서명 키와도 별개입니다. `.\win-setup.ps1 -EnvOnly`로 갱신 후 새 PowerShell 창을 여세요. **프로필·OneDrive 파일에는 키를 기록하지 않습니다.**
+
+JWT·API 호출 방법과 필드 표는 [맥의 Cocode 조직 API 키 설명](../macos/README.md#cocode-asc)을 참고하세요. API 조회·관리는 Windows에서도 가능하고, Xcode 빌드는 macOS에서 수행합니다.
 
 [macos](../macos/)와 이 폴더는 **같은 도구 목록을 각자의 OS 방식으로** 설치합니다. 아래는 실제로 달라지는 부분입니다.
 

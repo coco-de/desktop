@@ -84,7 +84,7 @@ fi
 # ------------------------------------------------------------
 # 실행 옵션 파싱
 #   (옵션 없음)  : 전체 설치 (0~10단계)
-#   --env-only   : 1Password(op)에서 팀 공용 토큰만 다시 읽어 ~/.zshrc에 주입 (8.5~8.11단계만)
+#   --env-only   : 1Password(op)에서 팀 공용 토큰·Cocode 조직 키를 ~/.zshrc에 주입 (8.5~8.12단계만)
 #   --perms-only : Orca 전체 디스크 접근 권한 점검·안내만 다시 실행 (9단계만)
 #   --dart-only  : Dart 글로벌 패키지만 다시 설치/업데이트 (4-b단계만)
 #   --keychains-only: 서명 키체인 설정만 실행 (첫 번째 옵션으로 지정, 위에서 처리)
@@ -101,7 +101,8 @@ usage() {
                 OpenCode·Claude Code에 기본 MCP 10개를 함께 등록합니다(6.6단계).
   --env-only    1Password(op)에서 팀 공용 토큰(ZENHUB_API_TOKEN·JIRA_API_TOKEN·
                 SLANG_GPT_API_KEY·DCM_EMAIL·DCM_CI_KEY·SLACK_TEAM_ID·
-                SLACK_BOT_TOKEN·TYPESAFE_API_KEY·OPENAI_API_KEY)만 다시 읽어
+                SLACK_BOT_TOKEN·TYPESAFE_API_KEY·OPENAI_API_KEY·COCODE_ASC_*·
+                COCODE_APPLE_TEAM_ID)를 다시 읽어
                 ~/.zshrc에 주입합니다. 앱/도구 설치 단계는 전부 건너뜁니다.
                 (토큰이 바뀌었거나, 설치 때 토큰 주입을 건너뛴 경우에 사용)
   --perms-only  Orca의 '전체 디스크 접근 권한'만 다시 점검하고 안내합니다.
@@ -167,7 +168,7 @@ fi
 log()  { echo ""; echo "▶ $1"; }
 have() { command -v "$1" >/dev/null 2>&1; }
 
-# 1Password 관련 여러 단계(3.4 GitHub 인증 자동화 · 8.5~8.11 팀 토큰 주입)가 공유하는
+# 1Password 관련 여러 단계(3.4 GitHub 인증 자동화 · 8.5~8.12 팀 토큰·조직 키 주입)가 공유하는
 # 팀 계정 식별자와 계정 확인 함수. 가장 먼저 쓰는 단계(3.4)보다 앞에 두어야 해서 여기 둔다.
 TEAM_OP_ACCOUNT="team-cocodeinc.1password.com"   # 팀 1Password 계정 (비밀 아님)
 
@@ -336,11 +337,12 @@ fi
 #   8.9. SLACK_TEAM_ID·SLACK_BOT_TOKEN 주입 (1Password op read → .zshrc, slack MCP용)
 #   8.10. TYPESAFE_API_KEY 주입 (1Password op read → .zshrc, TypeSafe Jev(판단형 AI 모델) SDK용)
 #   8.11. OPENAI_API_KEY 주입 (1Password op read → .zshrc, OpenAI SDK용)
+#   8.12. COCODE_ASC_*·COCODE_APPLE_TEAM_ID 주입 (Cocode Inc. 조직 Team API 키)
 #   9.   앱 권한 — Orca 전체 디스크 접근(Full Disk Access) 점검·안내
 #        (TTY면 시스템 설정 창을 열어주고 Enter 대기 · 이미 허용돼 있으면 건너뜀)
 #   10.  설치 검증 + 다음 단계 안내
 # 공통 규칙: 모든 단계 멱등(이미 설치 시 스킵) · 실패해도 ⚠ 후 계속 · 시크릿 미커밋
-# 실행 옵션: 옵션 없음=전체 실행 · --env-only=8.5~8.11(토큰 주입)만 재실행 ·
+# 실행 옵션: 옵션 없음=전체 실행 · --env-only=8.5~8.12(토큰·조직 키 주입)만 재실행 ·
 #            --perms-only=9(앱 권한)만 재실행 · --dart-only=4-b(Dart 글로벌 패키지)만 재실행 ·
 #            -h/--help=사용법
 # ============================================================
@@ -1683,7 +1685,7 @@ if ! grep -qE '^[[:space:]]*export PATH=.*\.local/bin' "$HOME/.zshrc" 2>/dev/nul
   echo "  ✓ ~/.zshrc에 ~/.local/bin PATH 추가 (Claude Code)"
 fi
 
-fi  # ══ 설치 단계(1~8) 끝 — 여기부터(8.5~8.11 토큰 주입)는 --env-only 실행 시에도 수행된다 ══
+fi  # ══ 설치 단계(1~8) 끝 — 여기부터(8.5~8.12 토큰·조직 키 주입)는 --env-only 실행 시에도 수행된다 ══
 
 # --env-only 가드: 아직 전체 세팅을 한 번도 하지 않은 맥이면 토큰을 붙일 ~/.zshrc 골격이
 #   없다. 빈 .zshrc를 새로 만들어 토큰만 꽂으면 PATH·테마 등이 빠진 반쪽짜리 설정이 되므로,
@@ -1748,6 +1750,7 @@ TYPESAFE_TOKEN_OP_REF="op://API Token/TypeSafe Jev/credential"  # 팀 공용 항
 #   MCP 인증용이 아니라 OpenAI SDK(Python·JavaScript)가 셸 환경변수 OPENAI_API_KEY를 직접 읽는
 #   순수 환경변수라 claude mcp 등록 단계는 없다 (Slang GPT·TypeSafe와 같은 단일 값 패턴).
 OPENAI_TOKEN_OP_REF="op://API Token/OPENAI_API_KEY/credential"  # 팀 공용 항목 경로 (키 값은 1Password에만 존재)
+COCODE_ASC_OP_REF="op://API Token/Cocode App Store Connect API"  # Cocode Inc. 조직 전용 Team API 키
 
 # ~/.zshrc에서 기존 ZENHUB_API_TOKEN 라인을 모두 제거한다.
 #   빈 값(export ZENHUB_API_TOKEN="")이 남아 있으면 zenhub MCP가 인증 없이 뜨면서
@@ -1969,6 +1972,29 @@ inject_openai_token() {
   [[ -n "$tok" ]] || return 1
   strip_openai_token_lines
   printf 'export OPENAI_API_KEY=%q\n' "$tok" >> "$HOME/.zshrc"
+}
+
+# Cocode 조직 API 키는 네 필드를 전부 읽고 팀·Issuer를 확인한 뒤 한 번에 교체한다.
+# 개인 키·다른 회사 키와 섞이지 않게 COCODE_ 접두사를 쓰며, .p8는 한 줄 base64로 보관한다.
+inject_cocode_asc_key() {
+  local key_id issuer_id private_key team_id tmp
+  op_has_account || return 1
+  key_id="$(op read --account "$TEAM_OP_ACCOUNT" "$COCODE_ASC_OP_REF/key_id" 2>/dev/null </dev/null)" || return 1
+  issuer_id="$(op read --account "$TEAM_OP_ACCOUNT" "$COCODE_ASC_OP_REF/issuer_id" 2>/dev/null </dev/null)" || return 1
+  private_key="$(op read --account "$TEAM_OP_ACCOUNT" "$COCODE_ASC_OP_REF/credential" 2>/dev/null </dev/null)" || return 1
+  team_id="$(op read --account "$TEAM_OP_ACCOUNT" "$COCODE_ASC_OP_REF/team_id" 2>/dev/null </dev/null)" || return 1
+  [[ "$key_id" =~ ^[A-Z0-9]{10}$ && "$private_key" =~ ^[A-Za-z0-9+/]+={0,2}$ ]] || return 1
+  [[ "$team_id" == "DNNK8RH9GY" && "$issuer_id" == "1f078b74-be9f-4985-a055-aa7881dc293a" ]] || return 1
+  tmp="$(mktemp "$HOME/.zshrc.asc.XXXXXX")" || return 1
+  # 새 파일은 mktemp의 0600 권한을 유지한다. 읽기 실패 시 기존 환경변수는 보존된다.
+  { grep -vE '^export (COCODE_ASC_KEY_ID|COCODE_ASC_ISSUER_ID|COCODE_ASC_PRIVATE_KEY_BASE64|COCODE_APPLE_TEAM_ID)=' "$HOME/.zshrc" || true; } > "$tmp"
+  if ! printf 'export COCODE_ASC_KEY_ID=%q\nexport COCODE_ASC_ISSUER_ID=%q\nexport COCODE_ASC_PRIVATE_KEY_BASE64=%q\nexport COCODE_APPLE_TEAM_ID=%q\n' \
+      "$key_id" "$issuer_id" "$private_key" "$team_id" >> "$tmp"; then
+    rm -f "$tmp"
+    return 1
+  fi
+  mv "$tmp" "$HOME/.zshrc" || { rm -f "$tmp"; return 1; }
+  unset private_key
 }
 
 log "ZENHUB_API_TOKEN 주입 (1Password 공용 토큰)"
@@ -2303,7 +2329,20 @@ else
 fi
 
 # ------------------------------------------------------------
-# 8.12. --env-only 마무리: 주입 결과만 요약하고 종료 (아래 10단계 전체 검증은 돌리지 않음)
+# 8.12. Cocode Inc. 조직 전용 App Store Connect API 키 주입
+#   앱·Bundle ID·프로파일을 브라우저 없이 관리하는 Team API 키(Admin)다.
+#   Sign in with Apple 로그인 서명 키와는 별개이며, 개인/다른 조직 키는 주입하지 않는다.
+# ------------------------------------------------------------
+log "Cocode App Store Connect API 키 주입 (1Password 조직 전용 Team Key)"
+if have op && inject_cocode_asc_key; then
+  echo "  ✓ COCODE_ASC_*·COCODE_APPLE_TEAM_ID 주입 완료 (~/.zshrc, Cocode Inc. 전용)"
+else
+  echo "  ⚠ Cocode 조직 API 키 미주입 — 팀 'API Token' 금고 > 'Cocode App Store Connect API'의 네 필드와 조직을 확인하세요."
+  echo "     기존 값은 보존됩니다. 확인 후 './mac-setup.sh --env-only' 를 다시 실행하세요."
+fi
+
+# ------------------------------------------------------------
+# 8.13. --env-only 마무리: 주입 결과만 요약하고 종료 (아래 10단계 전체 검증은 돌리지 않음)
 #   토큰 유무는 10단계와 같은 기준(~/.zshrc의 값)으로 판단한다 — MCP의 'Connected' 표시는
 #   인증 성공을 뜻하지 않기 때문 (8.5단계 주석 참고).
 # ------------------------------------------------------------
@@ -2329,8 +2368,11 @@ if (( ENV_ONLY )); then
   echo "  SLACK_TEAM_ID/SLACK_BOT_TOKEN: $([[ -n "$SLACK_TEAM_ID_VAL" && -n "$SLACK_BOT_TOKEN_VAL" ]] && echo '✓ 주입됨' || echo '❌ 미주입 (위 안내 참고)')"
   echo "  TYPESAFE_API_KEY: $([[ -n "$TYPESAFE_VAL" ]] && echo '✓ 주입됨' || echo '❌ 미주입 (위 안내 참고)')"
   echo "  OPENAI_API_KEY: $([[ -n "$OPENAI_VAL" ]] && echo '✓ 주입됨' || echo '❌ 미주입 (위 안내 참고)')"
+  for asc_var in COCODE_ASC_KEY_ID COCODE_ASC_ISSUER_ID COCODE_ASC_PRIVATE_KEY_BASE64 COCODE_APPLE_TEAM_ID; do
+    echo "  $asc_var: $(grep -qE \"^export ${asc_var}=.+\" "$HOME/.zshrc" && echo '✓ 주입됨' || echo '❌ 미주입 (위 안내 참고)')"
+  done
   echo ""
-  if [[ -n "$ZH_VAL" || -n "$JIRA_VAL" || -n "$SLANG_GPT_VAL" || ( -n "$DCM_EMAIL_VAL" && -n "$DCM_CI_KEY_VAL" ) || ( -n "$SLACK_TEAM_ID_VAL" && -n "$SLACK_BOT_TOKEN_VAL" ) || -n "$TYPESAFE_VAL" || -n "$OPENAI_VAL" ]]; then
+  if [[ -n "$ZH_VAL" || -n "$JIRA_VAL" || -n "$SLANG_GPT_VAL" || ( -n "$DCM_EMAIL_VAL" && -n "$DCM_CI_KEY_VAL" ) || ( -n "$SLACK_TEAM_ID_VAL" && -n "$SLACK_BOT_TOKEN_VAL" ) || -n "$TYPESAFE_VAL" || -n "$OPENAI_VAL" ]] || grep -qE '^export COCODE_ASC_PRIVATE_KEY_BASE64=.+' "$HOME/.zshrc"; then
     echo "✅ 완료! 새 터미널을 열거나 'source ~/.zshrc' 를 실행한 뒤 claude를 다시 켜세요."
     echo "   (jira MCP는 colima/docker 데몬이 떠 있어야 연결됩니다 — claude/cld 실행 시 꺼져 있으면 자동으로 'colima start' 시도)"
   else
@@ -2467,6 +2509,9 @@ OPENAI_VAL=$(grep '^export OPENAI_API_KEY=' "$HOME/.zshrc" 2>/dev/null | tail -1
 echo "  OPENAI_API_KEY: $([[ -n "$OPENAI_VAL" ]] \
   && echo '✓ 주입됨 (새 터미널에서 적용 — OpenAI SDK용)' \
   || echo '❌ 미주입 (1Password 앱 CLI 통합/볼트 권한 확인 후 --env-only 재실행)')"
+for asc_var in COCODE_ASC_KEY_ID COCODE_ASC_ISSUER_ID COCODE_ASC_PRIVATE_KEY_BASE64 COCODE_APPLE_TEAM_ID; do
+  echo "  $asc_var: $(grep -qE \"^export ${asc_var}=.+\" "$HOME/.zshrc" && echo '✓ 주입됨 (Cocode Inc. API용)' || echo '❌ 미주입 (--env-only 재실행)')"
+done
 # Dart 글로벌 패키지 5줄 — 본체는 파일 앞부분의 print_dart_packages_verification 에 있다
 #   (--dart-only 마무리에서도 같은 출력을 써야 해서 함수로 뽑아 두었다)
 print_dart_packages_verification
@@ -2504,7 +2549,7 @@ echo "     ↳ 두 도구에서 claude mcp list · opencode mcp list 로 기본 
 echo "     ↳ chrome-devtools: Dia의 dia://inspect/#remote-debugging에서 'Allow remote debugging for this browser instance'를 켜고, MCP 연결 허용 창이 뜨면 허용하세요"
 echo "       서버 주소(예: 127.0.0.1:9222)는 Dia가 알려주며 MCP가 프로필에서 자동으로 읽습니다. 연결 실패 시 Dia 실행·허용 상태 확인 후 두 AI 도구를 재시작하세요"
 echo "     ↳ jira(atlassian)는 더 이상 OAuth 로그인이 필요 없습니다 — zenhub처럼 1Password 팀 공용 토큰으로 인증합니다"
-echo "  7. zenhub·jira·slang_gpt·DCM·slack·TypeSafe·OpenAI 토큰(1Password CLI): 실행 중 8.5~8.11단계에서 설정 안내가 나오면 아래를 마친 뒤 Enter를 누르면 자동 주입됩니다"
+echo "  7. zenhub·jira·slang_gpt·DCM·slack·TypeSafe·OpenAI 토큰·Cocode 조직 키(1Password CLI): 실행 중 8.5~8.12단계의 설정 안내를 마치면 자동 주입됩니다"
 echo "     ↳ 1Password 앱 로그인(team-cocodeinc) → 설정(⌘,) > 개발자 > '1Password CLI와 통합' 체크"
 echo "       ('개발자' 탭이 없으면 설정 > 보안 > 'Touch ID로 잠금 해제'를 먼저 켜세요)"
 echo "       확인: op account list 에 팀 계정이 보이면 성공 · 건너뛰었다면 './mac-setup.sh --env-only' 로 토큰만 다시 주입할 수 있습니다"
@@ -2522,6 +2567,8 @@ echo "     ↳ OPENAI_API_KEY(OpenAI API용)는 같은 볼트 > 'OPENAI_API_KEY'
 echo "       읽어 주입됩니다. MCP가 아니라 OpenAI SDK(Python·JavaScript)가 환경변수로 직접 읽는 값이라 별도 로그인이 없습니다"
 echo "       (~/.zshrc 맨 끝에 적히므로 ~/.zshrc.local 의 개인 키보다 팀 키가 우선합니다 — 프로젝트별 키는 그 폴더의 .envrc 에 두세요)"
 echo "     ↳ 주입 후에는 반드시 '새 터미널'에서 claude·opencode를 다시 실행하세요."
+echo "     ↳ Cocode 조직 App Store Connect 키는 'Cocode App Store Connect API'에서 네 필드를 함께 읽습니다."
+echo "       COCODE_ASC_KEY_ID·COCODE_ASC_ISSUER_ID·COCODE_ASC_PRIVATE_KEY_BASE64·COCODE_APPLE_TEAM_ID를 사용하세요."
 echo "       claude 실행 시점의 환경변수에서 토큰을 읽으므로, 예전 터미널에서 띄운 claude는 토큰을 못 읽습니다."
 echo "       (jira MCP가 docker로 뜨는데, colima가 꺼져 있으면 새 .zshrc의 claude/cld 함수가 자동으로 'colima start'를 시도합니다 — 최초 콜드 스타트는 수십 초 걸릴 수 있으니 미리 켜두면 더 빠릅니다)"
 echo "  8. GitHub 인증(gh)이 '❌'이면 cocode-skills·cob(co-bricks) 둘 다 설치되지 않습니다 (3.4단계에서 시도)"
