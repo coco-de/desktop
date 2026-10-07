@@ -3454,7 +3454,11 @@ if (( ENV_ONLY )); then
   echo "  TYPESAFE_API_KEY: $([[ -n "$TYPESAFE_VAL" ]] && echo '✓ 주입됨' || echo '❌ 미주입 (위 안내 참고)')"
   echo "  OPENAI_API_KEY: $([[ -n "$OPENAI_VAL" ]] && echo '✓ 주입됨' || echo '❌ 미주입 (위 안내 참고)')"
   for asc_var in COCODE_ASC_KEY_ID COCODE_ASC_ISSUER_ID COCODE_ASC_PRIVATE_KEY_BASE64 COCODE_APPLE_TEAM_ID; do
-    echo "  $asc_var: $(grep -qE \"^export ${asc_var}=.+\" "$HOME/.zshrc" && echo '✓ 주입됨' || echo '❌ 미주입 (위 안내 참고)')"
+    if grep -qE "^export ${asc_var}=.+" "$HOME/.zshrc"; then
+      echo "  $asc_var: ✓ 주입됨"
+    else
+      echo "  $asc_var: ❌ 미주입 (위 안내 참고)"
+    fi
   done
   echo ""
   if [[ -n "$ZH_VAL" || -n "$JIRA_VAL" || -n "$SLANG_GPT_VAL" || ( -n "$DCM_EMAIL_VAL" && -n "$DCM_CI_KEY_VAL" ) || ( -n "$SLACK_TEAM_ID_VAL" && -n "$SLACK_BOT_TOKEN_VAL" ) || -n "$TYPESAFE_VAL" || -n "$OPENAI_VAL" ]] || grep -qE '^export COCODE_ASC_PRIVATE_KEY_BASE64=.+' "$HOME/.zshrc"; then
@@ -3609,7 +3613,11 @@ echo "  OPENAI_API_KEY: $([[ -n "$OPENAI_VAL" ]] \
   || echo '❌ 미주입 (1Password 앱 CLI 통합/볼트 권한 확인 후 --env-only 재실행)')"
 # Dart 글로벌 패키지 — 본체는 4-b단계의 print_dart_packages_verification 에 있다
 for asc_var in COCODE_ASC_KEY_ID COCODE_ASC_ISSUER_ID COCODE_ASC_PRIVATE_KEY_BASE64 COCODE_APPLE_TEAM_ID; do
-  echo "  $asc_var: $(grep -qE \"^export ${asc_var}=.+\" "$HOME/.zshrc" && echo '✓ 주입됨 (Cocode Inc. API용)' || echo '❌ 미주입 (--env-only 재실행)')"
+  if grep -qE "^export ${asc_var}=.+" "$HOME/.zshrc"; then
+    echo "  $asc_var: ✓ 주입됨 (Cocode Inc. API용)"
+  else
+    echo "  $asc_var: ❌ 미주입 (--env-only 재실행)"
+  fi
 done
 #   (--dart-only 마무리에서도 같은 출력을 써야 해서 함수로 뽑혀 있다)
 if declare -f print_dart_packages_verification >/dev/null 2>&1; then
