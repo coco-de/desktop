@@ -196,16 +196,16 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 <tr>
 <td align="center" width="100"><img src="assets/icons/1password.svg" width="36" height="36" alt="1Password"><br><sub><b>1Password</b></sub></td>
 <td align="center" width="100"><img src="assets/icons/dia.png" width="36" height="36" alt="Dia"><br><sub><b>Dia</b></sub></td>
+<td align="center" width="100"><img src="assets/icons/ego-lite.png" width="36" height="36" alt="ego lite"><br><sub><b>ego lite</b></sub></td>
 <td align="center" width="100"><img src="assets/icons/tailscale.svg" width="36" height="36" alt="Tailscale"><br><sub><b>Tailscale</b></sub></td>
 <td align="center" width="100"><img src="assets/icons/orca.png" width="36" height="36" alt="Orca"><br><sub><b>Orca</b></sub></td>
-<td align="center" width="100"><img src="assets/icons/lumide.png" width="36" height="36" alt="Lumide"><br><sub><b>Lumide</b></sub></td>
 </tr>
 <tr>
+<td align="center" width="100"><img src="assets/icons/lumide.png" width="36" height="36" alt="Lumide"><br><sub><b>Lumide</b></sub></td>
 <td align="center" width="100"><img src="assets/icons/zed.svg" width="36" height="36" alt="Zed"><br><sub><b>Zed</b></sub></td>
 <td align="center" width="100"><img src="assets/icons/rive.svg" width="36" height="36" alt="Rive"><br><sub><b>Rive</b></sub></td>
 <td align="center" width="100"><img src="assets/icons/stats.png" width="36" height="36" alt="Stats"><br><sub><b>Stats</b></sub></td>
 <td align="center" width="100"><sub><b>Pretendard</b><br>(폰트)</sub></td>
-<td align="center" width="100"></td>
 </tr>
 </table>
 
@@ -310,7 +310,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 <td align="center" width="100"><img src="assets/icons/playwright.png" width="36" height="36" alt="Playwright MCP"><br><sub><b>Playwright MCP</b></sub></td>
 </tr></table>
 
-<sub>※ OpenCode·Atlassian의 SVG는 [Simple Icons](https://simpleicons.org), Mobbin·ZenHub·Playwright의 PNG는 공식 사이트 파비콘입니다. Slack · Dia · Orca · Lumide · Stats · codex(OpenAI) · agy(Antigravity)도 실제 브랜드 아이콘(파비콘)을 사용합니다. awscli, pyenv, colima, direnv, jq, maestro, oh-my-zsh, powerlevel10k, MesloLGS NF, Pretendard는 공식 브랜드 아이콘이 없어 텍스트로만 표기했습니다. DCM · coverage · melos · mason_cli · flutter_gen · jaspr_cli · serverpod_cli · marionette_mcp · mcp_server_dart · cob(co-bricks)는 Dart 아이콘, op는 1Password 아이콘, ccstatusline · awesome-statusline은 Claude 아이콘을 공용으로 사용합니다.</sub>
+<sub>※ OpenCode·Atlassian의 SVG는 [Simple Icons](https://simpleicons.org), Mobbin·ZenHub·Playwright의 PNG는 공식 사이트 파비콘입니다. Slack · Dia · Orca · Lumide · Stats · codex(OpenAI) · agy(Antigravity)도 실제 브랜드 아이콘(파비콘)을 사용합니다. ego lite는 앱 번들(`ego lite.app`)에 들어 있는 공식 앱 아이콘을 사용합니다. awscli, pyenv, colima, direnv, jq, maestro, oh-my-zsh, powerlevel10k, MesloLGS NF, Pretendard는 공식 브랜드 아이콘이 없어 텍스트로만 표기했습니다. DCM · coverage · melos · mason_cli · flutter_gen · jaspr_cli · serverpod_cli · marionette_mcp · mcp_server_dart · cob(co-bricks)는 Dart 아이콘, op는 1Password 아이콘, ccstatusline · awesome-statusline은 Claude 아이콘을 공용으로 사용합니다.</sub>
 
 <br>
 
@@ -321,7 +321,8 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 | 분류 | 항목 |
 |---|---|
 | 🍺 Homebrew | 맥용 패키지 관리자. 없으면 [공식 설치 스크립트](https://brew.sh)로 자동 설치하고 이어서 진행합니다(0단계 · 관리자 암호를 한 번 물어볼 수 있음). Homebrew가 필요로 하는 **Xcode Command Line Tools**도 이때 함께 설치됩니다. 이미 있으면 건너뜁니다 |
-| 🖥 GUI 앱 | Android Studio, Slack, Figma, Claude Desktop, Google Chrome, Dia, 1Password, Tailscale, Orca, Lumide, Zed, Rive, Stats(메뉴막대 시스템 모니터 — 최초 1회 직접 실행 필요), Pretendard 폰트(9개 스타일: Thin~Black) |
+| 🖥 GUI 앱 | Android Studio, Slack, Figma, Claude Desktop, Google Chrome, Dia, **ego lite**(AI 에이전트와 함께 쓰는 브라우저 — Homebrew cask가 없어 공식 dmg로 설치 · 최초 1회 직접 실행 필요 · [자세히](#ego-lite)), 1Password, Tailscale, Orca, Lumide, Zed, Rive, Stats(메뉴막대 시스템 모니터 — 최초 1회 직접 실행 필요), Pretendard 폰트(9개 스타일: Thin~Black) |
+| 🤖 ego lite 에이전트 연동 | Claude Code·Codex·OpenCode가 `ego-browser`로 ego lite를 쓰게 하는 설정입니다. 에이전트용 스킬은 ego lite를 처음 실행할 때 앱이 직접 설치하고, 이 스크립트는 설치 상태 확인과 Codex·OpenCode용 **전용 실행 명령**(`codex-ego`·`opencode-ego`)을 제공합니다 ([에이전트별 사용법](#ego-lite-agents)) |
 | 🍎 Xcode 개발자 도구 | Xcode.app이 없으면 `mas`(App Store CLI)로 자동 설치 시도(App Store 로그인 필요 · 수십 GB라 오래 걸릴 수 있음). Command Line Tools만 활성화돼 있으면(`xcodebuild` "requires Xcode" 에러 원인) `xcode-select`를 Xcode.app으로 자동 전환하고 최초 실행 동의(`xcodebuild -runFirstLaunch`)까지 진행 (sudo 암호 입력 필요) |
 | 🧩 브라우저 확장 프로그램 | Chrome·Dia에 [ZenHub for GitHub](https://chromewebstore.google.com/detail/zenhub-for-github/ogcgkffhplmphkaahpmffcafajaocjbd) 확장을 자동 등록(External Extensions 드롭인 방식, sudo 암호 입력 필요) — Dia는 동작이 보장되지 않아 실패해도 경고만 남기고 계속 진행 |
 | 🔌 OpenCode·Claude Code MCP | **6.6단계**에서 OpenCode CLI(`npm install -g opencode-ai`) 설치 + 두 도구에 `cob` · `dart` · `figma` · `marionette` · `atlassian` · `mobbin` · `slack` · `zenhub` · `chrome-devtools` · `playwright` 직접 등록. `chrome-devtools`는 실행 중인 **Dia**에 연결합니다. 기존 설정은 백업 후 병합합니다. Figma 보조 플러그인도 설치합니다. 인증·실행 조건은 [기본 MCP 표](#default-mcp)를 참고하세요 |
@@ -353,7 +354,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 |---|---|---|
 | <img src="assets/icons/homebrew.svg" width="20" height="20"> | Homebrew (`brew`) | macOS용 앱·도구 설치 관리자. 아래 도구 대부분이 `brew`로 설치됩니다. 없으면 스크립트가 0단계에서 공식 설치 스크립트로 자동 설치하며(관리자 암호를 한 번 물어볼 수 있음), Homebrew가 필요로 하는 **Xcode Command Line Tools**도 이때 함께 설치됩니다 |
 
-**GUI 앱 (Homebrew Cask)**
+**GUI 앱 (Homebrew Cask — ego lite만 공식 dmg 직접 설치)**
 
 | | 도구 | 용도 |
 |---|---|---|
@@ -363,6 +364,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 | <img src="assets/icons/claude.svg" width="20" height="20"> | Claude Desktop | Claude AI 어시스턴트 데스크톱 앱 |
 | <img src="assets/icons/chrome.svg" width="20" height="20"> | Google Chrome | 웹 브라우저 |
 | <img src="assets/icons/dia.png" width="20" height="20"> | Dia | AI 기반 웹 브라우저 |
+| <img src="assets/icons/ego-lite.png" width="20" height="20"> | ego lite | 사람과 AI 에이전트가 한 브라우저를 나눠 쓰는 크로미움 기반 브라우저 ([lite.ego.app](https://lite.ego.app/ko), Citro Labs). Homebrew cask가 없어 공식 dmg로 설치하고, 설치 후 최초 1회 실행해야 에이전트와 연결됩니다 — [자세히](#ego-lite) |
 | <img src="assets/icons/1password.svg" width="20" height="20"> | 1Password | 비밀번호 관리자 |
 | <img src="assets/icons/tailscale.svg" width="20" height="20"> | Tailscale | 팀 내부망 접속용 VPN 메시 네트워크 (메뉴바 앱 + CLI) |
 | <img src="assets/icons/orca.png" width="20" height="20"> | Orca | AI 코딩 에이전트 도구 (stablyai/orca 탭) — 설치 후 [전체 디스크 접근 권한](#orca-full-disk-access)을 한 번 켜야 폴더 허용 창이 반복해서 뜨지 않습니다 |
@@ -377,6 +379,41 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 **브라우저 확장 프로그램 자동 등록**
 
 Chrome·Dia 설치 직후, [ZenHub for GitHub](https://chromewebstore.google.com/detail/zenhub-for-github/ogcgkffhplmphkaahpmffcafajaocjbd) 확장을 구글이 공식 문서화한 "External Extensions" 드롭인 방식(`/Library/Application Support/<브라우저>/External Extensions/<확장ID>.json`)으로 자동 등록합니다. 다음에 해당 브라우저를 실행하면 스토어에서 자동으로 받아 설치됩니다. 시스템 폴더에 파일을 심어야 해서 **sudo 암호 입력이 필요**하며(터미널 대화형 실행일 때만 시도), Preferences 파일을 직접 고치는 방식은 브라우저의 변조 감지로 되돌아가기 때문에 이 공식 경로만 사용합니다. Dia는 Chrome과 같은 크로미움 기반이라 동일한 방식을 시도하지만, Arc 계열 제품 특성상 엔터프라이즈 정책 훅이 막혀 있을 수 있어 실제 설치까지 이어진다는 보장은 없습니다 — 적용되지 않아도 오류로 취급하지 않고 조용히 넘어가며, 안 될 경우 위 링크에서 수동으로 추가하면 됩니다.
+
+<a id="ego-lite"></a>
+
+**ego lite (에이전트용 브라우저) 설치와 에이전트 연동**
+
+ego lite는 [Citro Labs](https://lite.ego.app/ko)가 만든 크로미움 기반 브라우저입니다. **사람이 쓰는 탭과 AI 에이전트가 일하는 공간(Space)을 한 브라우저 안에서 나눠** 주기 때문에, 에이전트가 `ego-browser` 명령으로 내 로그인 상태를 그대로 쓰면서도 내가 보고 있는 탭을 가져가지 않습니다. 지금은 **macOS 전용**입니다(Windows·Linux는 [윈도우 안내](../windows/README.md#vs-mac)·[리눅스 안내](../linux/README.md#vs-mac)에 사유를 적어 두었습니다).
+
+*스크립트가 하는 일*
+
+- Homebrew cask가 없어서 **공식 dmg를 직접 내려받아** `/Applications`에 설치합니다(관리자 계정이 아니면 `~/Applications`). Apple Silicon·Intel을 자동으로 구분하고, Rosetta 터미널에서도 Apple Silicon용을 받습니다.
+- 복사하기 전에 **Apple 공증과 서명자(Citro Labs, Team ID `JGQLC6YQYJ`)를 확인**합니다. 직접 내려받는 방식은 brew처럼 체크섬 검사가 없어서, 이 확인이 바뀌거나 변조된 파일을 걸러 줍니다. 하나라도 맞지 않으면 설치하지 않고 경고만 남긴 채 다음 단계로 넘어갑니다.
+- 이미 설치돼 있으면(`/Applications` 또는 `~/Applications`) 내려받지 않고 건너뜁니다. 업데이트는 하지 않습니다.
+- 다운로드·검증이 실패해도 전체 설치는 멈추지 않습니다. 안내된 주소(<https://lite.ego.app/ko>)에서 Mac용 앱을 직접 받아 설치하면 됩니다.
+- Chrome·Dia에만 적용되는 ZenHub 확장 자동 등록과 번역 언어 자동 설정은 ego lite에는 적용하지 않습니다.
+
+*설치 후 직접 해야 하는 일 — 첫 실행(온보딩)*
+
+`open -a "ego lite"`로 한 번 실행해 첫 설정을 마치세요. 이때 Chrome 데이터(로그인·쿠키·확장·북마크)를 가져올지 한 번 묻고, 끝나면 앱이 **`ego-browser` 명령(보통 `~/.local/bin`)과 에이전트용 스킬을 자동으로 등록**합니다. 화면에서 직접 해야 하는 단계라 스크립트가 대신할 수 없습니다. 이미 켜 둔 에이전트는 **완전히 종료했다가 다시 실행**해야 스킬이 보입니다.
+
+<a id="ego-lite-agents"></a>
+
+*에이전트별 사용법* — 공식 가이드: [Claude Code](https://lite.ego.app/document/ko/docs/claude-code) · [Codex](https://lite.ego.app/document/ko/docs/codex) · [OpenCode](https://lite.ego.app/document/ko/docs/opencode)
+
+| 에이전트 | 스킬이 놓이는 곳 | 필요한 권한 모드 | 터미널에서 실행 | 스킬 불러오기 |
+|---|---|---|---|---|
+| Claude Code | `~/.claude/skills/ego-browser` | Bypass permissions | `claude` — 팀 `.zshrc`의 함수가 이미 `--dangerously-skip-permissions`로 실행하므로 따로 할 일 없음 | `/ego-browser` 입력 후 선택 |
+| Codex | `~/.agents/skills/ego-browser` | Full access | `codex-ego` (= `codex --dangerously-bypass-approvals-and-sandbox`) | `/ego` 입력 후 목록에서 ego-browser 선택 |
+| OpenCode | `~/.agents/skills/ego-browser` | Auto-accept permissions | `opencode-ego` (= `opencode --auto`) | `/ego-browser` 입력 후 선택 |
+
+데스크톱 앱을 쓴다면 터미널 명령 대신 앱에서 권한 모드를 고릅니다. Claude Code는 입력창 옆 권한 메뉴에서 **Bypass permissions**(Cowork가 아니라 **Code** 모드에서 사용), Codex는 입력창 왼쪽 아래 권한 메뉴에서 **Full access**(ChatGPT 데스크톱 앱이면 왼쪽 위 모드를 Codex로), OpenCode는 **Settings > General > Auto-accept permissions**입니다.
+
+- `codex-ego`·`opencode-ego`는 이 레포의 `.zshrc`가 만드는 **전용 실행 명령**입니다(새 터미널을 열어야 적용). 권한 확인·샌드박스를 끄는 모드라서 평소 쓰는 `codex`·`opencode`는 그대로 두었습니다 — **ego lite 작업을 할 때만, 믿을 수 있는 프로젝트에서** 쓰세요. `opencode --auto`는 명시적으로 거부된 권한은 그대로 거부합니다.
+- 권한 모드가 꺼져 있으면 에이전트가 ego lite를 실행하지 못하거나 승인 대기에서 멈출 수 있습니다.
+- ego-browser 스킬은 "브라우저가 필요하면 내장 브라우저나 다른 웹 도구보다 ego-browser를 우선 쓰라"고 안내합니다. 그래서 기본 MCP `playwright`·`chrome-devtools` 대신 ego lite가 쓰일 수 있습니다.
+- 에이전트가 사이트에서 로그인이나 확인을 요구하면 ego lite의 에이전트 Space에서 직접 마친 뒤 에이전트에게 계속 진행하라고 알려 주세요.
 
 **Android SDK (자동 설치·구성)**
 
@@ -541,6 +578,7 @@ Xcode.app: ...
 xcode-select: ...
 ZenHub 확장(Chrome/Dia): ...
 Stats.app: ...
+ego lite: ...
 fvm     : ...
 flutter : ...
 go      : ...
@@ -584,6 +622,8 @@ Orca 전체 디스크 접근: ...
 
 > `Stats.app`은 메뉴막대에 시스템 사용량을 띄워 주는 앱이라, **설치됨과 메뉴막대에 보임이 다릅니다**. 여기 `✓ 설치됨`이 찍혀도 메뉴막대에 아무것도 없다면 아직 한 번도 실행하지 않은 것이니 `open -a Stats`로 최초 1회 실행해 주세요.
 
+> `ego lite`도 **설치됨과 에이전트에서 쓸 수 있음이 다릅니다**. `✓ 설치됨 — 아직 첫 실행 전입니다`가 나오면 앱은 깔렸지만 `ego-browser` 명령과 에이전트용 스킬은 아직 없는 상태이니, `open -a "ego lite"`로 최초 1회 실행해 첫 설정을 마쳐 주세요. 마친 뒤에는 `ego-browser 명령 ✓ · 에이전트 스킬 — Claude Code ✓ · Codex·OpenCode ✓`가 보여야 준비 완료입니다(스킬이 `❌`면 그 에이전트를 완전히 종료했다가 다시 실행). 스크립트를 다시 돌리지 않고 지금 상태만 보려면 `command -v ego-browser`와 `ls ~/.claude/skills/ego-browser ~/.agents/skills/ego-browser`를 실행하세요. 자세한 내용은 [ego lite](#ego-lite)에 있습니다.
+
 > `lefthook`은 커밋·푸시 직전에 검사를 자동으로 돌려주는 Git 훅 관리자입니다. 여기 버전이 찍히면 도구는 준비된 것이고, **실제로 켜는 건 레포마다 한 번씩**입니다 — `lefthook.yml`이 있는 프로젝트 폴더에서 `lefthook install`을 실행하세요(설정 파일이 없는 레포에서는 할 일 없음).
 
 > `GitHub 인증(gh)`이 `❌`이면 바로 아래 `cob(co-bricks)`·`cocode-skills` 둘 다 설치되지 않습니다 — 둘 다 coco-de의 비공개 레포라 GitHub 로그인이 필요하기 때문입니다. 보통은 팀 공용 1Password 항목("API Token" 볼트 > "GitHub API Token" > credential 필드)으로 자동 로그인되며, 항목이 없거나 실패했다면 `gh auth login`을 직접 실행한 뒤 스크립트를 다시 실행하세요.
@@ -618,6 +658,7 @@ Orca 전체 디스크 접근: ...
 10. Slack CLI로 직접 앱/워크플로를 개발하려면 `slack login`으로 워크스페이스 인증(최초 1회) — Claude Code의 `slack` MCP는 이 로그인과 무관하게 아래 팀 공용 토큰으로 별도 인증됩니다
 11. **Git 훅(lefthook)은 레포마다 한 번씩 켜기** — `lefthook.yml`이 있는 프로젝트 폴더에서 `lefthook install`을 실행하면, 그 레포에서 커밋·푸시할 때 포맷/린트/테스트가 자동으로 돌아갑니다 (설정 파일이 없는 레포에서는 할 일 없음)
 12. **Stats(시스템 모니터)를 최초 1회 실행** — `open -a Stats`. 설치만으로는 메뉴막대에 나타나지 않고, 한 번 실행해야 CPU·메모리·디스크·네트워크 사용량이 메뉴막대에 표시됩니다. 실행 후 Stats 설정에서 **"로그인 시 시작"** 을 켜 두면 다음부터는 자동으로 떠 있습니다
+13. **ego lite(에이전트용 브라우저)를 최초 1회 실행해 첫 설정 마치기** — `open -a "ego lite"`. Chrome 데이터를 가져올지 한 번 묻고, 끝나면 `ego-browser` 명령과 에이전트용 스킬이 자동으로 등록됩니다. 이미 켜 둔 에이전트는 **완전히 종료했다가 다시 실행**하고, 권한 확인 없는 모드로 실행하세요(Claude Code는 `claude` 그대로 · Codex는 `codex-ego` · OpenCode는 `opencode-ego` — 새 터미널에서 적용). 그다음 에이전트에서 `/ego-browser`(Codex는 `/ego` 입력 후 선택)로 스킬을 불러오면 됩니다 ([에이전트별 사용법](#ego-lite-agents))
 
 > ✉️ **Git 이메일 (실행 중 입력)**: 스크립트 실행 도중 Git 설정 단계(3.2)에서 커밋에 사용할 회사 이메일을 물어봅니다. 입력하면 `git config --global user.email`에 저장되고, 이미 설정된 맥이라면 묻지 않고 건너뜁니다. `s` + Enter로 건너뛸 수도 있으며, 그 경우 나중에 터미널에서 `git config --global user.email <이메일>`을 직접 실행하면 됩니다.
 

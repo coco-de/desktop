@@ -460,6 +460,7 @@ JWT·API 호출 방법과 필드 표는 [맥의 Cocode 조직 API 키 설명](..
 | **fastlane** | 윈도우에서는 Xcode 의존 기능이 전부 동작하지 않아 Android 레인만 남습니다. Ruby 런타임까지 추가로 필요해 실패 지점이 많아 팀 표준에서 제외했습니다. Android 릴리스 자동화는 Gradle 태스크나 GitHub Actions에서 처리합니다 |
 | **mas (App Store CLI)** | Mac App Store 전용 |
 | **서명 키체인 로그인 자동 해제** (`--keychains-only`) | macOS의 login 키체인·Security.framework·LaunchAgent를 사용하는 설정입니다. Apple 앱·패키지 서명용 Mac에서 [선택형 설정](../macos/signing-keychains/)을 실행합니다 |
+| **ego lite (에이전트용 브라우저)** | 맥 전용 앱입니다. 윈도우판은 클로즈드 베타를 준비 중이라 아직 내려받을 수 없습니다(공식 사이트에서 출시 알림 신청만 가능). 윈도우에서 에이전트의 브라우저 작업은 기본 MCP(`chrome-devtools`·`playwright`)가 Chrome으로 처리합니다. 정식 출시되면 설치 방식을 확인해 `win-setup.ps1`에 추가합니다 → [맥의 ego lite 설명](../macos/README.md#ego-lite) |
 | **docker-compose (하이픈 있는 별도 패키지)** | Docker Desktop에 Compose v2가 내장돼 있습니다. 윈도우에서는 **`docker compose`(하이픈 없음)** 로 씁니다 — 문서나 스크립트에 `docker-compose`가 남아 있으면 명령을 찾지 못합니다 |
 | **Android 에뮬레이터 (ARM64 PC만)** | 구글이 Windows ARM64용 에뮬레이터 빌드를 배포하지 않습니다. 실기기를 USB로 연결해 개발하세요. x64 PC에서는 정상 설치됩니다 |
 | **cocode-skills 자동 설치** | `install.sh`가 `rsync`에 의존하는데 윈도우에 `rsync`가 없습니다 → [알려진 제약](#known-gap) |
