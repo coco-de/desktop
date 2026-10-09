@@ -389,7 +389,7 @@ ego lite는 [Citro Labs](https://lite.ego.app/ko)가 만든 크로미움 기반 
 *스크립트가 하는 일*
 
 - Homebrew cask가 없어서 **공식 dmg를 직접 내려받아** `/Applications`에 설치합니다(관리자 계정이 아니면 `~/Applications`). Apple Silicon·Intel을 자동으로 구분하고, Rosetta 터미널에서도 Apple Silicon용을 받습니다.
-- 복사하기 전에 **Apple 공증과 서명자(Citro Labs, Team ID `JGQLC6YQYJ`)를 확인**합니다. 직접 내려받는 방식은 brew처럼 체크섬 검사가 없어서, 이 확인이 바뀌거나 변조된 파일을 걸러 줍니다. 하나라도 맞지 않으면 설치하지 않고 경고만 남긴 채 다음 단계로 넘어갑니다.
+- 복사하기 전에 **Apple 공증, 서명이 깨지지 않았는지, 서명한 팀이 Citro Labs(Team ID `JGQLC6YQYJ`)인지를 모두 확인**합니다. 직접 내려받는 방식은 brew처럼 체크섬 검사가 없어서, 이 확인이 내용이 바뀌어 서명이 깨진 파일이나 다른 개발자가 서명한 파일을 걸러 줍니다. 하나라도 맞지 않으면 설치하지 않고 경고만 남긴 채 다음 단계로 넘어갑니다.
 - 이미 설치돼 있으면(`/Applications` 또는 `~/Applications`) 내려받지 않고 건너뜁니다. 업데이트는 하지 않습니다.
 - 다운로드·검증이 실패해도 전체 설치는 멈추지 않습니다. 안내된 주소(<https://lite.ego.app/ko>)에서 Mac용 앱을 직접 받아 설치하면 됩니다.
 - Chrome·Dia에만 적용되는 ZenHub 확장 자동 등록과 번역 언어 자동 설정은 ego lite에는 적용하지 않습니다.
@@ -402,15 +402,16 @@ ego lite는 [Citro Labs](https://lite.ego.app/ko)가 만든 크로미움 기반 
 
 *에이전트별 사용법* — 공식 가이드: [Claude Code](https://lite.ego.app/document/ko/docs/claude-code) · [Codex](https://lite.ego.app/document/ko/docs/codex) · [OpenCode](https://lite.ego.app/document/ko/docs/opencode)
 
-| 에이전트 | 스킬이 놓이는 곳 | 필요한 권한 모드 | 터미널에서 실행 | 스킬 불러오기 |
+| 에이전트 | 스킬이 놓이는 곳 | 필요한 권한 모드 | 터미널에서 실행 | 스킬 불러오기 (벤더 가이드, 데스크톱 앱 기준) |
 |---|---|---|---|---|
 | Claude Code | `~/.claude/skills/ego-browser` | Bypass permissions | `claude` — 팀 `.zshrc`의 함수가 이미 `--dangerously-skip-permissions`로 실행하므로 따로 할 일 없음 | `/ego-browser` 입력 후 선택 |
 | Codex | `~/.agents/skills/ego-browser` | Full access | `codex-ego` (= `codex --dangerously-bypass-approvals-and-sandbox`) | `/ego` 입력 후 목록에서 ego-browser 선택 |
-| OpenCode | `~/.agents/skills/ego-browser` | Auto-accept permissions | `opencode-ego` (= `opencode --auto`) | `/ego-browser` 입력 후 선택 |
+| OpenCode | `~/.agents/skills/ego-browser` | Auto-accept permissions | `opencode-ego` (= `opencode <인자> --auto`) | `/ego-browser` 입력 후 선택 |
 
 데스크톱 앱을 쓴다면 터미널 명령 대신 앱에서 권한 모드를 고릅니다. Claude Code는 입력창 옆 권한 메뉴에서 **Bypass permissions**(Cowork가 아니라 **Code** 모드에서 사용), Codex는 입력창 왼쪽 아래 권한 메뉴에서 **Full access**(ChatGPT 데스크톱 앱이면 왼쪽 위 모드를 Codex로), OpenCode는 **Settings > General > Auto-accept permissions**입니다.
 
-- `codex-ego`·`opencode-ego`는 이 레포의 `.zshrc`가 만드는 **전용 실행 명령**입니다(새 터미널을 열어야 적용). 권한 확인·샌드박스를 끄는 모드라서 평소 쓰는 `codex`·`opencode`는 그대로 두었습니다 — **ego lite 작업을 할 때만, 믿을 수 있는 프로젝트에서** 쓰세요. `opencode --auto`는 명시적으로 거부된 권한은 그대로 거부합니다.
+- 터미널(TUI)에서는 벤더 가이드가 "`ego-browser`를 불러온 다음 작업을 입력"하라고만 안내합니다. 목록에 `ego-browser`가 안 보이면 스킬이 `~/.claude/skills`·`~/.agents/skills`에 있는지 확인하고, 있으면 그 에이전트를 완전히 종료했다가 다시 실행하세요.
+- `codex-ego`·`opencode-ego`는 이 레포의 `.zshrc`가 만드는 **전용 실행 명령**입니다(팀 `.zshrc`를 쓰는 경우에 한해, 새 터미널을 열어야 적용). 예전 `.zshrc`를 그대로 쓰면 이 명령과 `claude`의 권한 우회 함수가 없으니 [직접 추가](#after-install)하거나 같은 플래그로 실행하세요. 권한 확인·샌드박스를 끄는 모드라서 평소 쓰는 `codex`·`opencode`는 그대로 두었습니다 — **ego lite 작업을 할 때만, 믿을 수 있는 프로젝트에서** 쓰세요. `opencode --auto`는 명시적으로 거부된 권한은 그대로 거부합니다.
 - 권한 모드가 꺼져 있으면 에이전트가 ego lite를 실행하지 못하거나 승인 대기에서 멈출 수 있습니다.
 - ego-browser 스킬은 "브라우저가 필요하면 내장 브라우저나 다른 웹 도구보다 ego-browser를 우선 쓰라"고 안내합니다. 그래서 기본 MCP `playwright`·`chrome-devtools` 대신 ego lite가 쓰일 수 있습니다.
 - 에이전트가 사이트에서 로그인이나 확인을 요구하면 ego lite의 에이전트 Space에서 직접 마친 뒤 에이전트에게 계속 진행하라고 알려 주세요.
@@ -622,7 +623,7 @@ Orca 전체 디스크 접근: ...
 
 > `Stats.app`은 메뉴막대에 시스템 사용량을 띄워 주는 앱이라, **설치됨과 메뉴막대에 보임이 다릅니다**. 여기 `✓ 설치됨`이 찍혀도 메뉴막대에 아무것도 없다면 아직 한 번도 실행하지 않은 것이니 `open -a Stats`로 최초 1회 실행해 주세요.
 
-> `ego lite`도 **설치됨과 에이전트에서 쓸 수 있음이 다릅니다**. `✓ 설치됨 — 아직 첫 실행 전입니다`가 나오면 앱은 깔렸지만 `ego-browser` 명령과 에이전트용 스킬은 아직 없는 상태이니, `open -a "ego lite"`로 최초 1회 실행해 첫 설정을 마쳐 주세요. 마친 뒤에는 `ego-browser 명령 ✓ · 에이전트 스킬 — Claude Code ✓ · Codex·OpenCode ✓`가 보여야 준비 완료입니다(스킬이 `❌`면 그 에이전트를 완전히 종료했다가 다시 실행). 스크립트를 다시 돌리지 않고 지금 상태만 보려면 `command -v ego-browser`와 `ls ~/.claude/skills/ego-browser ~/.agents/skills/ego-browser`를 실행하세요. 자세한 내용은 [ego lite](#ego-lite)에 있습니다.
+> `ego lite`도 **설치됨과 에이전트에서 쓸 수 있음이 다릅니다**. `✓ 설치됨 — 아직 첫 실행 전입니다`가 나오면 앱은 깔렸지만 `ego-browser` 명령과 에이전트용 스킬은 아직 없는 상태이니, `open -a "ego lite"`로 최초 1회 실행해 첫 설정을 마쳐 주세요. 마친 뒤에는 `ego-browser 명령 ✓ · 에이전트 스킬 — Claude Code ✓ · Codex·OpenCode ✓`가 보여야 준비 완료입니다. `❌`는 ego lite가 아직 만들지 못한 것이니, 첫 설정을 마쳤는지 확인하고 ego lite를 완전히 종료했다 다시 실행해 보세요(에이전트는 먼저 설치돼 있어야 스킬이 들어갑니다). 스킬이 있는데 에이전트에서 안 보일 때만 그 에이전트를 완전히 종료했다가 다시 실행하면 됩니다. 스크립트를 다시 돌리지 않고 지금 상태만 보려면 `command -v ego-browser`와 `ls ~/.claude/skills/ego-browser ~/.agents/skills/ego-browser`를 실행하세요. 자세한 내용은 [ego lite](#ego-lite)에 있습니다.
 
 > `lefthook`은 커밋·푸시 직전에 검사를 자동으로 돌려주는 Git 훅 관리자입니다. 여기 버전이 찍히면 도구는 준비된 것이고, **실제로 켜는 건 레포마다 한 번씩**입니다 — `lefthook.yml`이 있는 프로젝트 폴더에서 `lefthook install`을 실행하세요(설정 파일이 없는 레포에서는 할 일 없음).
 
@@ -658,7 +659,7 @@ Orca 전체 디스크 접근: ...
 10. Slack CLI로 직접 앱/워크플로를 개발하려면 `slack login`으로 워크스페이스 인증(최초 1회) — Claude Code의 `slack` MCP는 이 로그인과 무관하게 아래 팀 공용 토큰으로 별도 인증됩니다
 11. **Git 훅(lefthook)은 레포마다 한 번씩 켜기** — `lefthook.yml`이 있는 프로젝트 폴더에서 `lefthook install`을 실행하면, 그 레포에서 커밋·푸시할 때 포맷/린트/테스트가 자동으로 돌아갑니다 (설정 파일이 없는 레포에서는 할 일 없음)
 12. **Stats(시스템 모니터)를 최초 1회 실행** — `open -a Stats`. 설치만으로는 메뉴막대에 나타나지 않고, 한 번 실행해야 CPU·메모리·디스크·네트워크 사용량이 메뉴막대에 표시됩니다. 실행 후 Stats 설정에서 **"로그인 시 시작"** 을 켜 두면 다음부터는 자동으로 떠 있습니다
-13. **ego lite(에이전트용 브라우저)를 최초 1회 실행해 첫 설정 마치기** — `open -a "ego lite"`. Chrome 데이터를 가져올지 한 번 묻고, 끝나면 `ego-browser` 명령과 에이전트용 스킬이 자동으로 등록됩니다. 이미 켜 둔 에이전트는 **완전히 종료했다가 다시 실행**하고, 권한 확인 없는 모드로 실행하세요(Claude Code는 `claude` 그대로 · Codex는 `codex-ego` · OpenCode는 `opencode-ego` — 새 터미널에서 적용). 그다음 에이전트에서 `/ego-browser`(Codex는 `/ego` 입력 후 선택)로 스킬을 불러오면 됩니다 ([에이전트별 사용법](#ego-lite-agents))
+13. **ego lite(에이전트용 브라우저)를 최초 1회 실행해 첫 설정 마치기** — `open -a "ego lite"`. Chrome 데이터를 가져올지 한 번 묻고, 끝나면 `ego-browser` 명령과 에이전트용 스킬이 자동으로 등록됩니다. 이미 켜 둔 에이전트는 **완전히 종료했다가 다시 실행**하고, 권한 확인 없는 모드로 실행하세요(Claude Code는 `claude` 그대로 · Codex는 `codex-ego` · OpenCode는 `opencode-ego` — 새 터미널에서 적용). 그다음 에이전트에서 `/ego-browser`(Codex는 `/ego` 입력 후 선택 — 데스크톱 앱 기준, 터미널은 `ego-browser` 스킬을 불러온 뒤 작업 입력)로 스킬을 불러오면 됩니다 ([에이전트별 사용법](#ego-lite-agents))
 
 > ✉️ **Git 이메일 (실행 중 입력)**: 스크립트 실행 도중 Git 설정 단계(3.2)에서 커밋에 사용할 회사 이메일을 물어봅니다. 입력하면 `git config --global user.email`에 저장되고, 이미 설정된 맥이라면 묻지 않고 건너뜁니다. `s` + Enter로 건너뛸 수도 있으며, 그 경우 나중에 터미널에서 `git config --global user.email <이메일>`을 직접 실행하면 됩니다.
 
@@ -858,6 +859,7 @@ API를 호출할 때는 `credential`을 base64 디코딩한 `.p8`로 **ES256 JWT
 - `pyenv init` — 없으면 새 터미널에서 `python`이 "command not found"로 뜹니다 (설치는 돼 있어도 경로가 안 잡힘)
 - `ANDROID_HOME` / SDK PATH — 없으면 `adb`·`sdkmanager`·`emulator`를 터미널에서 부를 수 없고, Gradle이 SDK를 못 찾습니다
 - `claude`/`cld` 실행 시 colima 자동 기동 함수 — 없으면 Jira MCP를 쓰기 전에 `colima start`를 직접 실행해야 합니다
+- `claude` 권한 우회 실행 함수(`--dangerously-skip-permissions`)와 `codex-ego`·`opencode-ego` — 없으면 에이전트에서 ego lite를 쓸 때 권한 모드를 직접 켜야 합니다 ([에이전트별 사용법](#ego-lite-agents))
 
 </details>
 
