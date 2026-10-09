@@ -249,6 +249,18 @@ cld() {
 
 # ──────────────────────────────────────────────────────────────────────────────
 
+# ─── ego lite (에이전트용 브라우저) 연동 ──────────────────────────────────────────
+# ego lite 공식 가이드(https://lite.ego.app/document)는 각 에이전트를 권한 확인 없는 모드로 실행해야
+# ego-browser 로 브라우저를 조작할 수 있다고 안내한다 (꺼져 있으면 앱 실행이 막히거나 승인 대기에서 멈춘다).
+# 권한 확인·샌드박스를 끄는 모드라서, 평소 쓰는 codex·opencode 는 그대로 두고
+# ego lite 작업을 할 때만 아래 전용 명령으로 띄운다 (믿을 수 있는 프로젝트에서만).
+#   claude   : 위 claude()·cld() 가 이미 --dangerously-skip-permissions 로 실행하므로 따로 만들지 않는다
+#   codex    : Full access             → codex-ego    (= codex --dangerously-bypass-approvals-and-sandbox)
+#   opencode : Auto-accept permissions → opencode-ego (= opencode --auto · 명시적으로 거부된 권한은 그대로 거부된다)
+codex-ego()    { command codex --dangerously-bypass-approvals-and-sandbox "$@"; }
+opencode-ego() { command opencode --auto "$@"; }
+# ──────────────────────────────────────────────────────────────────────────────
+
 # Tmux
 alias tns="tmux new-session -A -s"
 
