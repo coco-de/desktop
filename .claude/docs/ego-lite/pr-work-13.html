@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>#13 작업내역 — ego lite 설치와 에이전트 연동</title>
+  <style>
+    :root { color-scheme: light dark; --fg: #1f2328; --bg: #fff; --line: #d1d9e0; --code: #f6f8fa; }
+    @media (prefers-color-scheme: dark) {
+      :root { --fg: #e6edf3; --bg: #0d1117; --line: #3d444d; --code: #151b23; }
+    }
+    body { margin: 0; color: var(--fg); background: var(--bg); font: 16px/1.65 system-ui, sans-serif; }
+    main { max-width: 76ch; margin: auto; padding: 24px 16px; }
+    h2 { margin-top: 32px; border-bottom: 1px solid var(--line); }
+    code { background: var(--code); padding: 2px 4px; border-radius: 4px; overflow-wrap: anywhere; }
+    li { margin: 8px 0; }
+    a { color: inherit; }
+  </style>
+</head>
+<body><main>
+  <h1>ego lite 설치와 Claude Code·Codex·OpenCode 연동</h1>
+  <p>이슈 #13 · <code>feature/13-ego-lite-browser</code> → <code>main</code></p>
+
+  <h2>무엇을 바꿨나</h2>
+  <p>macOS 세팅 스크립트가 에이전트용 브라우저 <strong>ego lite</strong>를 설치하고, 팀이 쓰는 에이전트 3종(Claude Code·Codex·OpenCode)이 <code>ego-browser</code>로 쓸 수 있게 하는 절차(첫 실행·스킬 위치·권한 모드)를 스크립트·문서·실행 명령에 반영했습니다.</p>
+  <p>구현 커밋 <code>d81608e</code> · <code>3593b1e</code> · <code>22e33c0</code> · <code>380a911</code>, 독립 코드 리뷰 반영 커밋 <code>427b866</code> · <code>c89dde0</code> · <code>6893d07</code> — 7개 파일: 464줄 추가, 8줄 삭제(아이콘 PNG 포함). 작업내역 HTML은 별도 문서 커밋으로 남깁니다.</p>
+  <ul>
+    <li><code>macos/mac-setup.sh</code>: 1단계에 <code>install_ego_lite</code>(공식 dmg 직접 설치 · Apple Silicon/Intel 자동 선택 · 공증·서명 온전성·서명자 확인 후 복사 · 멱등 · 실패해도 계속). 10단계 검증에 설치·<code>ego-browser</code> 명령·에이전트 스킬 상태 줄, 마지막 안내 11번(첫 실행 → 에이전트 재시작 → 권한 모드 → 스킬 불러오기).</li>
+    <li><code>macos/.zshrc</code>: Codex·OpenCode용 전용 실행 명령 <code>codex-ego</code>·<code>opencode-ego</code> 두 개.</li>
+    <li><code>macos/README.md</code>·<code>macos/assets/icons/ego-lite.png</code>: 기술 스택·설치 요약·상세 표·아이콘 각주·검증 예시·다음 단계 갱신, ego lite 설치 방식과 에이전트별 사용법 섹션 추가.</li>
+    <li><code>windows/README.md</code>·<code>linux/README.md</code>: "빠진 것" 표에 미지원 사유와 대안 기록. 두 OS의 설치 스크립트는 바꾸지 않았습니다.</li>
+    <li><code>tests/test_ego_lite_install.py</code>: 실제 설치 블록을 <code>bash -e</code>로 실행하고 맥 전용 명령만 대체하는 회귀 테스트 12개(설치 9 + 검증 줄·안내 번호 3).</li>
+  </ul>
+
+  <h2>왜 이 방식인가</h2>
+  <ol>
+    <li><strong>cask가 없어 공식 dmg를 직접 받습니다.</strong> <code>brew search --casks</code>에서 ego lite를 찾을 수 없었고, 벤더 문서는 dmg 직접 설치(또는 에이전트가 설치 스크립트를 실행)를 안내합니다. 벤더 설치 스크립트는 격리 속성을 무조건 지우지만 이 스크립트는 지우지 않습니다. <code>curl</code>로 받은 파일에는 처음부터 격리 표시가 없고, 설치본에서 0건임을 확인했습니다.</li>
+    <li><strong>체크섬이 없어 세 가지로 확인합니다.</strong> Apple 공증(<code>spctl --assess</code>), 서명이 깨지지 않았는지, 서명한 팀이 Citro Labs(Team ID <code>JGQLC6YQYJ</code>)인지를 <code>codesign --verify --deep -R=&lt;요구사항&gt;</code>으로 함께 봅니다. 처음에는 <code>codesign -dv</code> 출력에서 Team ID를 찾는 방식이었는데, 독립 리뷰에서 <strong>식별자에 <code>TeamIdentifier=…</code> 줄을 심은 가짜 앱이 통과</strong>한다는 지적이 나왔고 직접 재현했습니다. 요구사항 검사로 바꾼 뒤에는 진짜 앱은 통과하고 잘못된 팀·가짜는 막힙니다. <code>--strict</code>는 dmg 볼륨의 Finder 속성 때문에 정상 파일도 실패시켜 쓰지 않았습니다.</li>
+    <li><strong>주소는 토큰 없는 <code>egolite.dmg</code>입니다.</strong> 공식 README의 <code>egolite-&lt;토큰&gt;.dmg</code>는 같은 파일(동일 ETag·크기)을 가리키는 별칭인데, 앱 번들 안의 벤더 설치 스크립트가 이 토큰을 <strong>마케팅 추적 코드(refcode)</strong>로 읽어 앱에 기록합니다. 그대로 쓰면 우리 설치가 그 캠페인으로 집계되고 코드가 바뀌면 다운로드가 끊깁니다.</li>
+    <li><strong>에이전트 스킬은 앱이 설치하게 둡니다.</strong> 첫 실행(온보딩)이 <code>ego-browser</code> 명령과 Claude Code <code>~/.claude/skills</code>, Codex·OpenCode <code>~/.agents/skills</code>의 스킬을 설치합니다(벤더 가이드). 벤더의 <code>npx skills add</code>는 GitHub 저장소에서 스킬을 받는 방식이라 앱에 든 스킬과 버전이 어긋날 수 있고(가정), 어차피 명령은 앱 첫 실행이 만들어 미리 받을 이점이 없다고 판단했습니다. 대신 상태를 검증 줄과 안내로 보여 줍니다.</li>
+    <li><strong>권한 모드는 에이전트별로 다르게 다룹니다.</strong> Claude Code는 팀 <code>.zshrc</code>의 <code>claude()</code>가 이미 <code>--dangerously-skip-permissions</code>로 실행하므로 추가가 없습니다. Codex·OpenCode는 계획 승인에서 "전용 실행 명령만 추가"를 선택해, 권한·샌드박스를 끄는 모드를 ego lite 작업 때만 쓰도록 <code>codex-ego</code>·<code>opencode-ego</code>를 만들었고 평소 <code>codex</code>·<code>opencode</code> 동작은 바꾸지 않았습니다. <code>opencode-ego</code>는 <code>--auto</code>를 인자 뒤에 붙입니다(서브커맨드 앞의 <code>--auto</code>는 프로젝트 경로로 읽힙니다).</li>
+    <li><strong>중단돼도 부분 설치가 남지 않게 했습니다.</strong> 설치 폴더 안에 임시 이름으로 복사한 뒤 같은 폴더에서 이름만 바꿉니다(이름 바꾸기는 한 번에 끝남). 옮기기 직전에 설치 여부를 다시 확인해 내려받는 사이 설치된 앱 안으로 중첩되는 일을 막고, 임시 폴더는 <code>rm -rf</code> 대신 <code>rmdir</code>로 지워 마운트가 남아도 읽기 전용 볼륨 안을 건드리지 않습니다. EXIT 트랩 안에서는 <code>set -e</code>가 다시 적용되므로 <code>hdiutil detach</code> 실패에 <code>|| true</code>를 붙였습니다(없으면 마운트 전에 끝나는 실패에서 정리가 끊겨 받다 만 dmg가 남았습니다).</li>
+  </ol>
+
+  <h2>여기부터 리뷰하세요</h2>
+  <ol>
+    <li><code>install_ego_lite</code>(<code>macos/mac-setup.sh</code> 781~838행): 실패 경로마다 경고 후 <code>exit 0</code>인지, 서명 게이트(<code>spctl</code> + <code>codesign --verify -R</code>)가 복사보다 먼저인지, 설치 폴더 안 임시 복사 → 이름 바꾸기 순서와 트랩 정리.</li>
+    <li>회귀 테스트: <code>codesign</code> 스텁이 <code>-dv</code> 출력에 진짜 팀 줄을 섞어 두어 출력 문자열을 믿는 구현을 잡는지, <code>hdiutil detach</code>가 마운트 전에 실패하는 실제 동작을 흉내 내는지.</li>
+    <li>10단계 검증 줄(2494행 부근), 마지막 안내 10~12번(번호·하위 항목 순서), <code>macos/.zshrc</code>의 두 함수(262~263행).</li>
+    <li>README 에이전트별 사용법 표가 벤더 가이드와 맞는지, windows·linux 사유 행.</li>
+  </ol>
+
+  <h2>로컬 검증</h2>
+  <ul>
+    <li><strong>실제 공식 dmg(arm64)</strong>로 설치 함수를 실행했습니다(설치 위치만 임시 폴더로 변경). 설치, 재실행 시 건너뜀, 임시 폴더 0개, 남은 마운트 0개. 설치본은 Gatekeeper 수락(공증)·Team ID 일치·격리 속성 0건이었습니다. Intel dmg도 번들 이름·서명자·공증이 같음을 확인했습니다(설치는 하지 않음).</li>
+    <li><strong>서명 게이트</strong>: 진짜 앱 통과, 잘못된 팀 차단, 식별자 스푸핑 앱은 옛 방식이 통과시키고 새 방식이 차단함을 같은 환경에서 비교했습니다.</li>
+    <li><strong>다른 디스크</strong>(스파스 이미지)에 설치하며 복사 도중 SIGTERM·SIGKILL을 보냈을 때 최종 경로 <code>ego lite.app</code>에 부분 설치가 남지 않았고(SIGTERM은 임시 폴더까지 정리, SIGKILL은 숨김 임시 폴더만 남음), 재실행하면 정상 설치됐습니다. 내려받는 사이 다른 곳에서 앱이 설치되는 경쟁 상황도 재현해 남의 앱이 그대로 유지됨(중첩 없음)을 확인했습니다.</li>
+    <li>합성 dmg로 실제 <code>hdiutil</code>·<code>ditto</code> 경로의 시나리오(정상, 공증 실패, 서명자 불일치, 스푸핑, 앱 없는 dmg, 깨진 dmg, 다운로드 실패, 경쟁 설치)를 실행했고, 실패 시나리오는 모두 경고 후 스크립트가 계속 진행되고 정리됐습니다.</li>
+    <li>Python 회귀 검사 24개 통과(기존 12 + 신규 12). 변이 검사 10종(정리 누락 · 옛 grep 서명 게이트 · 공증 제거 · Rosetta 판별 제거 · 멱등 검사 제거 · 이름 바꾸기 전 재확인 제거 · <code>-readonly</code> 제거 · <code>curl -f</code> 제거 · 안내 번호 중복 · 임시 복사본 정리 제거)를 각각 넣었을 때 모두 테스트가 실패했습니다.</li>
+    <li>macOS·Linux Bash 문법 검사, <code>zsh -n</code>, diff 공백 검사 통과. ShellCheck 경고 3건은 기본 브랜치에도 같은 코드에 있으며 새 경고는 0건입니다. <code>codex-ego</code>·<code>opencode-ego</code>는 가짜 실행 파일로 플래그와 인자 순서를 확인했습니다.</li>
+    <li>코드 리뷰: <code>/cc-quality:review --quick --gate-mode</code> 9개 항목 판정(치명 0 · 확인 못 함 0). 별도 서브에이전트의 독립 리뷰는 10건을 보고했고(Major 2 · Minor 5 · Nit 3 + 한계 관찰), 직접 재현해 확인한 뒤 Major 2건을 포함해 대부분을 위 커밋으로 반영했습니다. 반영하지 않은 것은 아래 "범위 밖"에 이유와 함께 적었습니다.</li>
+    <li><strong>미검증</strong>: 실제 <code>/Applications</code> 설치와 ego lite 첫 실행(온보딩) 화면, 각 에이전트에서 스킬이 실제로 불러와지는지(권한 모드·터미널에서의 스킬 호출 방식), Gatekeeper가 꺼진 환경에서의 <code>spctl</code> 동작, Windows PowerShell 검사(로컬에 pwsh가 없고 이번 변경에 PowerShell 파일이 없어 CI가 실행).</li>
+  </ul>
+
+  <h2>실행 기록</h2>
+  <p>계획 승인 후 구현부터 머지까지 진행하는 정책(원스톱)입니다. 이 저장소는 접근 가능한 ZenHub 워크스페이스에 연결돼 있지 않아 작업 기록은 GitHub 이슈·PR에 남기며, 보드 타입·포인트·파이프라인은 반영되지 않습니다(#9와 동일). 규모(단독 Feature·5 SP)와 요구사항 정리는 작업자가 직접 판단했고 별도 보조 판정·서브에이전트는 쓰지 않았습니다. 제품 화면 개발이 아니라 디자인 결정 기록은 없습니다. 독립 리뷰어는 머지 전에 결과를 받아 반영했습니다.</p>
+
+  <h2>범위 밖</h2>
+  <ul>
+    <li>Windows·Linux 설치: 벤더 빌드가 아직 없어 미지원 사유만 README에 남겼습니다. 출시 시 반영은 <a href="https://github.com/coco-de/desktop/issues/14">#14</a>로 추적합니다.</li>
+    <li>Chrome·Dia용 ZenHub 확장 자동 등록과 번역 언어 설정을 ego lite로 넓히는 일: 동작을 확인하지 못한 영역이라 제외했습니다.</li>
+    <li><code>codex</code>·<code>opencode</code> 기본 실행의 권한 우회: 모든 사용에서 샌드박스가 꺼지는 팀 정책 변경이라 승인 없이 바꾸지 않았습니다.</li>
+    <li>ego lite 온보딩 화면 자동 조작과 에이전트 스킬 선설치: 앱이 직접 처리하는 단계입니다.</li>
+    <li>알려진 한계(리뷰에서 확인, 이번에는 바꾸지 않음): 최신 macOS에서 <code>hdiutil attach/detach</code>가 deprecated로 표시됩니다(지금은 동작하고 벤더 설치 스크립트도 사용). 사라지면 경고 후 수동 설치 안내로 떨어집니다. <code>hdiutil attach</code> 중 Ctrl-C는 hdiutil이 정상 종료해 스크립트가 계속 진행됩니다.</li>
+    <li>후속 확인 후보: 리뷰어가 앱 번들에서 ego lite 온보딩이 <code>~/.codex/rules/default.rules</code>에 <code>ego-browser</code> 허용 규칙을 쓰는 것으로 보이는 문자열을 발견했습니다. 사실이면 Codex는 전체 샌드박스 해제(<code>codex-ego</code>) 없이도 될 수 있습니다. 실제 온보딩 후 확인이 필요해 이번에는 벤더 가이드대로 두었습니다.</li>
+  </ul>
+</main></body>
+</html>

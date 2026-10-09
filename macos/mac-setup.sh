@@ -301,7 +301,8 @@ fi
 #        설치 · 관리자 암호를 물어볼 수 있음 · 설치 실패 시에만 중단)
 #   0.5. 팀 셸 설정(.zshrc·.p10k.zsh) 확보 — 스크립트 옆에 둘 다 없으면 레포에서 내려받기
 #        (clone 없이 curl 한 줄로 실행한 경우 · 실패해도 8단계 기본 설정으로 계속)
-#   1.   GUI 앱 (brew cask: 개발툴·브라우저·1Password·op 등)
+#   1.   GUI 앱 (brew cask: 개발툴·브라우저·1Password·op 등 · ego lite만 cask가 없어 공식 dmg를
+#        직접 설치 — Apple 공증·서명자 확인 후 복사 · 에이전트 연동은 첫 실행 뒤 앱이 마무리)
 #   1.5. Xcode 설치 확인/자동 설치(mas, App Store 로그인 필요) + 개발자 도구 전환
 #        (CLT만 활성화돼 있으면 Xcode.app으로 xcode-select 전환 + 최초 실행 동의,
 #        sudo 암호 필요 · TTY에서만 시도)
@@ -743,7 +744,7 @@ if (( ! ENV_ONLY )); then
 # ------------------------------------------------------------
 # 1. GUI 앱 (brew cask)
 # ------------------------------------------------------------
-log "GUI 앱 설치 (Android Studio, Slack, Figma, Claude Desktop, Chrome, Dia, 1Password, Tailscale, Orca, Lumide, Zed, Rive, Stats) + 1Password CLI(op — 앱이 아닌 터미널 도구)"
+log "GUI 앱 설치 (Android Studio, Slack, Figma, Claude Desktop, Chrome, Dia, ego lite, 1Password, Tailscale, Orca, Lumide, Zed, Rive, Stats) + 1Password CLI(op — 앱이 아닌 터미널 도구)"
 
 # cask 설치 (이미 /Applications 에 수동 설치된 앱은 건너뜀)
 install_cask() {
@@ -758,12 +759,92 @@ install_cask() {
   fi
 }
 
+# ego lite (Citro Labs) — 사람과 AI 에이전트(Claude Code·Codex·OpenCode 등)가 한 브라우저를 나눠 쓰는
+#   크로미움 기반 브라우저. 에이전트는 `ego-browser` 명령으로 내 로그인 상태를 그대로 쓰면서도 내가 보는 탭은 건드리지 않는다.
+#   Homebrew cask가 없어 공식 .dmg(https://lite.ego.app/ko)를 직접 내려받아 설치한다.
+#   · 이미 설치돼 있으면(/Applications 또는 ~/Applications) 내려받지 않고 건너뛴다 — 업데이트는 하지 않는다.
+#   · brew cask와 달리 체크섬이 없어서, 복사하기 전에 아래 둘을 모두 확인한다. 하나라도 다르면 설치하지 않고 건너뛴다.
+#       ① Apple 공증(Gatekeeper, spctl) — 단, 이것만으로는 '아무 개발자'의 공증 앱도 통과한다
+#       ② 서명 온전성 + 서명자 고정 — `codesign --verify --deep -R=<요구사항>` 이 서명이 깨지지 않았는지와
+#          서명 인증서의 팀(Team ID)이 Citro Labs 인지를 함께 본다.
+#          (`codesign -dv` 출력을 grep 하는 방식은 쓰지 않는다 — 식별자 문자열에 'TeamIdentifier=…' 줄을 심은
+#           가짜 앱이 통과하고, 내용이 바뀌어 서명이 깨진 앱도 이름만 보여 통과한다.)
+#     `--strict` 는 쓰지 않는다 — dmg 볼륨의 Finder 속성 때문에 정상 파일도 실패한다.
+#     curl 로 받은 파일에는 격리(quarantine) 표시가 붙지 않아 macOS 가 첫 실행 때 검사해 주지 않으므로,
+#     이 확인이 그 자리를 대신한다(격리 표시를 지우는 일은 하지 않는다).
+#   · 주소는 토큰 없는 `egolite.dmg` 다. 공식 README 의 `egolite-<토큰>.dmg` 는 같은 파일(ETag 동일)을 가리키는
+#     마케팅 추적 코드(refcode) 별칭이라 — 쓰면 우리 설치가 그 캠페인으로 집계되고, 코드가 바뀌면 다운로드가 끊긴다.
+#   · `ego-browser` 명령과 에이전트용 스킬(Claude Code ~/.claude/skills · Codex·OpenCode ~/.agents/skills)은
+#     앱을 처음 실행할 때(온보딩) 앱이 직접 만든다 — 스크립트가 대신할 수 없는 화면 단계라
+#     설치 검증과 마지막 안내(11번)에서 알려 준다.
+#   · set -e 아래에서도 스크립트가 멈추지 않도록, 실패할 수 있는 명령은 전부 직접 처리한다(어떤 실패도 경고 후 건너뜀).
+EGO_LITE_APP="ego lite.app"
+EGO_LITE_DMG_BASE="https://cdn.ego.app/setup/macos"
+EGO_LITE_TEAM_ID="JGQLC6YQYJ"          # CITRO LABS PTE. LIMITED
+EGO_LITE_SYSTEM_APPS="/Applications"
+install_ego_lite() {
+  local arch="x64" progress="-sS" url tmp
+  if [[ -d "$EGO_LITE_SYSTEM_APPS/$EGO_LITE_APP" || -d "$HOME/Applications/$EGO_LITE_APP" ]]; then
+    echo "  ✓ ego lite 이미 존재 → 건너뜀"
+    return 0
+  fi
+  # Apple Silicon 판별 — Rosetta 터미널에서는 uname -m 이 x86_64 로 나오므로 sysctl 도 함께 본다
+  if [[ "$(uname -m)" == "arm64" || "$(sysctl -n hw.optional.arm64 2>/dev/null)" == "1" ]]; then arch="arm64"; fi
+  if [[ -t 2 ]]; then progress="-#"; fi
+  url="$EGO_LITE_DMG_BASE/$arch/egolite.dmg"
+  tmp=$(mktemp -d "${TMPDIR:-/tmp}/ego-lite.XXXXXX") \
+    || { echo "  ⚠ ego lite 임시 폴더를 만들지 못함 → 건너뜀 (수동 설치: https://lite.ego.app/ko)"; return 0; }
+  # 본문은 서브셸에서 돌린다 — 어디서 끝나든 EXIT 트랩이 마운트 해제와 임시 파일 정리를 보장한다
+  (
+    local dest part=""
+    # ⚠️ 트랩 안에서는 set -e 가 다시 적용된다 — 아직 마운트 전(다운로드 실패 등)이라 detach 가 실패해도
+    #    정리가 끊기지 않도록 `|| true` 가 필요하다. 임시 폴더는 rm -rf 가 아니라 rmdir 로 지운다:
+    #    detach 가 끝내 실패해 마운트가 남아 있어도 읽기 전용 볼륨 안을 건드리지 않고(rmdir 은 거기서 실패할 뿐) 조용히 넘어간다
+    trap 'hdiutil detach "$tmp/mnt" -quiet >/dev/null 2>&1 || hdiutil detach "$tmp/mnt" -force -quiet >/dev/null 2>&1 || true; rm -f "$tmp/egolite.dmg"; rmdir "$tmp/mnt" "$tmp" 2>/dev/null || true; if [[ -n "$part" ]]; then rm -rf "$part"; fi' EXIT
+    echo "  · ego lite($arch) 내려받는 중 — 약 150MB라 네트워크에 따라 몇 분 걸릴 수 있습니다"
+    curl -fL "$progress" --retry 3 --connect-timeout 20 --max-time 1200 -o "$tmp/egolite.dmg" "$url" \
+      || { echo "  ⚠ ego lite 다운로드 실패 → 건너뜀 (수동 설치: https://lite.ego.app/ko)"; exit 0; }
+    mkdir -p "$tmp/mnt" \
+      && hdiutil attach "$tmp/egolite.dmg" -nobrowse -readonly -noautoopen -mountpoint "$tmp/mnt" </dev/null >/dev/null 2>&1 \
+      || { echo "  ⚠ ego lite 설치 파일을 열지 못함 → 건너뜀 (수동 설치: https://lite.ego.app/ko)"; exit 0; }
+    [[ -d "$tmp/mnt/$EGO_LITE_APP" ]] \
+      || { echo "  ⚠ ego lite 설치 파일 안에서 $EGO_LITE_APP 을 찾지 못함(파일 구성이 바뀌었을 수 있음) → 건너뜀 (수동 설치: https://lite.ego.app/ko)"; exit 0; }
+    # Apple 공증(Gatekeeper) + 서명 온전성 + 서명자(Team ID) 고정 — 모두 맞아야 복사한다
+    if ! { spctl --assess --type execute "$tmp/mnt/$EGO_LITE_APP" >/dev/null 2>&1 \
+           && codesign --verify --deep -R="anchor apple generic and certificate leaf[subject.OU] = \"$EGO_LITE_TEAM_ID\"" "$tmp/mnt/$EGO_LITE_APP" >/dev/null 2>&1; }; then
+      echo "  ⚠ ego lite 서명 검증 실패(Apple 공증·서명 온전성 또는 서명자 불일치) → 설치하지 않고 건너뜀 (수동 설치: https://lite.ego.app/ko)"
+      exit 0
+    fi
+    # 관리자 계정이면 /Applications, 아니면 ~/Applications
+    dest="$EGO_LITE_SYSTEM_APPS"
+    if [[ ! -w "$dest" ]]; then dest="$HOME/Applications"; fi
+    mkdir -p "$dest" \
+      || { echo "  ⚠ ego lite 설치 폴더($dest)를 만들지 못함 → 건너뜀 (수동 설치: https://lite.ego.app/ko)"; exit 0; }
+    # 설치 폴더 '안'에 임시 이름으로 복사한 뒤 같은 폴더 안에서 이름만 바꾼다 — 이름 바꾸기는 한 번에 끝나서,
+    # 도중에 끊기거나 임시 폴더와 설치 폴더가 다른 디스크여도 반쯤 복사된 앱이 설치 위치에 남지 않는다
+    part="$dest/.ego-lite-install.$$"
+    ditto "$tmp/mnt/$EGO_LITE_APP" "$part" \
+      || { echo "  ⚠ ego lite 복사 실패 → 건너뜀 (수동 설치: https://lite.ego.app/ko)"; exit 0; }
+    # 내려받는 사이 다른 곳에서 설치됐을 수 있다 — mv 는 이미 있는 폴더 '안으로' 들어가 앱을 망가뜨리므로 옮기기 직전에 다시 확인한다
+    if [[ -e "$dest/$EGO_LITE_APP" ]]; then
+      echo "  ✓ ego lite 이미 존재(내려받는 사이에 설치됨) → 건너뜀"
+      exit 0
+    fi
+    mv "$part" "$dest/$EGO_LITE_APP" \
+      || { echo "  ⚠ ego lite를 $dest 로 옮기지 못함(권한?) → 건너뜀 (수동 설치: https://lite.ego.app/ko)"; exit 0; }
+    part=""   # 옮기기 끝 — 트랩이 지울 것이 없다
+    echo "  ✓ ego lite 설치 완료 → $dest/$EGO_LITE_APP (최초 1회 직접 실행해야 ego-browser 명령·에이전트 스킬이 등록됩니다 — 마지막 안내 참고)"
+  ) || true
+}
+
 install_cask android-studio         "Android Studio.app"
 install_cask slack                  "Slack.app"
 install_cask figma                  "Figma.app"
 install_cask claude                 "Claude.app"
 install_cask google-chrome          "Google Chrome.app"
 install_cask thebrowsercompany-dia  "Dia.app"
+# ego lite: 에이전트용 브라우저 — cask가 없어 공식 dmg로 설치한다(위 install_ego_lite 주석 참고)
+install_ego_lite
 install_cask 1password              "1Password.app"
 # 1Password CLI: 터미널에서 1Password 금고를 읽는 `op` 명령. 앱이 아니라 CLI라 /Applications에 없다.
 #   이 스크립트에서는 8.5단계에서 팀 공용 ZenHub 토큰을 읽어오는 데 쓴다 (설정 방법은 8.5단계 주석 참고).
@@ -2410,6 +2491,25 @@ ZH_EXT_ID="ogcgkffhplmphkaahpmffcafajaocjbd"
 echo "  ZenHub 확장(Chrome/Dia): $([[ -f "/Library/Application Support/Google/Chrome/External Extensions/$ZH_EXT_ID.json" ]] && echo 'Chrome ✓' || echo 'Chrome ❌') · $([[ -f "/Library/Application Support/Dia/External Extensions/$ZH_EXT_ID.json" ]] && echo 'Dia ✓' || echo 'Dia ❌(동작 미보장 — 안 되면 수동 설치: https://chromewebstore.google.com/detail/zenhub-for-github/'"$ZH_EXT_ID"')')"
 # Stats: 메뉴막대 앱이라 '설치됨'과 '메뉴막대에 보임'이 다르다 — 설치 여부만 확인하고 최초 실행은 마지막 안내로 넘긴다.
 echo "  Stats.app: $([[ -d /Applications/Stats.app || -d "$HOME/Applications/Stats.app" ]] && echo '✓ 설치됨 (메뉴막대에 안 보이면 최초 1회 실행 필요)' || echo '❌ (수동 설치: brew install --cask stats)')"
+# ego lite: '설치됨'과 '에이전트에서 쓸 수 있음'이 다르다 — ego-browser 명령과 에이전트용 스킬은 앱을 처음 실행할 때
+#   (온보딩) 앱이 만들기 때문이다. 셋(명령·Claude Code 스킬·Codex/OpenCode 스킬)이 모두 없으면 '첫 실행 전',
+#   하나라도 있으면 각각의 상태를 따로 보여 준다(명령만 없거나 스킬만 없는 경우도 그대로 드러난다).
+#   스킬 위치: Claude Code ~/.claude/skills/ego-browser · Codex·OpenCode ~/.agents/skills/ego-browser (ego lite 공식 가이드)
+if [[ -d "/Applications/ego lite.app" || -d "$HOME/Applications/ego lite.app" ]]; then
+  EGO_CMD=$([[ -x "$HOME/.local/bin/ego-browser" ]] || have ego-browser && echo '✓' || echo '❌')
+  EGO_SKILL_CLAUDE=$([[ -e "$HOME/.claude/skills/ego-browser" ]] && echo '✓' || echo '❌')
+  EGO_SKILL_AGENTS=$([[ -e "$HOME/.agents/skills/ego-browser" ]] && echo '✓' || echo '❌')
+  if [[ "$EGO_CMD$EGO_SKILL_CLAUDE$EGO_SKILL_AGENTS" == '❌❌❌' ]]; then
+    echo "  ego lite: ✓ 설치됨 — 아직 첫 실행 전입니다 (open -a \"ego lite\" 로 최초 1회 실행해 첫 설정을 마치면 ego-browser 명령과 에이전트 스킬이 등록됩니다)"
+  else
+    echo "  ego lite: ✓ 설치됨 · ego-browser 명령 $EGO_CMD · 에이전트 스킬 — Claude Code $EGO_SKILL_CLAUDE · Codex·OpenCode $EGO_SKILL_AGENTS"
+    if [[ "$EGO_CMD$EGO_SKILL_CLAUDE$EGO_SKILL_AGENTS" == *❌* ]]; then
+      echo "    ↳ ❌는 ego lite가 아직 만들지 못한 것입니다 — 첫 설정을 마쳤는지 확인하고 ego lite를 완전히 종료했다 다시 실행해 보세요 (에이전트는 먼저 설치돼 있어야 스킬이 들어갑니다. 스킬이 있는데 에이전트에서 안 보이면 그 에이전트를 완전히 종료했다 다시 실행)"
+    fi
+  fi
+else
+  echo "  ego lite: ❌ (수동 설치: https://lite.ego.app/ko 에서 Mac용 다운로드)"
+fi
 echo "  fvm     : $(fvm --version 2>/dev/null || echo '❌')"
 echo "  flutter : $(flutter --version 2>/dev/null | head -1 || echo '❌')"
 echo "  go      : $(go version 2>/dev/null || echo '❌')"
@@ -2588,5 +2688,12 @@ echo "  9. lefthook(Git 훅)은 레포마다 한 번씩 켜야 합니다 — lef
 echo "     ↳ 이걸 해야 커밋·푸시할 때 포맷/린트/테스트가 자동으로 돌아갑니다 (설정 파일이 없는 레포에서는 할 일 없음)"
 echo " 10. Stats(시스템 모니터)는 최초 1회 직접 실행해야 메뉴막대에 나타납니다: open -a Stats"
 echo "     ↳ 실행 후 Stats 설정에서 '로그인 시 시작'을 켜 두면 다음부터는 자동으로 떠 있습니다"
-echo " 11. 재부팅 후 서명 키체인을 자동 해제하려면(선택): ./mac-setup.sh --keychains-only --help"
+echo " 11. ego lite(에이전트용 브라우저)를 최초 1회 직접 실행해 첫 설정(온보딩)을 마치세요: open -a \"ego lite\""
+echo "     ↳ 온보딩에서 Chrome 데이터(로그인·쿠키·확장·북마크)를 가져올지 한 번 묻습니다 — 가져오면 에이전트가 내 로그인 상태를 그대로 씁니다"
+echo "     ↳ 끝나면 ego-browser 명령(보통 ~/.local/bin)과 에이전트용 스킬이 등록됩니다 — Claude Code는 ~/.claude/skills, Codex·OpenCode는 ~/.agents/skills (위 설치 검증의 ego lite 줄에서 확인 · 에이전트는 먼저 설치돼 있어야 합니다)"
+echo "     ↳ 이미 켜 둔 에이전트는 완전히 종료했다가 다시 실행해야 스킬이 보입니다 (Claude Code는 Cowork가 아니라 Code 모드에서 사용)"
+echo "     ↳ 에이전트는 권한 확인 없는 모드로 실행해야 ego lite를 조작할 수 있습니다 — 권한·샌드박스를 끄는 모드이니 믿는 프로젝트에서만 쓰세요:"
+echo "       claude → 팀 .zshrc 의 claude 함수가 이미 --dangerously-skip-permissions · codex → codex-ego · opencode → opencode-ego (팀 .zshrc 를 쓰는 경우, 새 터미널에서 적용)"
+echo "     ↳ 스킬 불러오기(벤더 가이드, 데스크톱 앱 기준): /ego-browser 입력 후 선택 (Codex는 /ego 입력 후 목록에서 선택) — 터미널에서는 ego-browser 스킬을 불러온 뒤 작업을 입력하세요"
+echo " 12. 재부팅 후 서명 키체인을 자동 해제하려면(선택): ./mac-setup.sh --keychains-only --help"
 echo "     ↳ 1Password 원본을 login 키체인에 암호화 보관합니다. 등록 후에는 --keychains-only verify로 반복 서명을 검증하세요"

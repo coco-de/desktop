@@ -415,6 +415,7 @@ chmod +x linux-setup.sh
 | **Figma 데스크톱 앱** | 리눅스 빌드가 없습니다 | [figma.com](https://figma.com) 웹 사용. 원격 `figma` MCP는 리눅스에서도 두 AI 도구에 동일하게 등록됩니다 |
 | **Rive 데스크톱 앱** | 리눅스 빌드가 없습니다 | [editor.rive.app](https://editor.rive.app) 웹 에디터 — 공식 문서상 데스크톱과 기능이 같습니다 |
 | **Dia 브라우저·리모트 디버깅 연결** | 리눅스 빌드가 없습니다 | `chrome-devtools` MCP가 별도 Chrome을 실행합니다. 맥 전용 `--autoConnect`·Dia 프로필 경로는 지정하지 않습니다 |
+| **ego lite (에이전트용 브라우저)** | 맥 전용 앱입니다. 리눅스는 공식 로드맵 단계라 빌드가 없습니다(윈도우도 클로즈드 베타 준비 중) | 에이전트의 브라우저 작업은 기본 MCP(`chrome-devtools`·`playwright`)가 Chrome으로 처리합니다. 정식 출시되면 설치 방식을 확인해 `linux-setup.sh`에 추가합니다 → [맥의 ego lite 설명](../macos/README.md#ego-lite) |
 | **mas (App Store CLI)** | App Store가 없습니다 | apt·snap이 그 역할을 합니다 |
 
 > ⚠️ **iOS 개발이 업무에 포함된다면 리눅스 PC만으로는 부족합니다.** Flutter 앱의 iOS 빌드·시뮬레이터·App Store 배포는 macOS에서만 가능하므로, 맥이 별도로 필요합니다.
