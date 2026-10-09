@@ -256,9 +256,11 @@ cld() {
 # ego lite 작업을 할 때만 아래 전용 명령으로 띄운다 (믿을 수 있는 프로젝트에서만).
 #   claude   : 위 claude()·cld() 가 이미 --dangerously-skip-permissions 로 실행하므로 따로 만들지 않는다
 #   codex    : Full access             → codex-ego    (= codex --dangerously-bypass-approvals-and-sandbox)
-#   opencode : Auto-accept permissions → opencode-ego (= opencode --auto · 명시적으로 거부된 권한은 그대로 거부된다)
+#   opencode : Auto-accept permissions → opencode-ego (= opencode <인자> --auto · 명시적으로 거부된 권한은 그대로 거부된다)
+#              --auto 를 인자 뒤에 두는 이유: opencode 는 서브커맨드 앞의 --auto 를 프로젝트 경로로 읽는다
+#              (opencode-ego · opencode-ego . · opencode-ego run … 모두 동작)
 codex-ego()    { command codex --dangerously-bypass-approvals-and-sandbox "$@"; }
-opencode-ego() { command opencode --auto "$@"; }
+opencode-ego() { command opencode "$@" --auto; }
 # ──────────────────────────────────────────────────────────────────────────────
 
 # Tmux
