@@ -23,6 +23,7 @@
 - [📦 무엇이 설치되나요](#whats-installed)
 - [✅ 설치 후 확인할 것](#after-install)
 - [🔏 서명 키체인 로그인 자동 해제 (선택)](#signing-keychains)
+- [🧹 디스크 자동 정리](#disk-cleanup)
 - [🔒 안전한가요](#is-it-safe)
 - [🐛 문제가 생겼나요](#troubleshooting)
 - [💬 도움이 필요하신가요](#get-help)
@@ -140,6 +141,20 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 > 🔏 **앱 서명 때 키체인 암호를 반복해서 묻거나, 재부팅 후 자동으로 열고 싶다면**
 >
 > `./mac-setup.sh --keychains-only --help`로 선택형 설정을 확인하세요. **1Password 원본 + login 키체인의 암호화 사본 + 로그인 전용 helper**를 사용합니다. 실제 암호를 `.zshrc`나 plist에 적지 않습니다. 아래 [서명 키체인 로그인 자동 해제](#signing-keychains)에 준비·등록·검증·제거 방법이 있습니다.
+
+> 🧹 **디스크 여유가 자꾸 줄거나, 이미 세팅한 맥에 디스크 자동 정리만 넣고 싶다면**
+>
+> ```bash
+> ./mac-setup.sh --cleanup-only
+> ```
+>
+> 스크립트 파일이 없다면 `--env-only`와 같은 방식으로 쓰시면 됩니다.
+>
+> ```bash
+> /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coco-de/desktop/main/macos/mac-setup.sh)" -- --cleanup-only
+> ```
+>
+> 설치·토큰 주입·권한 단계는 전부 건너뛰고 **정리 작업 3개만** macOS 예약 작업(launchd)으로 등록합니다(9.5단계). 몇 번을 실행해도 안전하고, 내용이 같으면 다시 등록하지 않습니다. 무엇을 언제 지우는지는 아래 [🧹 디스크 자동 정리](#disk-cleanup)를 봐주세요.
 
 <details>
 <summary>예전에 쓰던 맥이 있다면 (선택 사항)</summary>
@@ -329,6 +344,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 | 🔑 팀 공용 토큰 | 위 `ZENHUB_API_TOKEN`·`JIRA_API_TOKEN`·`SLACK_TEAM_ID`·`SLACK_BOT_TOKEN`에 더해, 다국어 자동 번역 도구 `slang_gpt`가 쓰는 `SLANG_GPT_API_KEY`, DCM을 CI 모드로 인증하는 `DCM_EMAIL`·`DCM_CI_KEY`(1Password 항목 `DCM CI CD`의 이메일+키 한 쌍), TypeSafe(판단형 AI 모델 Jev) SDK가 쓰는 `TYPESAFE_API_KEY`(1Password 항목 `TypeSafe Jev`), OpenAI SDK가 쓰는 `OPENAI_API_KEY`(1Password 항목 `OPENAI_API_KEY`)도 같은 방식(1Password CLI → `~/.zshrc`)으로 자동 주입 — `SLANG_GPT_API_KEY`·`DCM_EMAIL`·`DCM_CI_KEY`·`TYPESAFE_API_KEY`·`OPENAI_API_KEY`는 MCP가 아니라 명령줄 도구·SDK가 직접 읽는 값이라 등록·로그인 과정이 없음 ([설정 방법](#after-install)) |
 | 🔑 GitHub 인증(gh) | coco-de 조직의 비공개 레포(`co-bricks`·`skills`) 접근용 GitHub 로그인을 팀 공용 1Password 토큰으로 자동 처리(`gh auth login` + `gh auth setup-git`) — 이미 인증돼 있으면 건너뜀. 실패해도 계속 진행하며, 아래 cocode-skills·cob(co-bricks)가 각자 인증 상태를 다시 확인해 건너뜀([설정 방법](#after-install)) |
 | 🔏 서명 키체인 (선택) | `--keychains-only`로 laputa·fastlane_tmp의 자동 잠금 설정·서명 도구 ACL을 확인하고, **1Password → login 암호화 캐시 → 사용자 로그인 후 자동 해제**를 등록합니다. 전체 설치에서는 자동으로 켜지지 않습니다 ([등록·검증·제거](#signing-keychains)) |
+| 🧹 디스크 자동 정리 | **9.5단계**에서 macOS 예약 작업(launchd) 3개를 등록 — Flutter·Dart 테스트 임시 폴더(15분마다), self-hosted 러너 캐시·작업 폴더(하루마다, 러너가 없는 맥은 할 일 없음), Colima 빌드 캐시·주인 없는 익명 볼륨·fstrim(하루마다). 실행 중이거나 최근에 쓴 것은 건드리지 않습니다 ([무엇을 언제 지우나](#disk-cleanup)) |
 | 🧩 cocode-skills 팀 플러그인 | 사설 레포 `coco-de/skills`의 `install.sh`로 cc-* 플러그인 번들(marionette·dart·figma·dev-cycle·coui 등) 자동 동기화 (⚠️ GitHub 인증 필요 — 보통 위 단계에서 1Password로 자동 처리되며, 안 됐다면 `gh auth login` 수동 실행 후 재실행) |
 | 📱 Android SDK | cmdline-tools, platform-tools, build-tools, platforms, NDK, 에뮬레이터 시스템 이미지, AVD까지 전부 자동 설치·구성 (Android Studio 첫 실행 마법사 불필요) |
 | 🛠 CLI 도구 | go, pyenv, nvm, git, gh, jq, cocoapods, fastlane, awscli, colima, docker, docker-compose, zsh-syntax-highlighting, direnv, openjdk@17, lefthook(Git 훅 관리자 — 레포별로 최초 1회 `lefthook install` 필요), Claude Code, **OpenCode**, ccstatusline(Claude Code 상태줄) → 실패 시 awesome-statusline(size: small)으로 자동 대체, codex, agy(Antigravity CLI), slack(Slack CLI), maestro(모바일 UI 자동화 CLI), op(1Password CLI), mas(App Store CLI — **Xcode.app이 없을 때만** 설치, Xcode 자동 설치용) |
@@ -444,6 +460,7 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 | <img src="assets/icons/cocoapods.svg" width="20" height="20"> | cocoapods | iOS 라이브러리 의존성 관리자 |
 | <img src="assets/icons/fastlane.svg" width="20" height="20"> | fastlane | 앱 빌드·배포 자동화 도구 |
 | <img src="assets/icons/1password.svg" width="20" height="20"> | 서명 키체인 자동 해제 (선택) | 서명된 전용 helper만 읽는 login 키체인 암호화 사본으로 재부팅 후 사용자 로그인 때 laputa·fastlane_tmp를 엽니다. 설치: `--keychains-only install`, 확인: `--keychains-only status` |
+| | 디스크 자동 정리 | 맥 디스크를 조용히 채우는 '아무도 치우지 않는 파일'(테스트 임시 폴더 · 러너 캐시 사본 · Docker가 맥에 돌려주지 않은 공간)을 정해진 주기로 치우는 예약 작업 3개. 다시 등록: `--cleanup-only`, 확인: 설치 검증의 `디스크 자동 정리` 줄 |
 | | awscli | AWS(아마존 클라우드)를 터미널에서 다루는 도구 |
 | | colima | Docker Desktop 없이 가볍게 컨테이너를 실행하는 도구 |
 | <img src="assets/icons/docker.svg" width="20" height="20"> | docker / docker-compose | 컨테이너 실행 및 관리 CLI (colima와 함께 사용) |
@@ -522,6 +539,28 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 
 **준비·원본 등록·공유 항목 이전·재생성·검증·제거의 상세 안내:** [signing-keychains/README.md](signing-keychains/README.md). 사용자 로그인 후 정상적으로 login 키체인이 열리는 환경을 전제로 합니다. 이 설정은 macOS 전용입니다.
 
+<a id="disk-cleanup"></a>
+
+## 🧹 디스크 자동 정리
+
+개발하다 보면 맥 디스크가 **'쓰고 나서 아무도 치우지 않는 파일'** 로 조금씩 찹니다. 전체 설치의 9.5단계가 그런 파일을 정해진 주기로 치우는 macOS 예약 작업(launchd) 3개를 등록합니다. 이미 세팅한 맥은 `./mac-setup.sh --cleanup-only`로 이 단계만 실행하면 됩니다.
+
+| 작업 | 주기 | 치우는 것 |
+|---|---|---|
+| `im.cocode.dart-tmp-cleanup` | 15분마다 | Flutter·Dart 테스트를 중간에 끊으면 임시 폴더에 남는 `dart_test.kernel.*`·`flutter_tools.*` (개당 수 GB~수십 GB) |
+| `im.cocode.runner-cache-cleanup` | 하루마다 | self-hosted 러너가 러너마다 따로 둔 캐시 사본과 오래 쓰지 않은 작업 폴더. 러너가 없는 맥은 할 일이 없습니다 |
+| `im.cocode.docker-disk-cleanup` | 하루마다 | Colima의 오래된 빌드 캐시·주인 없는 익명 볼륨, 그리고 VM 안에서 지운 공간을 맥으로 돌려주기(`fstrim`). Colima가 꺼져 있으면 쉽니다 |
+
+**실행 중이거나 최근에 쓴 것은 건드리지 않습니다.** 쓰는 프로세스가 없고, 그 안에서 바뀐 파일이 정해진 시간(테스트 임시 폴더 70분~6시간 · 러너 캐시 72시간 · 러너 작업 폴더 14일) 동안 하나도 없을 때만 지웁니다. Docker 이미지·컨테이너·이름 붙은 볼륨은 지우지 않고, Colima를 켜거나 끄지도 않습니다.
+
+```bash
+launchctl list | grep im.cocode                      # 세 작업이 보이면 등록된 것
+tail ~/Library/Logs/runner-cache-cleanup.log         # 무엇을 얼마나 지웠는지 (작업마다 기록 파일이 따로 있습니다)
+DRY_RUN=1 sh ~/.local/bin/cleanup-runner-cache.sh    # 지우지 않고 대상만 보기
+```
+
+**대상·기준·끄는 방법·그래도 부족할 때 볼 곳:** [disk-cleanup/README.md](disk-cleanup/README.md). 이 설정은 macOS 전용입니다 — 윈도우·리눅스에서 어떻게 다른지는 각 안내의 `🍎 맥과 무엇이 다른가요`에 있습니다.
+
 <a id="after-install"></a>
 
 ## ✅ 설치 후 확인할 것
@@ -576,6 +615,7 @@ Claude Code에서는 `/mcp`에서 `figma`·`mobbin`을 각각 인증합니다. �
 ```
 brew    : ...
 Xcode.app: ...
+디스크 자동 정리: ✓ 3종 등록됨 (기록: ~/Library/Logs/*-cleanup.log)
 xcode-select: ...
 ZenHub 확장(Chrome/Dia): ...
 Stats.app: ...
@@ -827,6 +867,7 @@ API를 호출할 때는 `credential`을 base64 디코딩한 `.p8`로 **ES256 JWT
 - **Terminal.app 폰트 자동 적용(7.5단계)은 macOS 기본 Terminal.app에서 실행 중일 때만 동작합니다.** 지금 실행 중인 터미널이 Terminal.app이 아니면(예: iTerm2) 건드리지 않고 건너뛰므로, 다른 터미널 앱에서 예상치 못한 창이 뜨는 일은 없습니다.
 - **기존 `~/.zshrc`는 자동으로 백업됩니다.** 새 설정을 쓰기 전에 `~/.zshrc.backup.년월일시분초` 형식으로 복사해 둡니다. 마음에 안 들면 이 백업 파일로 언제든 되돌릴 수 있습니다.
 - **권한은 스크립트가 대신 켜지 않습니다.** Orca의 [전체 디스크 접근 권한(9단계)](#orca-full-disk-access)은 macOS가 SIP로 잠가 두어 프로그램이 켤 수 없고, 스크립트는 **상태 확인 · 설정 창 열기 · 안내**까지만 합니다. 마지막 토글은 반드시 사용자가 직접 누르며, 켜지 않아도(=`s`로 건너뛰어도) 나머지 설치는 그대로 진행됩니다. 다만 이 권한은 홈 폴더 전체와 다른 앱의 데이터까지 읽을 수 있는 **강한 권한**이니, 무엇을 허용하는지 이해한 뒤 켜 주세요.
+- **디스크 자동 정리(9.5단계)는 아무도 쓰지 않는 것만 지웁니다.** 쓰는 프로세스가 없고 그 안에서 정해진 시간 동안 바뀐 파일이 없는 임시 폴더·캐시 사본만 대상이며, Docker 이미지·이름 붙은 볼륨처럼 다시 만들기 어려운 것은 건드리지 않습니다. `DRY_RUN=1`로 지우기 전 대상을 볼 수 있고, 끄는 방법은 [disk-cleanup/README.md](disk-cleanup/README.md)에 있습니다.
 - **코드가 전부 공개돼 있습니다.** 이 저장소의 [`mac-setup.sh`](./mac-setup.sh) 파일이 스크립트의 전부이며, 실행 전에 직접 열어서 읽어보실 수 있습니다. [빠른 시작](#quickstart)의 한 줄 실행은 이 저장소의 파일을 그대로 받아 실행하는 것이라 내용이 같지만, **읽어보고 실행하고 싶다면** 같은 섹션의 `git clone` 방식을 쓰시거나 아래처럼 먼저 내려받아 열어보셔도 됩니다.
 
   ```bash
@@ -996,6 +1037,17 @@ macOS 개인정보 보호(TCC) 창이라 **"항상 허용"이 없고**, 허용�
 **문제가 생긴 게 아닙니다.** 이 상태를 조회하려면 조회하는 쪽(스크립트를 실행한 터미널)에도 같은 권한이 필요한데, 새로 세팅한 맥의 터미널에는 보통 그 권한이 없습니다. 즉 **권한이 없다는 뜻이 아니라 "확인만 못 했다"** 는 뜻입니다.
 
 **시스템 설정 → 개인정보 보호 및 보안 → 전체 디스크 접근 권한**에서 Orca 토글이 켜져 있는지 눈으로 확인해 주세요. 켜져 있으면 그대로 쓰시면 됩니다.
+
+</details>
+
+<details>
+<summary>디스크 여유가 계속 줄어요</summary>
+
+<br>
+
+먼저 설치 검증의 `디스크 자동 정리` 줄이 `✓ 3종 등록됨`인지 확인하세요. `❌`라면 `./mac-setup.sh --cleanup-only`로 다시 등록합니다. 등록돼 있는데도 줄어든다면, 자동 정리가 다루지 않는 **한 번에 크게 차는 것**일 가능성이 큽니다 — OpenCode 대화 기록 DB, 오래 안 연 프로젝트의 `build/`, 아이폰 기기 심볼(`iOS DeviceSupport`), 쓰지 않는 Docker 이미지 등입니다. 어디를 어떻게 확인하는지는 [disk-cleanup/README.md의 '그래도 디스크가 부족하면'](disk-cleanup/README.md#그래도-디스크가-부족하면)에 있습니다.
+
+`du -sh ~/*`로는 원인이 잘 안 보입니다 — 숨김 폴더와 임시 폴더(`$TMPDIR`)가 빠지기 때문입니다.
 
 </details>
 

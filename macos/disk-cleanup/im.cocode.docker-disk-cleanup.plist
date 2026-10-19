@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>im.cocode.docker-disk-cleanup</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/sh</string>
+		<string>-c</string>
+		<string>$HOME/.local/bin/cleanup-docker-disk.sh &gt;&gt; $HOME/Library/Logs/docker-disk-cleanup.log 2&gt;&amp;1</string>
+	</array>
+	<key>StartInterval</key>
+	<integer>86400</integer>
+	<key>RunAtLoad</key>
+	<false/>
+	<key>LowPriorityIO</key>
+	<true/>
+	<key>Nice</key>
+	<integer>10</integer>
+	<key>ProcessType</key>
+	<string>Background</string>
+</dict>
+</plist>

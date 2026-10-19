@@ -429,6 +429,7 @@ chmod +x linux-setup.sh
 | **Homebrew on Linux** | 맥 포뮬러를 1:1로 재사용할 수 있지만, 500MB 추가 레이어와 잦은 소스 빌드로 설치가 크게 느려집니다 |
 | **flatpak** | 우분투 기본은 snap입니다. 둘을 함께 쓰면 설정이 한 겹 늘고 Android Studio 연동이 까다로워집니다 |
 | **스크립트 전체를 sudo로 실행** | fvm·pub·nvm·pyenv 설치물이 `/root`에 깔려 평소 터미널에서 안 보이게 됩니다. 필요할 때만 암호를 물어봅니다 |
+| **디스크 자동 정리** (맥의 `--cleanup-only`) | 맥에서는 Flutter 테스트 임시 폴더·self-hosted 러너 캐시·Colima VM 디스크를 [예약 작업](../macos/disk-cleanup/)이 정리합니다. 리눅스는 `/tmp`가 재부팅 때 비워지고(systemd-tmpfiles), Docker가 VM 없이 돌아 지운 공간이 바로 돌아오며, 러너 호스트·Xcode는 맥에만 있어 같은 작업을 두지 않았습니다. 재부팅 없이 오래 쓰다 디스크가 부족하면 `du -sh /tmp/dart_test.kernel.* /tmp/flutter_tools.*`로 확인하고, 테스트를 모두 끝낸 뒤 지우세요. Docker 빌드 캐시는 `docker builder prune`으로 비웁니다 |
 
 <br>
 <a id="after-install"></a>
