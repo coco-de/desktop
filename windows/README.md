@@ -473,6 +473,7 @@ JWT·API 호출 방법과 필드 표는 [맥의 Cocode 조직 API 키 설명](..
 | **Windows Defender 검사 예외 자동 추가** | 빌드는 빨라지지만, 실시간 보호 예외는 그 폴더에 들어오는 악성 코드까지 통과시킵니다. 하필 pub·Gradle·npm 캐시가 서드파티 코드가 그대로 떨어지는 곳이라 위험 표면이 정확히 겹칩니다. 보안팀 승인 없이 팀 표준에 넣는 건 부적절하다고 판단해 `-DefenderExclusions` 옵션으로만 남겼습니다 |
 | **에뮬레이터 가속(WHPX) 자동 활성화** | 관리자 권한 + 재부팅이 필요합니다. 이걸 위해 세팅 스크립트 전체를 관리자로 돌리게 하면 winget·fvm·pub 설치물이 관리자 프로필 경로에 깔려 평소 터미널에서 안 보이는 2차 사고가 납니다. 기본은 진단+안내이고, 원하면 관리자 PowerShell에서 `.\win-setup.ps1 -EnableHyperV` (전체 설치 없이 가속만 켬) |
 | **방화벽 인바운드 규칙 사전 등록** | 미리 규칙을 심으면 보안 표면이 넓어집니다. "이런 팝업이 뜨면 개인 네트워크만 체크하고 허용하세요"라는 안내로 대체했습니다 |
+| **디스크 자동 정리** (맥의 `--cleanup-only`) | 맥의 [예약 작업](../macos/disk-cleanup/)이 치우는 대상 대부분(self-hosted 러너 캐시·Xcode 빌드 캐시·Colima VM 디스크)이 윈도우에는 없어 예약 작업을 두지 않았습니다. 남는 하나는 Flutter 테스트를 중간에 끊으면 `%TEMP%`에 남는 `dart_test.kernel.*`·`flutter_tools.*` 폴더입니다 — 디스크가 부족하면 PowerShell에서 `Get-ChildItem $env:TEMP -Directory -Filter 'dart_test.kernel.*'`로 확인하고, 테스트를 모두 끝낸 뒤 지우세요 |
 
 <br>
 

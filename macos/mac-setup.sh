@@ -11,6 +11,7 @@
 #     0.5단계에서 같은 레포에서 따로 내려받는다.
 #   └ 이미 세팅한 맥에서 토큰(환경변수)만 다시 주입하려면: ./mac-setup.sh --env-only
 #   └ Dart 글로벌 패키지만 다시 설치/업데이트하려면:    ./mac-setup.sh --dart-only
+#   └ 디스크 자동 정리(launchd 3종)만 다시 등록하려면:  ./mac-setup.sh --cleanup-only
 #   └ 서명 키체인 로그인 자동 해제(선택): ./mac-setup.sh --keychains-only --help
 #
 # 기존 맥의 테마/설정을 그대로 가져오려면, 기존 맥에서
@@ -87,6 +88,7 @@ fi
 #   --env-only   : 1Password(op)에서 팀 공용 토큰·Cocode 조직 키를 ~/.zshrc에 주입 (8.5~8.12단계만)
 #   --perms-only : Orca 전체 디스크 접근 권한 점검·안내만 다시 실행 (9단계만)
 #   --dart-only  : Dart 글로벌 패키지만 다시 설치/업데이트 (4-b단계만)
+#   --cleanup-only: 디스크 자동 정리(launchd 3종)만 등록·갱신 (9.5단계만)
 #   --keychains-only: 서명 키체인 설정만 실행 (첫 번째 옵션으로 지정, 위에서 처리)
 #   -h, --help   : 사용법 출력
 #   모르는 옵션은 즉시 에러 종료한다 — 오탈자(예: --env-onyl)가 조용히
@@ -114,6 +116,11 @@ usage() {
                 앱 설치·토큰 주입·권한 단계는 전부 건너뜁니다.
                 (팀 패키지 목록이 바뀌었거나, 패키지만 최신으로 올리고 싶을 때 사용
                  — Flutter/Dart(fvm)는 이미 설치돼 있어야 합니다)
+  --cleanup-only
+                디스크 자동 정리 작업 3개만 launchd에 등록·갱신합니다
+                (Flutter 테스트 임시 폴더 15분마다 · 러너 캐시 하루마다 · Docker 하루마다).
+                설치·토큰 주입·권한 단계는 전부 건너뜁니다.
+                (이미 세팅한 맥에 정리 작업만 넣거나 최신으로 바꿀 때 사용)
   --keychains-only [install|refresh|status|verify|uninstall] [옵션]
                 서명 키체인 로그인 자동 해제만 설정·확인합니다 (선택형).
                 install에는 --laputa-ref / --fastlane-ref의 op:// 참조가 필요합니다.
@@ -127,11 +134,13 @@ USAGE
 ENV_ONLY=0
 PERMS_ONLY=0
 DART_ONLY=0
+CLEANUP_ONLY=0
 for arg in "$@"; do
   case "$arg" in
     --env-only)   ENV_ONLY=1 ;;
     --perms-only) PERMS_ONLY=1 ;;
     --dart-only)  DART_ONLY=1 ;;
+    --cleanup-only) CLEANUP_ONLY=1 ;;
     -h|--help)    usage; exit 0 ;;
     *)
       echo "❌ 알 수 없는 옵션: $arg"
@@ -159,9 +168,9 @@ fi
 # 모드 옵션들은 하는 일이 서로 달라 함께 쓰면 어느 쪽을 원한 건지 알 수 없다 — 조용히
 # 한쪽만 실행하지 말고 무엇을 골라야 하는지 알려주고 멈춘다.
 #   (옵션이 하나 늘 때마다 조건을 새로 조합하지 않도록 개수로 센다)
-MODE_COUNT=$(( ENV_ONLY + PERMS_ONLY + DART_ONLY ))
+MODE_COUNT=$(( ENV_ONLY + PERMS_ONLY + DART_ONLY + CLEANUP_ONLY ))
 if (( MODE_COUNT > 1 )); then
-  echo "❌ --env-only · --perms-only · --dart-only 는 함께 쓸 수 없습니다 (하나씩 따로 실행해 주세요)"
+  echo "❌ --env-only · --perms-only · --dart-only · --cleanup-only 는 함께 쓸 수 없습니다 (하나씩 따로 실행해 주세요)"
   exit 1
 fi
 
@@ -228,9 +237,10 @@ brew_shellenv() {
 
 if brew_shellenv; then
   :   # 이미 설치돼 있으면 경로만 잡고 넘어간다 (멱등)
-elif (( ENV_ONLY || PERMS_ONLY || DART_ONLY )); then
+elif (( ENV_ONLY || PERMS_ONLY || DART_ONLY || CLEANUP_ONLY )); then
   # --env-only는 op만, --perms-only는 macOS 기본 명령(sqlite3·open)만,
-  # --dart-only는 이미 깔려 있는 dart만 쓰므로 셋 다 brew로 설치하는 것이 없다 —
+  # --dart-only는 이미 깔려 있는 dart만, --cleanup-only는 macOS 기본 명령(launchctl·cp·curl)만
+  # 쓰므로 넷 다 brew로 설치하는 것이 없다 —
   # Homebrew가 없어도 계속 진행한다 (dart가 없으면 아래 --dart-only 블록이 따로 안내한다)
   :
 else
@@ -280,7 +290,7 @@ REPO_RAW_BASE="https://raw.githubusercontent.com/coco-de/desktop/main/macos"
 # 8단계가 참조할 dotfile 위치. 기본은 스크립트 옆이고, 원라이너 실행이면 임시 폴더로 바뀐다.
 DOTFILE_DIR="$SCRIPT_DIR"
 
-if (( ! ENV_ONLY && ! PERMS_ONLY && ! DART_ONLY )) \
+if (( ! ENV_ONLY && ! PERMS_ONLY && ! DART_ONLY && ! CLEANUP_ONLY )) \
    && { (( STANDALONE )) || [[ ! -f "$SCRIPT_DIR/.zshrc" && ! -f "$SCRIPT_DIR/.p10k.zsh" ]]; }; then
   log "0.5. 팀 셸 설정(.zshrc · .p10k.zsh) 내려받기"
   echo "  · 스크립트 옆에 설정 파일이 없습니다 (clone 없이 한 줄로 실행한 경우) → 레포에서 직접 받습니다"
@@ -341,11 +351,13 @@ fi
 #   8.12. COCODE_ASC_*·COCODE_APPLE_TEAM_ID 주입 (Cocode Inc. 조직 Team API 키)
 #   9.   앱 권한 — Orca 전체 디스크 접근(Full Disk Access) 점검·안내
 #        (TTY면 시스템 설정 창을 열어주고 Enter 대기 · 이미 허용돼 있으면 건너뜀)
+#   9.5. 디스크 자동 정리 등록 (launchd 3종 — Flutter 테스트 임시 폴더 15분마다 · 러너 캐시
+#        하루마다 · Docker 하루마다 · 실행 중이거나 최근에 쓴 것은 건드리지 않음 · 내용이 같으면 재등록 안 함)
 #   10.  설치 검증 + 다음 단계 안내
 # 공통 규칙: 모든 단계 멱등(이미 설치 시 스킵) · 실패해도 ⚠ 후 계속 · 시크릿 미커밋
 # 실행 옵션: 옵션 없음=전체 실행 · --env-only=8.5~8.12(토큰·조직 키 주입)만 재실행 ·
 #            --perms-only=9(앱 권한)만 재실행 · --dart-only=4-b(Dart 글로벌 패키지)만 재실행 ·
-#            -h/--help=사용법
+#            --cleanup-only=9.5(디스크 자동 정리)만 재실행 · -h/--help=사용법
 # ============================================================
 
 # ============================================================
@@ -733,9 +745,136 @@ if (( DART_ONLY )); then
 fi
 
 # ============================================================
+# 9.5단계(디스크 자동 정리) 본체 — launchd 정리 작업 3종
+#
+#   [이 단계가 하는 일 — 비개발자용 설명]
+#   개발하다 보면 맥 디스크가 '쓰고 나서 아무도 치우지 않는 파일'로 조금씩 찹니다. Flutter
+#   테스트를 중간에 끊으면 남는 임시 폴더(개당 수 GB~수십 GB), CI 러너가 러너마다 따로 받아 둔
+#   캐시, Docker(Colima)가 쓰고 맥에 돌려주지 않은 공간이 그렇습니다. 러너 9개가 도는 팀 맥은
+#   여유가 1.5GB 까지 떨어진 적이 있습니다(2026-10-19). 이 단계는 그것들을 정해진 주기로 치우는
+#   작업 3개를 macOS 예약 작업(launchd)으로 등록합니다.
+#     im.cocode.dart-tmp-cleanup      15분마다  Flutter·Dart 테스트 임시 폴더
+#     im.cocode.runner-cache-cleanup  하루마다  self-hosted 러너 캐시·작업 폴더 (러너가 없는 맥은 할 일 없음)
+#     im.cocode.docker-disk-cleanup   하루마다  Colima 빌드 캐시·주인 없는 익명 볼륨·fstrim (꺼져 있으면 쉼)
+#   실행 중이거나 최근에 쓴 것은 건드리지 않습니다. 무엇을 언제 지우는지는 disk-cleanup/README.md 에 있습니다.
+#
+#   [같은 이름으로 등록하는 이유]
+#   앞의 두 작업은 이 레포보다 먼저 unibook 레포의 안내로 같은 이름(Label)으로 등록된 맥이 있다.
+#   이름을 그대로 쓰면 그 맥에서도 새 판이 옛 판 자리를 갈아끼우고, 같은 일을 하는 작업이 둘이 되지 않는다.
+#
+#   [정의를 여기 둔 이유]
+#   --cleanup-only 는 설치 단계를 전부 건너뛰고 이 단계만 실행하므로, 설치 블록보다 앞에서
+#   정의돼 있어야 한다. 실제 호출은 (전체 실행 시) 아래 9.5단계 위치에서 한다.
+# ============================================================
+DISK_CLEANUP_JOBS="dart-tmp-cleanup:cleanup-dart-tmp.sh runner-cache-cleanup:cleanup-runner-cache.sh docker-disk-cleanup:cleanup-docker-disk.sh"
+
+install_disk_cleanup() {
+  log "디스크 자동 정리 등록 (Flutter 테스트 임시 폴더 · 러너 캐시 · Docker)"
+  local src tmp="" pair job script label plist uid f changed
+  uid="$(id -u)"
+  if [[ -n "$SCRIPT_DIR" && -d "$SCRIPT_DIR/disk-cleanup" ]]; then
+    src="$SCRIPT_DIR/disk-cleanup"
+  else
+    # curl 한 줄로 실행한 경우 — 옆에 폴더가 없으니 같은 레포에서 받는다
+    tmp="$(mktemp -d)"
+    src="$tmp"
+    for pair in $DISK_CLEANUP_JOBS; do
+      for f in "${pair#*:}" "im.cocode.${pair%%:*}.plist"; do
+        if ! curl -fsSL "$REPO_RAW_BASE/disk-cleanup/$f" -o "$tmp/$f"; then
+          echo "  ⚠ $f 내려받기 실패 → 디스크 자동 정리 등록을 건너뜁니다 (나중에 다시: ./mac-setup.sh --cleanup-only)"
+          rm -rf "$tmp"
+          return 0
+        fi
+      done
+    done
+  fi
+  mkdir -p "$HOME/.local/bin" "$HOME/Library/LaunchAgents" "$HOME/Library/Logs"
+  for pair in $DISK_CLEANUP_JOBS; do
+    job="${pair%%:*}"
+    script="${pair#*:}"
+    label="im.cocode.$job"
+    plist="$HOME/Library/LaunchAgents/$label.plist"
+    changed=0
+    if ! cmp -s "$src/$script" "$HOME/.local/bin/$script"; then
+      # 실행 중인 셸 스크립트 위에 그대로 덮어쓰면 그 실행이 엉뚱한 줄을 읽을 수 있다 —
+      # 옆에 새로 쓴 뒤 이름만 바꾼다 (실행 중이던 것은 옛 파일을 끝까지 읽는다)
+      if cp "$src/$script" "$HOME/.local/bin/.$script.new" \
+         && chmod 755 "$HOME/.local/bin/.$script.new" \
+         && mv -f "$HOME/.local/bin/.$script.new" "$HOME/.local/bin/$script"; then
+        changed=1
+      else
+        echo "  ⚠ $script 복사 실패 → $label 은 건너뜁니다"
+        continue
+      fi
+    fi
+    if ! cmp -s "$src/$label.plist" "$plist"; then
+      if cp "$src/$label.plist" "$plist"; then
+        changed=1
+      else
+        echo "  ⚠ $label.plist 복사 실패 → $label 은 건너뜁니다"
+        continue
+      fi
+    fi
+    if (( ! changed )) && launchctl print "gui/$uid/$label" >/dev/null 2>&1; then
+      echo "  ✓ $label 이미 최신으로 등록됨"
+      continue
+    fi
+    # 바뀐 설정을 읽히려면 내렸다가 다시 올린다 (등록돼 있지 않으면 bootout 은 그냥 실패한다).
+    # 막 내린 직후에는 bootstrap 이 'Input/output error' 로 한 번 실패하기도 해 1초 뒤 한 번 더 시도한다.
+    launchctl bootout "gui/$uid/$label" >/dev/null 2>&1 || true
+    if launchctl bootstrap "gui/$uid" "$plist" 2>/dev/null \
+       || { sleep 1; launchctl bootstrap "gui/$uid" "$plist" 2>/dev/null; }; then
+      case "$job" in
+        dart-tmp-cleanup)     echo "  ✓ $label 등록 (15분마다 · Flutter·Dart 테스트 임시 폴더)" ;;
+        runner-cache-cleanup) echo "  ✓ $label 등록 (하루마다 · self-hosted 러너 캐시·작업 폴더)" ;;
+        *)                    echo "  ✓ $label 등록 (하루마다 · Colima 빌드 캐시·주인 없는 익명 볼륨·fstrim)" ;;
+      esac
+    else
+      echo "  ⚠ $label 등록 실패 → 수동 등록: launchctl bootstrap gui/$uid $plist"
+    fi
+  done
+  [[ -z "$tmp" ]] || rm -rf "$tmp"
+  echo "  · 정리 기록: ~/Library/Logs/dart-tmp-cleanup.log · runner-cache-cleanup.log · docker-disk-cleanup.log"
+}
+
+# 10단계 검증과 --cleanup-only 요약이 함께 쓰는 등록 상태 한 줄
+disk_cleanup_status() {
+  local pair uid loaded=0 total=0
+  uid="$(id -u)"
+  for pair in $DISK_CLEANUP_JOBS; do
+    total=$((total + 1))
+    if launchctl print "gui/$uid/im.cocode.${pair%%:*}" >/dev/null 2>&1; then
+      loaded=$((loaded + 1))
+    fi
+  done
+  if (( loaded == total )); then
+    echo "✓ ${total}종 등록됨 (기록: ~/Library/Logs/*-cleanup.log)"
+  else
+    echo "❌ ${loaded}/${total} 등록 (다시 등록: ./mac-setup.sh --cleanup-only)"
+  fi
+}
+
+# --cleanup-only: 설치·토큰 주입·권한 점검을 전부 건너뛰고 9.5(디스크 자동 정리)만 실행한다.
+if (( CLEANUP_ONLY )); then
+  install_disk_cleanup
+  log "디스크 자동 정리 등록 결과 (--cleanup-only)"
+  DISK_CLEANUP_STATE="$(disk_cleanup_status)"
+  echo "  디스크 자동 정리: $DISK_CLEANUP_STATE"
+  echo ""
+  if [[ "$DISK_CLEANUP_STATE" == ✓* ]]; then
+    echo "✅ 완료! (전체 설치는 옵션 없이 './mac-setup.sh' 실행)"
+    echo "   지우기 전에 무엇이 대상인지 보려면: DRY_RUN=1 sh ~/.local/bin/cleanup-runner-cache.sh (Docker는 cleanup-docker-disk.sh)"
+  else
+    # 하나라도 빠졌으면 '완료' 배너 대신 다음 행동을 알려준다 (--dart-only 와 같은 원칙, 종료코드는 0 유지)
+    echo "⚠ 등록되지 않은 작업이 있습니다 — 위 ⚠ 메시지를 확인한 뒤 './mac-setup.sh --cleanup-only' 를 다시 실행해 주세요."
+  fi
+  exit 0
+fi
+
+# ============================================================
 # 설치 단계 시작 (1~8단계) — --env-only 실행 시 이 블록 전체를 건너뛴다
-#   (--perms-only 는 9단계만, --dart-only 는 4-b단계만 위에서 실행하고 이미 종료했으므로
-#    둘 다 여기까지 오지 않는다)
+#   (--perms-only 는 9단계만, --dart-only 는 4-b단계만, --cleanup-only 는 9.5단계만 위에서 실행하고
+#    이미 종료했으므로 셋 다 여기까지 오지 않는다)
 #   기존 코드를 옮기지 않고 그대로 감싸기만 했으므로, 블록 안쪽 본문은
 #   들여쓰기 없이 유지된다 (짝이 되는 fi는 8.5단계 직전에 있다)
 # ============================================================
@@ -2478,12 +2617,20 @@ fi
 run_orca_permission_step
 
 # ------------------------------------------------------------
+# 9.5. 디스크 자동 정리 (launchd 3종)
+#   본체(install_disk_cleanup)는 파일 앞부분에 정의돼 있다 — --cleanup-only 가
+#   설치 단계를 건너뛰고 이 단계만 실행할 수 있어야 하기 때문이다.
+# ------------------------------------------------------------
+install_disk_cleanup
+
+# ------------------------------------------------------------
 # 10. 검증
 # ------------------------------------------------------------
 log "설치 검증"
 echo "  brew    : $(brew --version 2>/dev/null | head -1 || echo '❌ (수동 설치: https://brew.sh)')"
 echo "  Xcode.app: $([[ -d /Applications/Xcode.app ]] && echo '✓ 설치됨' || echo '❌ (App Store에서 설치: https://apps.apple.com/app/xcode/id497799835, 또는 mas 로그인 후 재실행)')"
 echo "  서명 키체인 자동 해제: $([[ -f "$HOME/Library/LaunchAgents/im.cocode.desktop.signing-keychains.plist" ]] && echo '등록 파일 있음 (상태 확인: ./mac-setup.sh --keychains-only status)' || echo '선택형·미등록 (설정 안내: ./mac-setup.sh --keychains-only --help)')"
+echo "  디스크 자동 정리: $(disk_cleanup_status)"
 echo "  xcode-select: $(xcode-select -p 2>/dev/null || echo '❌ (Xcode.app 설치 필요 — App Store)')"
 # ZenHub for GitHub 확장(External Extensions 드롭인) 등록 여부 — Chrome은 공식 지원,
 # Dia는 동작이 보장되지 않아 파일이 없어도 오류가 아니라 "미보장" 문구로만 안내한다.

@@ -19,10 +19,25 @@ jobs:
         run: |
           bash -n macos/mac-setup.sh
           bash -n linux/linux-setup.sh
-      - name: MCP 설정 병합·Dia 연결 인자 회귀 검사
+          for f in macos/disk-cleanup/*.sh; do sh -n "$f"; done
+      - name: MCP 설정 병합·Dia 연결 인자·디스크 자동 정리 회귀 검사
         run: |
           python3 -m unittest discover -s tests -v
       - name: Windows 문법·MCP 설정 검사
         shell: pwsh
         run: |
           ./tests/default-mcp.Tests.ps1
+
+  disk-cleanup-macos:
+    # 디스크 자동 정리 스크립트는 맥에서만 돈다. macOS 의 find·du·date 는 리눅스와 다르게 동작하는
+    # 곳이 있어(날짜와 시각 사이의 T 를 다른 시각으로 읽는 find 가 그 예다) 리눅스 검사만으로는 그 차이를
+    # 잡지 못한다. 위 잡과 같은 회귀 검사를 맥에서 한 번 더 돌린다.
+    runs-on: macos-latest
+    # 신규 경량 검사: 로컬(맥) 실측 약 15초 + 러너 준비 여유. 첫 CI 실측 후 최대 소요 × 2로 재산정합니다.
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: 디스크 자동 정리 회귀 검사 (macOS)
+        run: |
+          for f in macos/disk-cleanup/*.sh; do sh -n "$f"; done
+          python3 -m unittest discover -s tests -p 'test_disk_cleanup.py' -v
