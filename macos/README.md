@@ -1,6 +1,6 @@
 # 🍎 macOS
 
-> 새로 받은 맥북 한 대를 명령어 한 줄로 co:code 팀 전체와 똑같은 개발환경으로 만들어주는 스크립트입니다.
+> 새로 받은 맥북 한 대를 몇 줄의 명령어로 co:code 팀 전체와 똑같은 개발환경으로 만들어주는 스크립트입니다.
 
 이 안내는 [coco-de/desktop](../README.md) 저장소의 macOS 부분입니다. 윈도우·리눅스는 [windows/](../windows/) · [linux/](../linux/) 를 보세요.
 
@@ -60,25 +60,36 @@ co:code는 엔지니어뿐 아니라 디자이너, PM도 하나의 엔지니어�
 
 ### 실행
 
-터미널을 열고 아래 한 줄을 붙여넣은 뒤 Enter를 누르세요.
+스크립트를 먼저 파일로 **내려받아 내용을 직접 확인한 뒤** 실행합니다. 터미널을 열고 아래 세 단계를 **하나씩 따로** 실행하세요(한꺼번에 붙여넣으면 확인 단계를 건너뛰게 됩니다).
+
+**1단계 — 내려받기.** 전용 폴더(`~/co-mac`)에 저장합니다.
 
 ```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coco-de/desktop/main/macos/mac-setup.sh)"
+ref=main
+mkdir -p ~/co-mac
+curl -fsSLo ~/co-mac/mac-setup.sh "https://raw.githubusercontent.com/coco-de/desktop/$ref/macos/mac-setup.sh"
 ```
 
-레포를 내려받거나 Homebrew를 미리 설치할 필요 없이, 이 한 줄로 전부 진행됩니다.
+**2단계 — 내용 확인.** 텍스트 편집기가 열립니다. 무슨 일을 하는지 읽어 보세요. (터미널에서 보려면 `less ~/co-mac/mac-setup.sh` — `q` 를 누르면 빠져나옵니다)
 
-> 💾 **나중에 `--env-only` 같은 옵션을 쓰실 분은** 스크립트를 파일로 받아 두시면 편합니다. 위 한 줄은 스크립트를 내려받아 바로 실행하고 **파일을 남기지 않기 때문**입니다.
->
-> ```bash
-> mkdir -p ~/co-mac && curl -fsSL https://raw.githubusercontent.com/coco-de/desktop/main/macos/mac-setup.sh -o ~/co-mac/mac-setup.sh && chmod +x ~/co-mac/mac-setup.sh
-> ~/co-mac/mac-setup.sh
-> ```
->
-> 이렇게 두면 이후 `~/co-mac/mac-setup.sh --env-only` 처럼 쓸 수 있습니다. (홈 폴더에 바로 두지 말고 `~/co-mac` 같은 **전용 폴더**에 두세요 — 홈 폴더에 두면 스크립트가 여러분의 기존 `~/.zshrc`를 "직접 가져다 둔 설정"으로 보고 팀 설정을 적용하지 않습니다.)
+```bash
+open -e ~/co-mac/mac-setup.sh
+```
+
+**3단계 — 실행.** 다 읽으신 뒤에 실행하세요.
+
+```bash
+chmod +x ~/co-mac/mac-setup.sh && ~/co-mac/mac-setup.sh
+```
+
+레포를 내려받거나 Homebrew를 미리 설치할 필요 없이, 이 세 단계로 전부 진행됩니다.
+
+> 🔖 **`ref` 는 어느 시점의 스크립트를 받을지 정합니다.** `main` 은 가장 최신 버전입니다. 이미 검토한 버전을 그대로 쓰고 싶다면 `main` 대신 [커밋 번호(SHA, 40자리)](https://github.com/coco-de/desktop/commits/main)를 적으세요. 그 시점의 `mac-setup.sh` 만 받아집니다.
+
+> 💾 **스크립트는 `~/co-mac` 에 남습니다.** 나중에 `--env-only` 같은 옵션을 쓸 때는 `cd ~/co-mac` 으로 그 폴더에 들어가 `./mac-setup.sh --env-only` 처럼 다시 쓰면 됩니다. 이 문서의 `./mac-setup.sh …` 명령은 모두 **스크립트가 있는 폴더에서** 실행하는 형태입니다. 홈 폴더에 바로 두지 말고 이처럼 **전용 폴더**에 두세요 — 홈 폴더에 두면 스크립트가 여러분의 기존 `~/.zshrc`를 "직접 가져다 둔 설정"으로 보고 팀 설정을 적용하지 않습니다.
 
 <details>
-<summary>레포를 직접 내려받아 실행하고 싶다면 (스크립트를 먼저 읽어보고 싶은 분)</summary>
+<summary>레포를 통째로 내려받아 실행하고 싶다면 (git에 익숙한 분)</summary>
 
 <br>
 
@@ -88,7 +99,7 @@ cd desktop/macos
 chmod +x mac-setup.sh && ./mac-setup.sh
 ```
 
-결과는 위 한 줄 실행과 같고, 스크립트 파일이 폴더에 남아 있어 나중에 `--env-only` 같은 옵션을 쓰기도 편합니다. 다만 **갓 세팅한 맥에서는 `git clone` 단계에서 macOS가 "명령어 라인 개발자 도구를 설치하겠습니까?" 창을 띄울 수 있어**, 창을 눌러 설치를 마칠 때까지 기다려야 합니다. 위의 한 줄 실행은 그 도구까지 스크립트가 0단계에서 함께 설치하므로 **창을 눌러가며 기다리는 단계가 없습니다** (설치 자체는 몇 분 걸릴 수 있습니다).
+결과는 위 세 단계와 같습니다. 다만 **갓 세팅한 맥에서는 `git clone` 단계에서 macOS가 "명령어 라인 개발자 도구를 설치하겠습니까?" 창을 띄울 수 있어**, 창을 눌러 설치를 마칠 때까지 기다려야 합니다. 위 세 단계는 그 도구까지 스크립트가 0단계에서 함께 설치하므로 **창을 눌러가며 기다리는 단계가 없습니다** (설치 자체는 몇 분 걸릴 수 있습니다).
 
 </details>
 
@@ -102,12 +113,6 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 > ./mac-setup.sh --env-only
 > ```
 >
-> 스크립트 파일이 없다면(한 줄 실행으로 설치한 경우) 아래처럼 옵션을 붙여 그대로 실행해도 됩니다. `--` 는 그 뒤가 옵션이라는 표시라 빼면 안 됩니다.
->
-> ```bash
-> /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coco-de/desktop/main/macos/mac-setup.sh)" -- --env-only
-> ```
->
 > 앱·도구 설치는 전부 건너뛰고, 1Password(`op`)에서 팀 공용 토큰(`ZENHUB_API_TOKEN`·`JIRA_API_TOKEN`·`SLANG_GPT_API_KEY`·`DCM_EMAIL`·`DCM_CI_KEY`·`SLACK_TEAM_ID`·`SLACK_BOT_TOKEN`·`TYPESAFE_API_KEY`·`OPENAI_API_KEY`)과 **Cocode 조직 App Store Connect 키**(`COCODE_ASC_*`·`COCODE_APPLE_TEAM_ID`)를 다시 읽어 `~/.zshrc`에 넣어줍니다. 토큰이 바뀌었거나 설치 때 주입(8.5~8.12단계)을 건너뛴 경우 사용합니다. 자세한 키·환경변수 설명은 [Cocode 조직 API 키](#cocode-asc)를 참고하세요.
 
 > 🎯 **팀 Dart 패키지 목록이 바뀌었거나, 패키지만 최신으로 올리고 싶다면**
@@ -116,24 +121,12 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 > ./mac-setup.sh --dart-only
 > ```
 >
-> 스크립트 파일이 없다면 `--env-only`와 같은 방식으로 쓰시면 됩니다.
->
-> ```bash
-> /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coco-de/desktop/main/macos/mac-setup.sh)" -- --dart-only
-> ```
->
 > 앱 설치·토큰 주입·권한 단계는 전부 건너뛰고 **Dart 글로벌 패키지**(`coverage`·`melos`·`mason_cli`·`flutter_gen`·`jaspr_cli`·`serverpod_cli`·`flutterfire_cli`·`marionette_mcp`·`mcp_server_dart`·`cob`)만 다시 설치합니다(4-b단계). 이미 깔린 패키지는 최신으로 다시 활성화되므로 몇 번을 실행해도 안전하고, 끝나면 무엇이 깔렸는지 요약해서 보여줍니다. 단 **Flutter/Dart(fvm)는 이미 설치돼 있어야 합니다** — 없으면 전체 설치를 먼저 하라고 안내하고 멈춥니다. `cob(co-bricks)`은 비공개 레포라 **GitHub 인증이 돼 있을 때만** 설치되고(안 돼 있으면 그 항목만 건너뜁니다), GitHub에서 받아 직접 빌드하므로 이 단계에서만 몇 분 걸릴 수 있습니다(멈춘 게 아니니 기다려 주세요).
 
 > 🔐 **Orca가 폴더 접근 허용 창을 계속 띄운다면**
 >
 > ```bash
 > ./mac-setup.sh --perms-only
-> ```
->
-> 스크립트 파일이 없다면 `--env-only`와 같은 방식으로 쓰시면 됩니다.
->
-> ```bash
-> /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coco-de/desktop/main/macos/mac-setup.sh)" -- --perms-only
 > ```
 >
 > 설치·토큰 주입은 전부 건너뛰고, **Orca의 '전체 디스크 접근 권한'** 상태만 확인해 시스템 설정 창까지 열어 안내해 줍니다(9단계). 이미 켜져 있으면 아무것도 묻지 않고 바로 끝납니다. 자세한 내용은 아래 [🔐 Orca 전체 디스크 접근 권한](#orca-full-disk-access)을 봐주세요.
@@ -148,12 +141,6 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 > ./mac-setup.sh --cleanup-only
 > ```
 >
-> 스크립트 파일이 없다면 `--env-only`와 같은 방식으로 쓰시면 됩니다.
->
-> ```bash
-> /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coco-de/desktop/main/macos/mac-setup.sh)" -- --cleanup-only
-> ```
->
 > 설치·토큰 주입·권한 단계는 전부 건너뛰고 **정리 작업 3개만** macOS 예약 작업(launchd)으로 등록합니다(9.5단계). 몇 번을 실행해도 안전하고, 내용이 같으면 다시 등록하지 않습니다. 무엇을 언제 지우는지는 아래 [🧹 디스크 자동 정리](#disk-cleanup)를 봐주세요.
 
 <details>
@@ -161,11 +148,11 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 
 <br>
 
-기본적으로는 **팀 공통 터미널 설정**(`.zshrc`·`.p10k.zsh`)이 자동으로 적용됩니다. 저장소에 함께 들어 있고, [빠른 시작](#quickstart)의 한 줄 실행으로 돌리면 스크립트가 저장소에서 알아서 내려받아 씁니다. 따로 하실 일은 없습니다.
+기본적으로는 **팀 공통 터미널 설정**(`.zshrc`·`.p10k.zsh`)이 자동으로 적용됩니다. 저장소에 함께 들어 있고, [빠른 시작](#quickstart)대로 실행하면 스크립트가 저장소에서 알아서 내려받아 씁니다. 따로 하실 일은 없습니다.
 
-예전 맥의 터미널 테마·설정을 **대신** 쓰고 싶다면, 그 맥에서 `~/.zshrc`, `~/.p10k.zsh` 두 파일을 **스크립트가 있는 폴더**에 복사해 둔 뒤 실행하세요. 스크립트는 옆에 있는 파일을 우선하므로, 팀 설정 대신 여러분 것이 그대로 적용됩니다(이 경우 저장소에서 따로 내려받지 않습니다).
+예전 맥의 터미널 테마·설정을 **대신** 쓰고 싶다면, 그 맥에서 `~/.zshrc`, `~/.p10k.zsh` 두 파일을 **스크립트가 있는 폴더**(빠른 시작이라면 `~/co-mac`)에 복사해 둔 뒤 실행하세요. 빠른 시작이라면 2단계(확인)와 3단계(실행) 사이에 복사하면 됩니다. 스크립트는 옆에 있는 파일을 우선하므로, 팀 설정 대신 여러분 것이 그대로 적용됩니다(이 경우 저장소에서 따로 내려받지 않습니다).
 
-> ⚠️ 이 방법은 위 `git clone` 방식처럼 **스크립트가 폴더에 실제로 있을 때만** 쓸 수 있습니다. 한 줄 실행에는 "스크립트가 있는 폴더"라는 게 없어서, 항상 팀 설정이 적용됩니다.
+> ⚠️ 이 방법은 위 `git clone` 방식이나 빠른 시작처럼 **스크립트가 폴더에 실제로 있을 때만** 쓸 수 있습니다.
 >
 > ⚠️ **두 파일을 함께 두세요.** 하나만 두면 나머지 하나는 팀 것도 여러분 것도 아닌 **기본값**이 적용됩니다(예: `.zshrc`만 두면 프롬프트 테마는 p10k 기본값).
 
@@ -868,19 +855,7 @@ API를 호출할 때는 `credential`을 base64 디코딩한 `.p8`로 **ES256 JWT
 - **기존 `~/.zshrc`는 자동으로 백업됩니다.** 새 설정을 쓰기 전에 `~/.zshrc.backup.년월일시분초` 형식으로 복사해 둡니다. 마음에 안 들면 이 백업 파일로 언제든 되돌릴 수 있습니다.
 - **권한은 스크립트가 대신 켜지 않습니다.** Orca의 [전체 디스크 접근 권한(9단계)](#orca-full-disk-access)은 macOS가 SIP로 잠가 두어 프로그램이 켤 수 없고, 스크립트는 **상태 확인 · 설정 창 열기 · 안내**까지만 합니다. 마지막 토글은 반드시 사용자가 직접 누르며, 켜지 않아도(=`s`로 건너뛰어도) 나머지 설치는 그대로 진행됩니다. 다만 이 권한은 홈 폴더 전체와 다른 앱의 데이터까지 읽을 수 있는 **강한 권한**이니, 무엇을 허용하는지 이해한 뒤 켜 주세요.
 - **디스크 자동 정리(9.5단계)는 아무도 쓰지 않는 것만 지웁니다.** 쓰는 프로세스가 없고 그 안에서 정해진 시간 동안 바뀐 파일이 없는 임시 폴더·캐시 사본만 대상이며, Docker 이미지·이름 붙은 볼륨처럼 다시 만들기 어려운 것은 건드리지 않습니다. `DRY_RUN=1`로 지우기 전 대상을 볼 수 있고, 끄는 방법은 [disk-cleanup/README.md](disk-cleanup/README.md)에 있습니다.
-- **코드가 전부 공개돼 있습니다.** 이 저장소의 [`mac-setup.sh`](./mac-setup.sh) 파일이 스크립트의 전부이며, 실행 전에 직접 열어서 읽어보실 수 있습니다. [빠른 시작](#quickstart)의 한 줄 실행은 이 저장소의 파일을 그대로 받아 실행하는 것이라 내용이 같지만, **읽어보고 실행하고 싶다면** 같은 섹션의 `git clone` 방식을 쓰시거나 아래처럼 먼저 내려받아 열어보셔도 됩니다.
-
-  ```bash
-  mkdir -p ~/co-mac
-  curl -fsSL https://raw.githubusercontent.com/coco-de/desktop/main/macos/mac-setup.sh -o ~/co-mac/mac-setup.sh
-  open -e ~/co-mac/mac-setup.sh
-  ```
-
-  텍스트 편집기가 열리면 내용을 확인하시고, **다 읽으신 뒤에** 아래를 실행하세요.
-
-  ```bash
-  bash ~/co-mac/mac-setup.sh
-  ```
+- **코드가 전부 공개돼 있습니다.** 이 저장소의 [`mac-setup.sh`](./mac-setup.sh) 파일이 스크립트의 전부입니다. [빠른 시작](#quickstart)은 스크립트를 먼저 파일로 내려받아(1단계) 직접 열어 읽어 본 뒤(2단계) **그 파일을** 실행하는(3단계) 순서입니다. 특정 시점의 버전을 고정하려면 `ref` 에 커밋 번호(SHA)를 적습니다.
 
 <details>
 <summary>기존 .zshrc를 가져올 때 자동으로 적용되는 호환성 패치</summary>

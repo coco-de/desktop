@@ -10,9 +10,13 @@
 #     Set-ExecutionPolicy -Scope CurrentUser RemoteSigned -Force
 #     .\win-setup.ps1
 #
-# 실행 (clone 없이 한 줄로):
-#   Set-ExecutionPolicy -Scope Process Bypass -Force; $s="$env:TEMP\win-setup.ps1"; iwr -UseBasicParsing https://raw.githubusercontent.com/coco-de/desktop/main/windows/win-setup.ps1 -OutFile $s; Unblock-File $s; & $s
-#   └ 맨 앞의 Set-ExecutionPolicy 는 **지금 열려 있는 이 창에만** 적용된다(창을 닫으면 원래대로).
+# 실행 (clone 없이): 스크립트를 파일로 내려받아 내용을 확인한 뒤 실행한다 — 같은 창에서 한 단계씩 따로 실행
+#   $ref = 'main'   # 검토한 버전을 고정하려면 main 대신 커밋 SHA(40자리)
+#   $s = "$env:TEMP\win-setup.ps1"
+#   iwr -UseBasicParsing "https://raw.githubusercontent.com/coco-de/desktop/$ref/windows/win-setup.ps1" -OutFile $s
+#   notepad $s                                                                  # 내용 확인
+#   Set-ExecutionPolicy -Scope Process Bypass -Force; Unblock-File $s; & $s    # 다 읽은 뒤 실행
+#   └ 마지막 줄 맨 앞의 Set-ExecutionPolicy 는 **지금 열려 있는 이 창에만** 적용된다(창을 닫으면 원래대로).
 #     이게 없으면 새 PC 기본값(Restricted)에서 파일은 내려받아지지만 실행이 막힌다.
 #   └ 이 경우 스크립트 파일 하나만 내려오므로, 팀 셸 설정(PowerShell 프로필)은
 #     7단계(PowerShell 프로필 설정)에서 이 스크립트가 직접 만들어 준다.
@@ -73,7 +77,8 @@ try {
 } catch { }
 
 # 이 레포의 원본 파일 주소 — 메모리 실행(iex)으로 시작해 다시 실행할 파일이 없을 때
-# 이 스크립트를 임시 폴더로 내려받는 데 쓴다.
+# 이 스크립트를 임시 폴더로 내려받는 데 쓴다(파일로 실행했다면 쓰이지 않는다). 최신 main 을 받는 것이
+# 의도이며, 특정 시점으로 맞추려면 main 을 커밋 SHA 로 바꾼다.
 $RepoRawBase = 'https://raw.githubusercontent.com/coco-de/desktop/main/windows'
 
 # ------------------------------------------------------------

@@ -7,13 +7,18 @@
 #       x86_64(amd64) · ARM64 둘 다 지원한다.
 #
 # 실행 (레포를 clone한 경우): chmod +x linux-setup.sh && ./linux-setup.sh
-# 실행 (clone 없이 한 줄로):
-#   d="$(mktemp -d)" && curl -fsSL https://raw.githubusercontent.com/coco-de/desktop/main/linux/linux-setup.sh -o "$d/linux-setup.sh" && bash "$d/linux-setup.sh"
-#   └ ⚠ 맥처럼 `bash -c "$(curl ...)"` 로 쓰면 안 된다. 리눅스 커널은 ARG_MAX 와 별개로
-#     **인자 하나의 크기**를 128KiB(MAX_ARG_STRLEN)로 제한하는데 이 스크립트는 그보다 커서
-#     "Argument list too long" 으로 실행 자체가 실패한다. (맥에는 그 제한이 없다)
-#   └ 임시 폴더로 받는 방식이라 표준입력도 그대로 남아 3.2단계의 이메일 입력이 정상 동작하고,
-#     옵션도 `-- ` 없이 그냥 뒤에 붙이면 된다: bash "$d/linux-setup.sh" --dart-only
+# 실행 (clone 없이): 스크립트를 파일로 내려받아 내용을 확인한 뒤 실행한다 — 한 단계씩 따로 실행
+#   ref=main   # 검토한 버전을 고정하려면 main 대신 커밋 SHA(40자리)
+#   mkdir -p ~/co-linux
+#   curl -fsSLo ~/co-linux/linux-setup.sh "https://raw.githubusercontent.com/coco-de/desktop/$ref/linux/linux-setup.sh"
+#   less ~/co-linux/linux-setup.sh                                   # 내용 확인 (q 로 나가기)
+#   chmod +x ~/co-linux/linux-setup.sh && ~/co-linux/linux-setup.sh  # 다 읽은 뒤 실행
+#   └ ⚠ `bash -c "$(curl ...)"` 처럼 내려받은 내용을 바로 실행하는 방식은 쓰지 않는다. 내용을 확인할 수
+#     없고, 리눅스 커널은 ARG_MAX 와 별개로 **인자 하나의 크기**를 128KiB(MAX_ARG_STRLEN)로 제한하는데
+#     이 스크립트는 그보다 커서 "Argument list too long" 으로 실행 자체가 실패한다. (맥에는 그 제한이 없다)
+#   └ 파일로 실행하므로 표준입력도 그대로 남아 3.2단계의 이메일 입력이 정상 동작하고,
+#     옵션도 `-- ` 없이 그냥 뒤에 붙이면 된다: ~/co-linux/linux-setup.sh --dart-only
+#   └ 전용 폴더에 두는 이유: 스크립트 옆에 있는 .zshrc·.p10k.zsh 는 "직접 가져다 둔 설정"으로 읽힌다.
 #   └ 이 경우 스크립트 파일 하나만 내려오므로, 팀 셸 설정(.zshrc·.p10k.zsh)은
 #     0.5단계에서 같은 레포에서 따로 내려받는다.
 #   └ 이미 세팅한 PC에서 토큰(환경변수)만 다시 주입하려면: ./linux-setup.sh --env-only
@@ -612,6 +617,8 @@ fi
 #
 #   내려받기에 실패해도 중단하지 않는다 — 8단계의 기본 설정 생성 경로로 자연히 넘어간다.
 # ------------------------------------------------------------
+# 부속 파일(팀 셸 설정)은 이 저장소 main 의 최신본을 받는다. 팀 표준이 바뀌면 다음 실행부터
+# 따라가게 하려는 의도다. 특정 시점으로 맞추려면 main 을 커밋 SHA 로 바꾼다.
 REPO_RAW_BASE="https://raw.githubusercontent.com/coco-de/desktop/main/linux"
 # 8단계가 참조할 dotfile 위치. 기본은 스크립트 옆이고, 원라이너 실행이면 임시 폴더로 바뀐다.
 DOTFILE_DIR="$SCRIPT_DIR"

@@ -1,6 +1,6 @@
 # 🪟 Windows
 
-> 새로 받은 윈도우 PC 한 대를 명령어 한 줄로 co:code 팀 전체와 똑같은 개발환경으로 만들어주는 스크립트입니다.
+> 새로 받은 윈도우 PC 한 대를 몇 줄의 명령어로 co:code 팀 전체와 똑같은 개발환경으로 만들어주는 스크립트입니다.
 
 이 안내는 [coco-de/desktop](../README.md) 저장소의 Windows 부분입니다.
 
@@ -61,13 +61,33 @@ co:code는 엔지니어뿐 아니라 디자이너, PM도 하나의 엔지니어�
 
 ### 실행
 
-**시작 메뉴 > `PowerShell`** 을 열고, 아래 한 줄을 붙여넣은 뒤 Enter를 누르세요.
+스크립트를 먼저 파일로 **내려받아 내용을 직접 확인한 뒤** 실행합니다. **시작 메뉴 > `PowerShell`** 을 열고, 아래 세 단계를 **같은 창에서 하나씩 따로** 실행하세요(한꺼번에 붙여넣으면 확인 단계를 건너뛰게 됩니다).
+
+**1단계 — 내려받기.**
 
 ```powershell
-Set-ExecutionPolicy -Scope Process Bypass -Force; $s="$env:TEMP\win-setup.ps1"; iwr -UseBasicParsing https://raw.githubusercontent.com/coco-de/desktop/main/windows/win-setup.ps1 -OutFile $s; Unblock-File $s; & $s
+$ref = 'main'
+$s = "$env:TEMP\win-setup.ps1"
+iwr -UseBasicParsing "https://raw.githubusercontent.com/coco-de/desktop/$ref/windows/win-setup.ps1" -OutFile $s
 ```
 
-맨 앞의 `Set-ExecutionPolicy` 는 **지금 열려 있는 이 창에서만** 스크립트 실행을 허용합니다(창을 닫으면 원래대로 돌아갑니다). 이게 없으면 윈도우 기본값에서 파일은 내려받아지지만 실행이 아무 설명 없이 조용히 막힙니다.
+**2단계 — 내용 확인.** 메모장이 열립니다. 무슨 일을 하는지 읽어 보세요.
+
+```powershell
+notepad $s
+```
+
+**3단계 — 실행.** 다 읽으신 뒤에 실행하세요.
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass -Force; Unblock-File $s; & $s
+```
+
+3단계 맨 앞의 `Set-ExecutionPolicy` 는 **지금 열려 있는 이 창에서만** 스크립트 실행을 허용합니다(창을 닫으면 원래대로 돌아갑니다). 이게 없으면 윈도우 기본값에서 파일은 내려받아지지만 실행이 아무 설명 없이 조용히 막힙니다.
+
+> 🔖 **`$ref` 는 어느 시점의 스크립트를 받을지 정합니다.** `main` 은 가장 최신 버전입니다. 이미 검토한 버전을 그대로 쓰고 싶다면 `main` 대신 [커밋 번호(SHA, 40자리)](https://github.com/coco-de/desktop/commits/main)를 적으세요. 그 시점의 `win-setup.ps1` 만 받아집니다.
+
+> 💾 **같은 창에서는 옵션을 붙여 다시 실행할 수 있습니다.** `& $s -EnvOnly` 처럼 3단계 명령 뒤에 옵션을 그대로 붙이면 됩니다. 새 창에서는 1단계부터 다시 진행하세요.
 
 > ⏱ **설치에는 30분~2시간 정도 걸립니다.** Android SDK와 Visual Studio 빌드 도구가 수 GB짜리라 네트워크 속도에 따라 차이가 큽니다. 중간에 창을 닫지 마시고, 다른 일을 하셔도 됩니다.
 
@@ -412,7 +432,7 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 | | 도구 | 용도 |
 |---|---|---|
 | <img src="assets/icons/powershell.svg" width="20" height="20"> | PowerShell 7 (pwsh) | 팀 표준 셸. 윈도우에 기본 탑재된 '윈도우 PowerShell 5.1'과 동작이 달라, 스크립트는 없으면 자동으로 설치한 뒤(winget `Microsoft.PowerShell`) **PowerShell 7에서 스스로 다시 시작**합니다 |
-| | PowerShell 프로필 (Profile.ps1) | 터미널을 열 때마다 자동으로 읽히는 팀 공용 설정 파일. 맥의 `~/.zshrc` 자리입니다. 자동 제안·구문 색상·한글(UTF-8) 출력 설정이 들어갑니다. **마커로 감싼 블록만 갱신**하므로 개인 설정은 보존됩니다. 이전 PC의 설정을 그대로 옮기고 싶다면 그 PC의 `Profile.ps1`(`$PROFILE.CurrentUserAllHosts`)을 **`win-setup.ps1` 과 같은 폴더에 복사한 뒤 clone 방식으로 실행**하세요 — 프로필이 아직 없는 PC라면 그 파일을 출발점으로 삼습니다(한 줄 실행에는 '옆 폴더'가 없어 동작하지 않습니다) |
+| | PowerShell 프로필 (Profile.ps1) | 터미널을 열 때마다 자동으로 읽히는 팀 공용 설정 파일. 맥의 `~/.zshrc` 자리입니다. 자동 제안·구문 색상·한글(UTF-8) 출력 설정이 들어갑니다. **마커로 감싼 블록만 갱신**하므로 개인 설정은 보존됩니다. 이전 PC의 설정을 그대로 옮기고 싶다면 그 PC의 `Profile.ps1`(`$PROFILE.CurrentUserAllHosts`)을 **`win-setup.ps1` 과 같은 폴더에 복사한 뒤 실행**하세요(clone 한 폴더, 또는 [빠른 시작](#quickstart)에서 받은 `$env:TEMP`의 스크립트 옆) — 프로필이 아직 없는 PC라면 그 파일을 출발점으로 삼습니다 |
 | <img src="assets/icons/ohmyposh.png" width="20" height="20"> | Oh My Posh | 터미널 프롬프트에 현재 폴더·git 브랜치·실행 시간을 예쁘게 보여 주는 도구. winget `JanDeDobbeleer.OhMyPosh`(실패 시 공식 `ohmyposh.dev/install.ps1`) · 맥 powerlevel10k 대체이며, 테마도 p10k를 그대로 옮겨 온 공식 테마 `powerlevel10k_rainbow`를 씁니다 |
 | | PSReadLine | 예전에 친 명령을 회색으로 미리 보여 주고(→ 키로 수락), 명령줄에 구문 색상을 입힙니다. 맥의 `zsh-autosuggestions` + `zsh-syntax-highlighting` 대체 (PowerShell 7 기본 탑재) |
 | | MesloLGS NF (폰트) | 프롬프트 아이콘이 네모(□)로 깨지지 않게 하는 특수 폰트. **맥 스크립트와 폰트 이름까지 완전히 동일합니다.** 설치 후 Windows Terminal의 기본 글꼴로 자동 적용까지 해 줍니다 (맥의 Terminal.app AppleScript 단계에 해당). Windows Terminal 자체가 없으면 winget `Microsoft.WindowsTerminal`로 함께 설치합니다 |
@@ -568,7 +588,7 @@ Claude Code에서는 `/mcp`에서 `figma`·`mobbin`을 각각 인증합니다. �
 
 ## 🔒 안전한가요
 
-- **스크립트 전체가 공개되어 있습니다.** [`win-setup.ps1`](./win-setup.ps1) 한 파일뿐이고, 각 단계마다 무엇을 왜 하는지 한국어 주석으로 적어두었습니다.
+- **스크립트 전체가 공개되어 있습니다.** [`win-setup.ps1`](./win-setup.ps1) 한 파일뿐이고, 각 단계마다 무엇을 왜 하는지 한국어 주석으로 적어두었습니다. [빠른 시작](#quickstart)은 스크립트를 먼저 파일로 내려받아 읽어 본 뒤 **그 파일을** 실행하는 순서입니다.
 - **비밀값(토큰)은 이 저장소에 없습니다.** 전부 팀 1Password 금고에서 읽어와 **내 PC의 사용자 환경변수**에만 저장됩니다. git에 커밋되지 않고, 스크립트 화면에도 값이 찍히지 않습니다.
   > ⚠️ 다만 사용자 환경변수는 **암호화가 아닙니다.** 내 계정으로 실행되는 모든 프로그램이 평문으로 읽을 수 있습니다. 파일에 적어 OneDrive로 올라가는 사고를 막는 것이 목적입니다.
 - **관리자 권한을 최소한으로 씁니다.** 스크립트 전체를 관리자로 돌리지 않고, 꼭 필요한 세 가지(개발자 모드·긴 경로·브라우저 확장)만 관리자일 때 처리하고 아니면 안내만 합니다.

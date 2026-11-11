@@ -5,8 +5,14 @@
 #       Xcode.app도 1.5단계에서 자동 설치를 시도한다(App Store 로그인 필요).
 #
 # 실행 (레포를 clone한 경우): chmod +x mac-setup.sh && ./mac-setup.sh
-# 실행 (clone 없이 한 줄로):
-#   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coco-de/desktop/main/macos/mac-setup.sh)"
+# 실행 (clone 없이): 스크립트를 파일로 내려받아 내용을 확인한 뒤 실행한다 — 한 단계씩 따로 실행
+#   ref=main   # 검토한 버전을 고정하려면 main 대신 커밋 SHA(40자리)
+#   mkdir -p ~/co-mac
+#   curl -fsSLo ~/co-mac/mac-setup.sh "https://raw.githubusercontent.com/coco-de/desktop/$ref/macos/mac-setup.sh"
+#   open -e ~/co-mac/mac-setup.sh                              # 내용 확인
+#   chmod +x ~/co-mac/mac-setup.sh && ~/co-mac/mac-setup.sh    # 다 읽은 뒤 실행
+#   └ 홈 폴더가 아니라 전용 폴더(~/co-mac)에 둔다 — 홈 폴더에는 보통 .zshrc 가 이미 있어,
+#     스크립트가 그 파일을 "옆에 가져다 둔 설정"으로 오인해 팀 설정을 건너뛴다.
 #   └ 이 경우 스크립트 파일 하나만 내려오므로, 팀 셸 설정(.zshrc·.p10k.zsh)은
 #     0.5단계에서 같은 레포에서 따로 내려받는다.
 #   └ 이미 세팅한 맥에서 토큰(환경변수)만 다시 주입하려면: ./mac-setup.sh --env-only
@@ -286,6 +292,8 @@ fi
 #
 #   내려받기에 실패해도 중단하지 않는다 — 8단계의 기본 설정 생성 경로로 자연히 넘어간다.
 # ------------------------------------------------------------
+# 부속 파일(팀 셸 설정 · 디스크 정리 스크립트)은 이 저장소 main 의 최신본을 받는다. 팀 표준이 바뀌면
+# 다음 실행부터 따라가게 하려는 의도다. 특정 시점으로 맞추려면 main 을 커밋 SHA 로 바꾼다.
 REPO_RAW_BASE="https://raw.githubusercontent.com/coco-de/desktop/main/macos"
 # 8단계가 참조할 dotfile 위치. 기본은 스크립트 옆이고, 원라이너 실행이면 임시 폴더로 바뀐다.
 DOTFILE_DIR="$SCRIPT_DIR"

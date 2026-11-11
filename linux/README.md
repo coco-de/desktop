@@ -1,6 +1,6 @@
 # 🐧 Linux
 
-> 새로 받은 우분투 PC 한 대를 명령어 한 줄로 co:code 팀 전체와 똑같은 개발환경으로 만들어주는 스크립트입니다.
+> 새로 받은 우분투 PC 한 대를 몇 줄의 명령어로 co:code 팀 전체와 똑같은 개발환경으로 만들어주는 스크립트입니다.
 
 이 안내는 [coco-de/desktop](../README.md) 저장소의 Linux 부분입니다.
 
@@ -62,20 +62,40 @@ co:code는 엔지니어뿐 아니라 디자이너, PM도 하나의 엔지니어�
 
 ### 실행
 
-터미널을 열고 (**Ctrl + Alt + T**), 아래 한 줄을 붙여넣은 뒤 Enter를 누르세요.
+스크립트를 먼저 파일로 **내려받아 내용을 직접 확인한 뒤** 실행합니다. 터미널을 열고 (**Ctrl + Alt + T**), 아래 세 단계를 **하나씩 따로** 실행하세요(한꺼번에 붙여넣으면 확인 단계를 건너뛰게 됩니다).
+
+**1단계 — 내려받기.** 전용 폴더(`~/co-linux`)에 저장합니다.
 
 ```bash
-d="$(mktemp -d)" && curl -fsSL https://raw.githubusercontent.com/coco-de/desktop/main/linux/linux-setup.sh -o "$d/linux-setup.sh" && bash "$d/linux-setup.sh"
+ref=main
+mkdir -p ~/co-linux
+curl -fsSLo ~/co-linux/linux-setup.sh "https://raw.githubusercontent.com/coco-de/desktop/$ref/linux/linux-setup.sh"
 ```
 
-> 💡 **맥(macos)과 명령 모양이 다릅니다.** 맥에서 쓰는 `bash -c "$(curl ...)"` 형태는 리눅스에서 동작하지 않습니다 — 리눅스 커널은 **인자 하나의 크기를 128KiB로 제한**하는데(`MAX_ARG_STRLEN`) 이 스크립트가 그보다 커서 `Argument list too long` 으로 실행 자체가 막힙니다. 그래서 임시 폴더로 받아 실행합니다.
+**2단계 — 내용 확인.** 무슨 일을 하는지 읽어 보세요. (`q` 를 누르면 빠져나옵니다)
+
+```bash
+less ~/co-linux/linux-setup.sh
+```
+
+**3단계 — 실행.** 다 읽으신 뒤에 실행하세요.
+
+```bash
+chmod +x ~/co-linux/linux-setup.sh && ~/co-linux/linux-setup.sh
+```
+
+> 🔖 **`ref` 는 어느 시점의 스크립트를 받을지 정합니다.** `main` 은 가장 최신 버전입니다. 이미 검토한 버전을 그대로 쓰고 싶다면 `main` 대신 [커밋 번호(SHA, 40자리)](https://github.com/coco-de/desktop/commits/main)를 적으세요. 그 시점의 `linux-setup.sh` 만 받아집니다.
+
+> 💡 **스크립트를 파일로 받아 실행하는 이유가 하나 더 있습니다.** `bash -c "$(curl ...)"` 처럼 내려받은 내용을 바로 실행하는 방식은 내용을 확인할 수 없을 뿐 아니라, 리눅스 커널이 **인자 하나의 크기를 128KiB로 제한**하는데(`MAX_ARG_STRLEN`) 이 스크립트가 그보다 커서 `Argument list too long` 으로 실행 자체가 막힙니다.
+
+> 💾 **스크립트는 `~/co-linux` 에 남습니다.** 나중에 옵션을 쓸 때는 `cd ~/co-linux` 으로 그 폴더에 들어가 `./linux-setup.sh --dart-only` 처럼 다시 쓰면 됩니다. 이 문서의 `./linux-setup.sh …` 명령은 모두 **스크립트가 있는 폴더에서** 실행하는 형태입니다.
 
 > ⏱ **설치에는 30분~2시간 정도 걸립니다.** Android SDK가 수 GB짜리이고 pyenv가 파이썬을 소스에서 직접 빌드해서, 네트워크·CPU 속도에 따라 차이가 큽니다. 중간에 창을 닫지 마시고, 다른 일을 하셔도 됩니다.
 
 > 🔐 **중간에 암호를 한 번 물어봅니다.** 앱 설치에 관리자 권한이 필요해서입니다. 로그인할 때 쓰는 그 암호를 입력하시면 됩니다. (입력해도 화면에 아무 글자도 안 보이는 게 정상입니다.)
 
 <details>
-<summary>레포를 clone해서 실행하고 싶다면 (권장)</summary>
+<summary>레포를 통째로 clone해서 실행하고 싶다면 (git에 익숙한 분)</summary>
 
 <br>
 
@@ -87,7 +107,7 @@ chmod +x linux-setup.sh
 ./linux-setup.sh
 ```
 
-**clone 쪽이 한 줄 실행보다 나은 점이 하나 있습니다.** 기존에 쓰던 PC(맥 포함)의 `~/.zshrc`·`~/.p10k.zsh`를 이 폴더에 복사해 두면, 스크립트가 레포의 기본 설정 대신 **그 파일을 그대로 씁니다.** 터미널 테마와 개인 별칭을 그대로 옮겨올 수 있습니다. 한 줄 실행에는 "옆 폴더"라는 개념이 없어서 이 기능을 쓸 수 없습니다.
+**기존에 쓰던 PC의 터미널 설정을 그대로 쓰고 싶다면** 기존 PC(맥 포함)의 `~/.zshrc`·`~/.p10k.zsh`를 **스크립트가 있는 폴더**(clone 한 `desktop/linux` 또는 빠른 시작의 `~/co-linux`)에 복사해 두세요. 스크립트가 레포의 기본 설정 대신 **그 파일을 그대로 씁니다.** 터미널 테마와 개인 별칭을 그대로 옮겨올 수 있습니다. 빠른 시작이라면 2단계(확인)와 3단계(실행) 사이에 복사하면 됩니다.
 
 </details>
 
@@ -114,7 +134,7 @@ chmod +x linux-setup.sh
 | `--system-only` | 관리자 권한이 필요한 설정(docker·kvm 그룹, Android 기기 인식 규칙)만 다시 점검 |
 | `-h`, `--help` | 사용법 표시 |
 
-> 💡 한 줄 실행에서도 옵션은 그냥 뒤에 붙이면 됩니다 — `bash "$d/linux-setup.sh" --dart-only` 처럼요.
+> 💡 옵션은 그냥 뒤에 붙이면 됩니다 — `~/co-linux/linux-setup.sh --dart-only` 처럼요.
 > (clone 해서 쓰신다면 `./linux-setup.sh --dart-only` 로 똑같이 쓰시면 됩니다.)
 
 <br>
@@ -535,7 +555,7 @@ Claude Code에서는 `/mcp`에서 `figma`·`mobbin`을 각각 인증합니다. �
 
 ## 🔒 안전한가요
 
-- **스크립트 전체가 공개돼 있습니다.** [`linux-setup.sh`](./linux-setup.sh) 하나뿐이고, 무엇을 설치하는지 한국어 주석으로 전부 적혀 있습니다.
+- **스크립트 전체가 공개돼 있습니다.** [`linux-setup.sh`](./linux-setup.sh) 하나뿐이고, 무엇을 설치하는지 한국어 주석으로 전부 적혀 있습니다. [빠른 시작](#quickstart)은 스크립트를 먼저 파일로 내려받아 읽어 본 뒤 **그 파일을** 실행하는 순서입니다.
 - **비밀번호·토큰을 이 저장소에 저장하지 않습니다.** 팀 공용 토큰은 실행 시점에 **1Password에서 직접 읽어옵니다.** 저장소에는 "어느 항목을 읽을지"(`op://API Token/...`)만 적혀 있고 값은 없습니다.
 
 ### Cocode 조직 App Store Connect API 키
