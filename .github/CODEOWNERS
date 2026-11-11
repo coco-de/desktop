@@ -1,0 +1,11 @@
+# 아래 경로를 바꾸는 PR 은 해당 소유자가 검토합니다.
+
+# 워크플로·저장소 설정 파일
+/.github/                   @goccd
+
+# 사용자의 컴퓨터를 직접 바꾸는 설치 스크립트와 보조 도구
+/macos/mac-setup.sh         @goccd
+/linux/linux-setup.sh       @goccd
+/windows/win-setup.ps1      @goccd
+/macos/signing-keychains/   @goccd
+/macos/disk-cleanup/        @goccd
