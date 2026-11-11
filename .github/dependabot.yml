@@ -1,0 +1,15 @@
+# 워크플로가 쓰는 외부 액션의 새 버전을 주 1회 확인해 PR 로 알려 줍니다.
+# 액션은 커밋 SHA 로 고정돼 있으므로, 갱신 PR 은 SHA 와 줄 끝 버전 주석(# vX.Y.Z)을 함께 바꿉니다.
+# PR 이 열리면 변경된 액션의 릴리스 노트를 읽고 CI 가 통과하는지 확인한 뒤 병합합니다.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+    groups:
+      github-actions:
+        patterns:
+          - "*"
