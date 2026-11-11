@@ -1,6 +1,6 @@
 # 💻 desktop
 
-> 새로 받은 컴퓨터 한 대를 명령어 한 줄로 co:code 팀 전체와 똑같은 개발환경으로 만들어주는 스크립트입니다.
+> 새로 받은 컴퓨터 한 대를 몇 줄의 명령어로 co:code 팀 전체와 똑같은 개발환경으로 만들어주는 스크립트입니다.
 
 [![macOS](https://img.shields.io/badge/macOS-000000?logo=apple&logoColor=white)](./macos/)
 [![Windows](https://img.shields.io/badge/Windows_10%2F11-0078D4?logo=windows&logoColor=white)](./windows/)
@@ -16,14 +16,38 @@ co:code는 엔지니어뿐 아니라 디자이너, PM도 하나의 엔지니어�
 
 <br>
 
+## 🔍 설치 순서 — 내려받고, 읽어 보고, 실행합니다
+
+세 OS 모두 같은 순서입니다. 스크립트를 먼저 파일로 **내려받아 내용을 직접 확인한 뒤** 실행합니다. 아래 ①②③을 **한 단계씩 따로** 실행하세요(한꺼번에 붙여넣으면 확인 단계를 건너뛰게 됩니다).
+
+> 🔖 **`ref` 는 어느 시점의 스크립트를 받을지 정합니다.** `main` 은 가장 최신 버전입니다. 이미 검토한 버전을 그대로 쓰고 싶다면 `main` 대신 [커밋 번호(SHA, 40자리)](https://github.com/coco-de/desktop/commits/main)를 적으세요. 그 시점의 파일만 받아집니다.
+
+<br>
+
 ## 🍎 맥북 (macOS)
 
 자세한 안내: **[macos/README.md](./macos/README.md)**
 
-터미널을 열고 아래 한 줄을 붙여넣은 뒤 Enter를 누르세요.
+터미널을 열고 아래 세 단계를 하나씩 실행하세요.
+
+**① 내려받기** — 전용 폴더(`~/co-mac`)에 저장합니다.
 
 ```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/coco-de/desktop/main/macos/mac-setup.sh)"
+ref=main
+mkdir -p ~/co-mac
+curl -fsSLo ~/co-mac/mac-setup.sh "https://raw.githubusercontent.com/coco-de/desktop/$ref/macos/mac-setup.sh"
+```
+
+**② 확인** — 텍스트 편집기가 열립니다. 무슨 일을 하는지 읽어 보세요.
+
+```bash
+open -e ~/co-mac/mac-setup.sh
+```
+
+**③ 실행** — 다 읽은 뒤에 실행하세요.
+
+```bash
+chmod +x ~/co-mac/mac-setup.sh && ~/co-mac/mac-setup.sh
 ```
 
 <br>
@@ -32,10 +56,26 @@ co:code는 엔지니어뿐 아니라 디자이너, PM도 하나의 엔지니어�
 
 자세한 안내: **[windows/README.md](./windows/README.md)**
 
-시작 메뉴에서 `PowerShell`을 열고, 아래 한 줄을 붙여넣은 뒤 Enter를 누르세요.
+시작 메뉴에서 `PowerShell`을 열고, 아래 세 단계를 **같은 창에서** 하나씩 실행하세요.
+
+**① 내려받기**
 
 ```powershell
-Set-ExecutionPolicy -Scope Process Bypass -Force; $s="$env:TEMP\win-setup.ps1"; iwr -UseBasicParsing https://raw.githubusercontent.com/coco-de/desktop/main/windows/win-setup.ps1 -OutFile $s; Unblock-File $s; & $s
+$ref = 'main'
+$s = "$env:TEMP\win-setup.ps1"
+iwr -UseBasicParsing "https://raw.githubusercontent.com/coco-de/desktop/$ref/windows/win-setup.ps1" -OutFile $s
+```
+
+**② 확인** — 메모장이 열립니다. 무슨 일을 하는지 읽어 보세요.
+
+```powershell
+notepad $s
+```
+
+**③ 실행** — 다 읽은 뒤에 실행하세요.
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass -Force; Unblock-File $s; & $s
 ```
 
 <br>
@@ -44,10 +84,26 @@ Set-ExecutionPolicy -Scope Process Bypass -Force; $s="$env:TEMP\win-setup.ps1"; 
 
 자세한 안내: **[linux/README.md](./linux/README.md)**
 
-터미널을 열고 (**Ctrl + Alt + T**), 아래 한 줄을 붙여넣은 뒤 Enter를 누르세요.
+터미널을 열고 (**Ctrl + Alt + T**), 아래 세 단계를 하나씩 실행하세요.
+
+**① 내려받기** — 전용 폴더(`~/co-linux`)에 저장합니다.
 
 ```bash
-d="$(mktemp -d)" && curl -fsSL https://raw.githubusercontent.com/coco-de/desktop/main/linux/linux-setup.sh -o "$d/linux-setup.sh" && bash "$d/linux-setup.sh"
+ref=main
+mkdir -p ~/co-linux
+curl -fsSLo ~/co-linux/linux-setup.sh "https://raw.githubusercontent.com/coco-de/desktop/$ref/linux/linux-setup.sh"
+```
+
+**② 확인** — 무슨 일을 하는지 읽어 보세요. (`q` 를 누르면 빠져나옵니다)
+
+```bash
+less ~/co-linux/linux-setup.sh
+```
+
+**③ 실행** — 다 읽은 뒤에 실행하세요.
+
+```bash
+chmod +x ~/co-linux/linux-setup.sh && ~/co-linux/linux-setup.sh
 ```
 
 <br>

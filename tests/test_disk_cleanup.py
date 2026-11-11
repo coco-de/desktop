@@ -124,10 +124,10 @@ class DartTmpCleanupTests(unittest.TestCase):
         make_tree(self.root / 'dart_test.kernel.busy', 3 * HOUR)       # 명령줄이 가리킴 → 남김
         owned = self.root / 'dart_test.kernel.owned'                   # 만든 러너에서 dart test 실행 중 → 남김
         make_tree(owned, 3 * HOUR)
-        (owned / 'test.dart').write_text("import '/Users/x/actions/runner-zeta/_work/app/app/test/a_test.dart';\n")
+        (owned / 'test.dart').write_text("import '/Users/<you>/actions/runner-example/_work/app/app/test/a_test.dart';\n")
         set_age(owned, 3 * HOUR)
         make_tree(self.root / 'dart_test.kernel.orphan', 3 * HOUR)     # 아무도 안 씀 → 지움
-        procs = [hold(self.root / 'dart_test.kernel.busy'), hold('actions/runner-zeta', 'dart', 'test')]
+        procs = [hold(self.root / 'dart_test.kernel.busy'), hold('actions/runner-example', 'dart', 'test')]
         try:
             result = self.run_script(self.root, self.home)
         finally:

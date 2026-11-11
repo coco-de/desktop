@@ -1,0 +1,41 @@
+# 로컬 비밀·자격증명 파일 — 저장소에 올리지 않는다
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p8
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.mobileprovision
+
+# 개인 로컬 설정
+.claude/settings.local.json
+
+# 로그·임시 파일
+*.log
+*.tmp
+*.swp
+*.swo
+*~
+
+# Python 캐시 (tests/ 실행 시 생김)
+__pycache__/
+*.py[cod]
+
+# OS 파일
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# 에디터 파일
+.idea/
+.vscode/
+*.code-workspace
