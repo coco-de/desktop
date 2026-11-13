@@ -5,6 +5,7 @@
 가짜 명령으로 바꿔 끼워 어떤 명령을 어떤 인자로 부르는지만 본다 — 진짜 Docker 는 건드리지 않는다.
 """
 from datetime import datetime, timezone
+import importlib.util
 import os
 from pathlib import Path
 import plistlib
@@ -23,7 +24,9 @@ JOBS = {
     'dart-tmp-cleanup': ('cleanup-dart-tmp.sh', 900),
     'runner-cache-cleanup': ('cleanup-runner-cache.sh', 86400),
     'docker-disk-cleanup': ('cleanup-docker-disk.sh', 86400),
+    'runner-cache-dedupe': ('dedupe-runner-cache.sh', 86400),
 }
+HELPERS = ('dedupe-runner-cache.py',)      # 작업 스크립트가 옆에서 부르는 보조 파일 (launchd 작업은 아니다)
 MINUTE = 60
 HOUR = 3600
 DAY = 24 * HOUR
@@ -221,6 +224,250 @@ class RunnerCacheCleanupTests(unittest.TestCase):
         self.assertNotIn('회수', result.stdout)
 
 
+def load_engine():
+    """dedupe-runner-cache.py 를 모듈로 읽는다 (물리 배치를 직접 비교해 '정말 블록을 나눠 쓰는지' 확인하려고)."""
+    spec = importlib.util.spec_from_file_location('dedupe_runner_cache', CLEANUP / 'dedupe-runner-cache.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+@unittest.skipUnless(sys.platform == 'darwin', 'APFS 복제(clonefile)는 macOS 에만 있다')
+class RunnerCacheDedupeTests(unittest.TestCase):
+    """러너마다 따로 받은 같은 파일을 복제본으로 합치되, 쉬는 러너의 내용이 같은 파일만 바꾸는지 본다."""
+    RUNNERS = ('runA', 'runB', 'runC')
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.home = Path(self.temp.name) / 'home'
+        self.tmpdir = Path(self.temp.name) / 'tmp'       # 러너별 pub 캐시를 찾는 임시 폴더 — 진짜 /private/tmp 가 섞이지 않게
+        self.tmpdir.mkdir()
+        self.engine = load_engine()
+        self.big = os.urandom(2 * 1024 * 1024)
+        for i, name in enumerate(self.RUNNERS):
+            runner = self.home / 'actions' / name
+            runner.mkdir(parents=True)
+            (runner / '.runner').write_text('{}')
+            sdk = self.sdk(name)
+            self.write(sdk / 'lib/big.bin', self.big, mtime=1_700_000_000 + i * 1000)    # 러너마다 mtime 이 다르다
+            self.write(sdk / 'lib/small.txt', b'same small file\n')
+            self.write(sdk / 'lib/run.sh', b'#!/bin/sh\necho hi\n', mode=0o644 if name == 'runB' else 0o755)
+            self.write(sdk / 'lib/diff.bin', os.urandom(4096))                           # 크기만 같고 내용은 다르다
+            self.write(sdk / 'lib/empty', b'')
+            self.write(sdk / 'lib/lockfile', b'lock-content\n')                          # 쓰는 중 바뀌는 이름
+            self.write(sdk / '_temp/scratch.bin', self.big)                              # 임시 폴더
+            os.symlink('big.bin', sdk / 'lib/sym')
+        self.write(self.sdk('runA') / 'lib/hl1', b'hardlinked' * 1000)                   # 하드링크 쌍 (A 안에서)
+        os.link(self.sdk('runA') / 'lib/hl1', self.sdk('runA') / 'lib/hl2')
+        self.write(self.sdk('runB') / 'lib/hl1', b'hardlinked' * 1000)
+        self.write(self.sdk('runA') / 'lib/only_a.bin', b'only a')                       # 한 사본에만 있다
+        self.before = self.inodes()
+
+    def tearDown(self):
+        self.temp.cleanup()
+
+    def sdk(self, name):
+        return self.home / 'actions' / name / '_work/_tool/flutter/stable-1/flutter'
+
+    @staticmethod
+    def write(path, data, mode=0o644, mtime=None):
+        """mtime 을 안 주면 1시간 전 — 기본 '최근에 바뀐 파일은 건너뜀' 기준(10분)에 안 걸리게."""
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+        path.chmod(mode)
+        t = int((mtime if mtime is not None else time.time() - 3600) * 10**9)
+        os.utime(path, ns=(t, t))
+
+    def inodes(self):
+        return {str(p): os.lstat(p).st_ino for p in self.home.rglob('*') if p.is_file() or p.is_symlink()}
+
+    def same_blocks(self, a, b):
+        """두 파일이 디스크 블록을 나눠 쓰는가 (복제본이면 물리 배치가 같다)."""
+        sig_a = self.engine.physical_signature(str(a), os.stat(a).st_size)
+        sig_b = self.engine.physical_signature(str(b), os.stat(b).st_size)
+        return sig_a is not None and sig_a == sig_b
+
+    def assertUntouched(self, path):
+        self.assertEqual(os.lstat(path).st_ino, self.before[str(path)], f'바뀌면 안 됨: {path.relative_to(self.home)}')
+
+    def run_engine(self, *extra, apply=True):
+        cmd = [sys.executable, '-I', str(CLEANUP / 'dedupe-runner-cache.py'), '--home', str(self.home),
+               '--tmp-dir', str(self.tmpdir), '--min-age', '0', '--workers', '2', *extra]
+        if apply:
+            cmd.append('--apply')
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        line = [l for l in result.stdout.splitlines() if l.startswith('RESULT ')][-1]
+        return {k: v for k, v in (kv.split('=', 1) for kv in line.split()[1:])}
+
+    def run_wrapper(self, dry=False):
+        env = dict(os.environ, HOME=str(self.home), DEDUPE_PYTHON=sys.executable, DEDUPE_MIN_AGE='0',
+                   DEDUPE_TMP_DIR=str(self.tmpdir), DEDUPE_WORKERS='2')
+        if dry:
+            env['DRY_RUN'] = '1'
+        return subprocess.run(['sh', str(CLEANUP / 'dedupe-runner-cache.sh')], env=env,
+                              capture_output=True, text=True, timeout=180)
+
+    def test_merges_identical_files_and_leaves_everything_else_alone(self):
+        result = self.run_engine()
+
+        self.assertEqual(result['replaced'], '6')                # big · small · run.sh 를 B · C 에서
+        for rel in ('lib/big.bin', 'lib/small.txt', 'lib/run.sh'):
+            original = self.sdk('runA') / rel
+            self.assertUntouched(original)                        # 원본은 그대로
+            for name in ('runB', 'runC'):
+                copy = self.sdk(name) / rel
+                self.assertEqual(copy.read_bytes(), original.read_bytes())
+                self.assertTrue(self.same_blocks(original, copy), f'블록을 나눠 써야 함: {name}/{rel}')
+                self.assertNotEqual(os.lstat(copy).st_ino, self.before[str(copy)])
+        # 각 사본이 자기 모드·mtime 을 그대로 가진다
+        for i, name in enumerate(self.RUNNERS):
+            self.assertEqual(os.stat(self.sdk(name) / 'lib/big.bin').st_mtime_ns, (1_700_000_000 + i * 1000) * 10**9)
+        self.assertEqual(os.stat(self.sdk('runB') / 'lib/run.sh').st_mode & 0o777, 0o644)
+        self.assertEqual(os.stat(self.sdk('runC') / 'lib/run.sh').st_mode & 0o777, 0o755)
+        # 건드리면 안 되는 것
+        for name in self.RUNNERS:
+            for rel in ('lib/diff.bin', 'lib/empty', 'lib/lockfile', '_temp/scratch.bin', 'lib/sym'):
+                self.assertUntouched(self.sdk(name) / rel)
+        self.assertTrue(os.path.islink(self.sdk('runB') / 'lib/sym'))
+        self.assertEqual(os.stat(self.sdk('runA') / 'lib/hl1').st_nlink, 2)
+        self.assertTrue(os.path.samefile(self.sdk('runA') / 'lib/hl1', self.sdk('runA') / 'lib/hl2'))
+        self.assertUntouched(self.sdk('runB') / 'lib/hl1')
+        self.assertFalse([p for p in self.home.rglob('.dd*')], '임시 파일이 남으면 안 됨')
+
+    def test_second_run_reads_nothing_new(self):
+        first = self.run_engine()
+        second = self.run_engine()
+
+        self.assertEqual(second['replaced'], '0')
+        self.assertGreaterEqual(int(second['already_shared']), 6)
+        self.assertLess(int(second['hashed_bytes']), int(first['hashed_bytes']) // 10,
+                        '이미 합쳐진 파일은 다시 읽지 않아야 함')
+
+    def test_runner_running_a_job_is_never_modified(self):
+        busy = hold(self.home / 'actions/runB/bin/Runner.Worker', 'spawnclient')
+        try:
+            result = self.run_engine()
+        finally:
+            stop(busy)
+
+        for rel in ('lib/big.bin', 'lib/small.txt', 'lib/run.sh'):
+            source = self.sdk('runB') / rel
+            self.assertUntouched(source)                          # 일하는 러너 B 는 원본으로만 쓰인다
+            for name in ('runA', 'runC'):
+                self.assertTrue(self.same_blocks(source, self.sdk(name) / rel), f'{name}/{rel}')
+        self.assertEqual(result['replaced'], '6')
+
+    def test_runner_that_is_busy_only_with_another_runners_job_is_not_confused(self):
+        """runBB 의 잡은 이름이 비슷한 runB 를 바쁘게 만들지 않는다 (경로 끝의 / 까지 비교)."""
+        busy = hold(self.home / 'actions/runBB/bin/Runner.Worker')
+        try:
+            result = self.run_engine()
+        finally:
+            stop(busy)
+
+        self.assertEqual(result['replaced'], '6')
+
+    def test_shared_cache_is_only_a_source(self):
+        pkg = 'hosted/pub.dev/pkg-1.0.0/lib/a.dart'
+        for name in ('.pub-cache-shared', '.pub-cache-runA', '.pub-cache-runB'):
+            self.write(self.home / name / pkg, b'class A {}\n' * 200)
+            self.write(self.home / name / 'hosted/pub.dev/.cache/pkg-versions.json', b'{"versions":[]}\n' * 50)
+            self.write(self.home / name / '_temp/scratch', b'tmp\n' * 100)
+        before = self.inodes()
+
+        self.run_engine()
+
+        shared = self.home / '.pub-cache-shared' / pkg
+        self.assertEqual(os.lstat(shared).st_ino, before[str(shared)], '공용 캐시는 바뀌면 안 됨')
+        for name in ('.pub-cache-runA', '.pub-cache-runB'):
+            copy = self.home / name / pkg
+            self.assertNotEqual(os.lstat(copy).st_ino, before[str(copy)])
+            self.assertTrue(self.same_blocks(shared, copy))
+            for rel in ('hosted/pub.dev/.cache/pkg-versions.json', '_temp/scratch'):
+                path = self.home / name / rel
+                self.assertEqual(os.lstat(path).st_ino, before[str(path)], f'대상이 아님: {name}/{rel}')
+
+    def test_recently_changed_files_wait_for_a_later_run(self):
+        pkg = 'hosted/pub.dev/fresh-1.0.0/lib/f.dart'
+        for name in ('.pub-cache-runA', '.pub-cache-runB'):
+            self.write(self.home / name / pkg, b'fresh\n' * 300, mtime=time.time())
+        before = self.inodes()
+
+        skipped = self.run_engine('--min-age', '600')
+        self.assertGreaterEqual(int(skipped['skipped_recent']), 1)
+        for name in ('.pub-cache-runA', '.pub-cache-runB'):
+            path = self.home / name / pkg
+            self.assertEqual(os.lstat(path).st_ino, before[str(path)])
+
+        self.run_engine('--min-age', '0')                            # 10분이 지났다고 치면 이번엔 합친다
+        self.assertTrue(self.same_blocks(self.home / '.pub-cache-runA' / pkg, self.home / '.pub-cache-runB' / pkg))
+
+    def test_gradle_only_downloaded_artifacts_are_merged(self):
+        jar = 'caches/modules-2/files-2.1/org.example/lib/1.0/abc123/lib-1.0.jar'
+        untouched = ['caches/8.0/fileHashes/fileHashes.bin',            # Gradle 이 제자리에서 고쳐 쓰는 DB
+                     'caches/modules-2/metadata-2.1/descriptors.bin',
+                     'daemon/8.0/daemon.out.log',
+                     'caches/8.0/cache.properties']
+        for name in ('.gradle-runA', '.gradle-runB'):
+            self.write(self.home / name / jar, b'PK jar bytes ' * 5000)
+            for rel in untouched:
+                self.write(self.home / name / rel, b'same bytes ' * 100)
+        before = self.inodes()
+
+        self.run_engine()
+
+        self.assertTrue(self.same_blocks(self.home / '.gradle-runA' / jar, self.home / '.gradle-runB' / jar))
+        for name in ('.gradle-runA', '.gradle-runB'):
+            for rel in untouched:
+                path = self.home / name / rel
+                self.assertEqual(os.lstat(path).st_ino, before[str(path)], f'대상이 아님: {name}/{rel}')
+
+    def test_dry_run_counts_without_changing_anything(self):
+        result = self.run_wrapper(dry=True)
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.inodes(), self.before)
+        self.assertIn('[dry] 바꿀 파일 6개', result.stdout)
+        self.assertNotIn('중복 제거 파일', result.stdout)
+
+    def test_wrapper_writes_one_line_only_when_something_changed(self):
+        first = self.run_wrapper()
+        second = self.run_wrapper()
+
+        self.assertEqual(first.returncode, 0, first.stderr)
+        self.assertIn('중복 제거 파일 6개', first.stdout)
+        self.assertEqual(first.stdout.count('\n'), 1)
+        self.assertEqual(second.stdout, '')                          # 바꿀 것이 없으면 기록도 없다
+        self.assertFalse((self.home / 'Library/Caches/im.cocode.runner-cache-dedupe.lock').exists(), '잠금이 남으면 안 됨')
+
+    def test_does_nothing_without_two_runners(self):
+        for name in ('runB', 'runC'):
+            (self.home / 'actions' / name / '.runner').unlink()
+
+        result = self.run_wrapper()
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout, '')
+        deregistered = {str(self.home / 'actions' / name / '.runner') for name in ('runB', 'runC')}
+        self.assertEqual(self.inodes(), {k: v for k, v in self.before.items() if k not in deregistered})
+        shutil.rmtree(self.home / 'actions')                         # 러너가 아예 없는 맥도 조용히 끝난다
+        self.assertEqual(self.run_wrapper().stdout, '')
+
+    def test_owner_of_a_cache_is_the_longest_matching_runner_name(self):
+        for name in ('a-b', 'b'):
+            (self.home / 'actions' / name).mkdir(parents=True)
+            (self.home / 'actions' / name / '.runner').write_text('{}')
+        (self.home / '.pub-cache-a-b').mkdir()
+        (self.home / '.pub-cache-b').mkdir()
+
+        runners, families = self.engine.discover(str(self.home), str(self.tmpdir))
+
+        pub = {os.path.basename(r.path): r.owner for f in families if f.name == 'pub' for r in f.roots}
+        self.assertEqual(pub['.pub-cache-a-b'], 'a-b')
+        self.assertEqual(pub['.pub-cache-b'], 'b')
+
+
 STUB_DOCKER = r'''#!/bin/sh
 echo "docker $*" >> "$STUB_LOG"
 case "$1 $2" in
@@ -343,7 +590,8 @@ class SetupScriptWiringTests(unittest.TestCase):
         self.log = Path(self.temp.name) / 'calls.log'
         self.loaded = Path(self.temp.name) / 'loaded'
         source = SETUP.read_text()
-        jobs = re.search(r'^DISK_CLEANUP_JOBS=.*$', source, re.M).group(0)
+        jobs = (re.search(r'^DISK_CLEANUP_JOBS=.*$', source, re.M).group(0) + '\n'
+                + re.search(r'^DISK_CLEANUP_HELPERS=.*$', source, re.M).group(0))
         bodies = []
         for name in ('install_disk_cleanup', 'disk_cleanup_status'):
             start = source.index(f'{name}() {{')
@@ -393,17 +641,28 @@ curl() {
             self.assertEqual((self.home / f'Library/LaunchAgents/im.cocode.{job}.plist').read_bytes(),
                              (CLEANUP / f'im.cocode.{job}.plist').read_bytes())
             self.assertIn(f'✓ im.cocode.{job} 등록', out)
+        for helper in HELPERS:                              # 보조 파일도 같이 깔린다 (실행 권한 포함)
+            installed = self.home / '.local/bin' / helper
+            self.assertEqual(installed.read_bytes(), (CLEANUP / helper).read_bytes())
+            self.assertTrue(os.access(installed, os.X_OK))
 
         out, calls = self.run_install(ROOT / 'macos')
         self.assertEqual(self.bootstraps(calls), [])
-        self.assertEqual(out.count('이미 최신으로 등록됨'), 3)
+        self.assertEqual(out.count('이미 최신으로 등록됨'), len(JOBS))
 
         (self.home / '.local/bin/cleanup-docker-disk.sh').write_text('#!/bin/sh\nexit 0\n')
         out, calls = self.run_install(ROOT / 'macos')
         self.assertEqual(self.bootstraps(calls), ['im.cocode.docker-disk-cleanup.plist'])
 
+        # 보조 파일만 낡았다면 파일만 새로 깔고 작업은 다시 올리지 않는다 (스크립트가 매번 새로 읽는다)
+        (self.home / '.local/bin/dedupe-runner-cache.py').write_text('# old\n')
+        out, calls = self.run_install(ROOT / 'macos')
+        self.assertEqual(self.bootstraps(calls), [])
+        self.assertEqual((self.home / '.local/bin/dedupe-runner-cache.py').read_bytes(),
+                         (CLEANUP / 'dedupe-runner-cache.py').read_bytes())
+
         out, _ = self.run_install(ROOT / 'macos', command='disk_cleanup_status')
-        self.assertIn('✓ 3종 등록됨', out)
+        self.assertIn(f'✓ {len(JOBS)}종 등록됨', out)
 
     def test_one_liner_downloads_and_failed_download_skips_safely(self):
         out, calls = self.run_install('', curl_ok=False)
@@ -412,11 +671,13 @@ curl() {
         self.assertFalse((self.home / '.local/bin/cleanup-dart-tmp.sh').exists())
 
         out, _ = self.run_install('', command='disk_cleanup_status')
-        self.assertIn('0/3', out)
+        self.assertIn(f'0/{len(JOBS)}', out)
 
         out, calls = self.run_install('', curl_ok=True)
-        self.assertEqual(len(self.bootstraps(calls)), 3)
+        self.assertEqual(len(self.bootstraps(calls)), len(JOBS))
         self.assertTrue((self.home / '.local/bin/cleanup-dart-tmp.sh').exists())
+        for helper in HELPERS:                              # 한 줄 설치에서도 보조 파일을 같은 곳에서 받는다
+            self.assertTrue((self.home / '.local/bin' / helper).exists())
 
     def test_option_and_docs_are_wired(self):
         source = SETUP.read_text()

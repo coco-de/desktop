@@ -17,7 +17,7 @@
 #     0.5단계에서 같은 레포에서 따로 내려받는다.
 #   └ 이미 세팅한 맥에서 토큰(환경변수)만 다시 주입하려면: ./mac-setup.sh --env-only
 #   └ Dart 글로벌 패키지만 다시 설치/업데이트하려면:    ./mac-setup.sh --dart-only
-#   └ 디스크 자동 정리(launchd 3종)만 다시 등록하려면:  ./mac-setup.sh --cleanup-only
+#   └ 디스크 자동 정리(launchd 4종)만 다시 등록하려면:  ./mac-setup.sh --cleanup-only
 #   └ 서명 키체인 로그인 자동 해제(선택): ./mac-setup.sh --keychains-only --help
 #
 # 기존 맥의 테마/설정을 그대로 가져오려면, 기존 맥에서
@@ -94,7 +94,7 @@ fi
 #   --env-only   : 1Password(op)에서 팀 공용 토큰·Cocode 조직 키를 ~/.zshrc에 주입 (8.5~8.12단계만)
 #   --perms-only : Orca 전체 디스크 접근 권한 점검·안내만 다시 실행 (9단계만)
 #   --dart-only  : Dart 글로벌 패키지만 다시 설치/업데이트 (4-b단계만)
-#   --cleanup-only: 디스크 자동 정리(launchd 3종)만 등록·갱신 (9.5단계만)
+#   --cleanup-only: 디스크 자동 정리(launchd 4종)만 등록·갱신 (9.5단계만)
 #   --keychains-only: 서명 키체인 설정만 실행 (첫 번째 옵션으로 지정, 위에서 처리)
 #   -h, --help   : 사용법 출력
 #   모르는 옵션은 즉시 에러 종료한다 — 오탈자(예: --env-onyl)가 조용히
@@ -123,8 +123,9 @@ usage() {
                 (팀 패키지 목록이 바뀌었거나, 패키지만 최신으로 올리고 싶을 때 사용
                  — Flutter/Dart(fvm)는 이미 설치돼 있어야 합니다)
   --cleanup-only
-                디스크 자동 정리 작업 3개만 launchd에 등록·갱신합니다
-                (Flutter 테스트 임시 폴더 15분마다 · 러너 캐시 하루마다 · Docker 하루마다).
+                디스크 자동 정리 작업 4개만 launchd에 등록·갱신합니다
+                (Flutter 테스트 임시 폴더 15분마다 · 러너 캐시 하루마다 · Docker 하루마다 ·
+                 러너 사본 중복 제거 하루마다).
                 설치·토큰 주입·권한 단계는 전부 건너뜁니다.
                 (이미 세팅한 맥에 정리 작업만 넣거나 최신으로 바꿀 때 사용)
   --keychains-only [install|refresh|status|verify|uninstall] [옵션]
@@ -359,8 +360,9 @@ fi
 #   8.12. COCODE_ASC_*·COCODE_APPLE_TEAM_ID 주입 (Cocode Inc. 조직 Team API 키)
 #   9.   앱 권한 — Orca 전체 디스크 접근(Full Disk Access) 점검·안내
 #        (TTY면 시스템 설정 창을 열어주고 Enter 대기 · 이미 허용돼 있으면 건너뜀)
-#   9.5. 디스크 자동 정리 등록 (launchd 3종 — Flutter 테스트 임시 폴더 15분마다 · 러너 캐시
-#        하루마다 · Docker 하루마다 · 실행 중이거나 최근에 쓴 것은 건드리지 않음 · 내용이 같으면 재등록 안 함)
+#   9.5. 디스크 자동 정리 등록 (launchd 4종 — Flutter 테스트 임시 폴더 15분마다 · 러너 캐시
+#        하루마다 · Docker 하루마다 · 러너 사본 중복 제거 하루마다 · 실행 중이거나 최근에 쓴 것은
+#        건드리지 않음 · 내용이 같으면 재등록 안 함)
 #   10.  설치 검증 + 다음 단계 안내
 # 공통 규칙: 모든 단계 멱등(이미 설치 시 스킵) · 실패해도 ⚠ 후 계속 · 시크릿 미커밋
 # 실행 옵션: 옵션 없음=전체 실행 · --env-only=8.5~8.12(토큰·조직 키 주입)만 재실행 ·
@@ -753,17 +755,19 @@ if (( DART_ONLY )); then
 fi
 
 # ============================================================
-# 9.5단계(디스크 자동 정리) 본체 — launchd 정리 작업 3종
+# 9.5단계(디스크 자동 정리) 본체 — launchd 정리 작업 4종
 #
 #   [이 단계가 하는 일 — 비개발자용 설명]
 #   개발하다 보면 맥 디스크가 '쓰고 나서 아무도 치우지 않는 파일'로 조금씩 찹니다. Flutter
 #   테스트를 중간에 끊으면 남는 임시 폴더(개당 수 GB~수십 GB), CI 러너가 러너마다 따로 받아 둔
 #   캐시, Docker(Colima)가 쓰고 맥에 돌려주지 않은 공간이 그렇습니다. 러너 9개가 도는 팀 맥은
-#   여유가 1.5GB 까지 떨어진 적이 있습니다(2026-10-19). 이 단계는 그것들을 정해진 주기로 치우는
-#   작업 3개를 macOS 예약 작업(launchd)으로 등록합니다.
+#   여유가 1.5GB 까지 떨어진 적이 있습니다(2026-10-19, 2026-11-13). 이 단계는 그것들을 정해진 주기로
+#   치우는 작업 4개를 macOS 예약 작업(launchd)으로 등록합니다.
 #     im.cocode.dart-tmp-cleanup      15분마다  Flutter·Dart 테스트 임시 폴더
 #     im.cocode.runner-cache-cleanup  하루마다  self-hosted 러너 캐시·작업 폴더 (러너가 없는 맥은 할 일 없음)
 #     im.cocode.docker-disk-cleanup   하루마다  Colima 빌드 캐시·주인 없는 익명 볼륨·fstrim (꺼져 있으면 쉼)
+#     im.cocode.runner-cache-dedupe   하루마다  러너가 따로 받은 같은 SDK·패키지 캐시를 복제로 한 벌 크기로
+#                                              (지우지 않음 · 러너가 둘 미만인 맥은 할 일 없음)
 #   실행 중이거나 최근에 쓴 것은 건드리지 않습니다. 무엇을 언제 지우는지는 disk-cleanup/README.md 에 있습니다.
 #
 #   [같은 이름으로 등록하는 이유]
@@ -774,10 +778,12 @@ fi
 #   --cleanup-only 는 설치 단계를 전부 건너뛰고 이 단계만 실행하므로, 설치 블록보다 앞에서
 #   정의돼 있어야 한다. 실제 호출은 (전체 실행 시) 아래 9.5단계 위치에서 한다.
 # ============================================================
-DISK_CLEANUP_JOBS="dart-tmp-cleanup:cleanup-dart-tmp.sh runner-cache-cleanup:cleanup-runner-cache.sh docker-disk-cleanup:cleanup-docker-disk.sh"
+DISK_CLEANUP_JOBS="dart-tmp-cleanup:cleanup-dart-tmp.sh runner-cache-cleanup:cleanup-runner-cache.sh docker-disk-cleanup:cleanup-docker-disk.sh runner-cache-dedupe:dedupe-runner-cache.sh"
+# 작업 스크립트가 옆에서 부르는 보조 파일 — launchd 작업은 아니지만 스크립트와 같은 곳(~/.local/bin)에 깔려야 한다
+DISK_CLEANUP_HELPERS="dedupe-runner-cache.py"
 
 install_disk_cleanup() {
-  log "디스크 자동 정리 등록 (Flutter 테스트 임시 폴더 · 러너 캐시 · Docker)"
+  log "디스크 자동 정리 등록 (Flutter 테스트 임시 폴더 · 러너 캐시 · Docker · 러너 사본 중복 제거)"
   local src tmp="" pair job script label plist uid f changed
   uid="$(id -u)"
   if [[ -n "$SCRIPT_DIR" && -d "$SCRIPT_DIR/disk-cleanup" ]]; then
@@ -795,8 +801,28 @@ install_disk_cleanup() {
         fi
       done
     done
+    for f in $DISK_CLEANUP_HELPERS; do
+      if ! curl -fsSL "$REPO_RAW_BASE/disk-cleanup/$f" -o "$tmp/$f"; then
+        echo "  ⚠ $f 내려받기 실패 → 디스크 자동 정리 등록을 건너뜁니다 (나중에 다시: ./mac-setup.sh --cleanup-only)"
+        rm -rf "$tmp"
+        return 0
+      fi
+    done
   fi
   mkdir -p "$HOME/.local/bin" "$HOME/Library/LaunchAgents" "$HOME/Library/Logs"
+  # 보조 파일(작업 스크립트가 옆에서 부르는 것)을 먼저 깐다. 바뀌었다고 작업을 다시 올릴 필요는 없다 —
+  # 스크립트가 돌 때마다 새로 읽는다. 스크립트와 같은 이유로 덮어쓰지 않고 옆에 쓴 뒤 이름만 바꾼다.
+  for f in $DISK_CLEANUP_HELPERS; do
+    if ! cmp -s "$src/$f" "$HOME/.local/bin/$f"; then
+      if cp "$src/$f" "$HOME/.local/bin/.$f.new" \
+         && chmod 755 "$HOME/.local/bin/.$f.new" \
+         && mv -f "$HOME/.local/bin/.$f.new" "$HOME/.local/bin/$f"; then
+        :
+      else
+        echo "  ⚠ $f 복사 실패 → 이 파일에 기대는 작업은 다음 실행 때 다시 시도합니다 (./mac-setup.sh --cleanup-only)"
+      fi
+    fi
+  done
   for pair in $DISK_CLEANUP_JOBS; do
     job="${pair%%:*}"
     script="${pair#*:}"
@@ -835,6 +861,7 @@ install_disk_cleanup() {
       case "$job" in
         dart-tmp-cleanup)     echo "  ✓ $label 등록 (15분마다 · Flutter·Dart 테스트 임시 폴더)" ;;
         runner-cache-cleanup) echo "  ✓ $label 등록 (하루마다 · self-hosted 러너 캐시·작업 폴더)" ;;
+        runner-cache-dedupe)  echo "  ✓ $label 등록 (하루마다 · 러너가 따로 받은 같은 SDK·패키지 캐시를 복제로 한 벌 크기로 — 지우지 않음)" ;;
         *)                    echo "  ✓ $label 등록 (하루마다 · Colima 빌드 캐시·주인 없는 익명 볼륨·fstrim)" ;;
       esac
     else
@@ -842,7 +869,7 @@ install_disk_cleanup() {
     fi
   done
   [[ -z "$tmp" ]] || rm -rf "$tmp"
-  echo "  · 정리 기록: ~/Library/Logs/dart-tmp-cleanup.log · runner-cache-cleanup.log · docker-disk-cleanup.log"
+  echo "  · 정리 기록: ~/Library/Logs/dart-tmp-cleanup.log · runner-cache-cleanup.log · docker-disk-cleanup.log · runner-cache-dedupe.log"
 }
 
 # 10단계 검증과 --cleanup-only 요약이 함께 쓰는 등록 상태 한 줄
@@ -856,7 +883,7 @@ disk_cleanup_status() {
     fi
   done
   if (( loaded == total )); then
-    echo "✓ ${total}종 등록됨 (기록: ~/Library/Logs/*-cleanup.log)"
+    echo "✓ ${total}종 등록됨 (기록: ~/Library/Logs/ 의 *-cleanup.log · runner-cache-dedupe.log)"
   else
     echo "❌ ${loaded}/${total} 등록 (다시 등록: ./mac-setup.sh --cleanup-only)"
   fi
@@ -871,7 +898,7 @@ if (( CLEANUP_ONLY )); then
   echo ""
   if [[ "$DISK_CLEANUP_STATE" == ✓* ]]; then
     echo "✅ 완료! (전체 설치는 옵션 없이 './mac-setup.sh' 실행)"
-    echo "   지우기 전에 무엇이 대상인지 보려면: DRY_RUN=1 sh ~/.local/bin/cleanup-runner-cache.sh (Docker는 cleanup-docker-disk.sh)"
+    echo "   바꾸기 전에 무엇이 대상인지 보려면: DRY_RUN=1 sh ~/.local/bin/cleanup-runner-cache.sh (Docker는 cleanup-docker-disk.sh · 사본 중복 제거는 dedupe-runner-cache.sh)"
   else
     # 하나라도 빠졌으면 '완료' 배너 대신 다음 행동을 알려준다 (--dart-only 와 같은 원칙, 종료코드는 0 유지)
     echo "⚠ 등록되지 않은 작업이 있습니다 — 위 ⚠ 메시지를 확인한 뒤 './mac-setup.sh --cleanup-only' 를 다시 실행해 주세요."
@@ -2625,7 +2652,7 @@ fi
 run_orca_permission_step
 
 # ------------------------------------------------------------
-# 9.5. 디스크 자동 정리 (launchd 3종)
+# 9.5. 디스크 자동 정리 (launchd 4종)
 #   본체(install_disk_cleanup)는 파일 앞부분에 정의돼 있다 — --cleanup-only 가
 #   설치 단계를 건너뛰고 이 단계만 실행할 수 있어야 하기 때문이다.
 # ------------------------------------------------------------
