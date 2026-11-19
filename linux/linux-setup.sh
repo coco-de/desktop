@@ -55,6 +55,8 @@
 #   6.1. codex 재시도 (2.6단계는 Node.js 이전이라 그때 건너뛴 경우)
 #   6.5. Claude Code 상태줄 (ccstatusline)
 #   6.6. OpenCode CLI + 두 도구의 기본 MCP 10개 직접 등록 (기존 설정 병합)
+#   6.7. Trail-code(trail) — AI 에이전트용 코드베이스 지도 CLI 설치 + 사용 통계 끄기
+#        (npm, 6단계 Node 이후 · 레포 연결 `trail init` 은 사람이 레포별로 선택해 실행)
 #   7.   oh-my-zsh + powerlevel10k
 #   7.5. 터미널 폰트 자동 적용 (MesloLGS NF — GNOME Terminal·Konsole)
 #   8.   ~/.zshrc / ~/.p10k.zsh 반영 + 기본 셸을 zsh로 변경
@@ -2339,6 +2341,42 @@ fi
 info "새 터미널에서 두 도구를 재시작하세요. Claude Code: /mcp · OpenCode: opencode mcp auth figma · opencode mcp auth mobbin"
 
 # ------------------------------------------------------------
+# 6.7. Trail-code(trail) — AI 에이전트용 코드베이스 지도 CLI (옛 이름 graft)
+#   레포의 코드를 읽어 '어디에 뭐가 있고 누가 누구를 부르는지' 지도를 만들어 두고,
+#   Claude Code·Codex·OpenCode 같은 에이전트가 파일을 덜 뒤지고 바로 찾게 해 준다
+#   (https://github.com/trailhq/Trail-Code · npm 패키지 @trailhq/trail-code).
+#   이 단계는 'CLI 설치 + 사용 통계 끄기'까지만 한다. 레포에 연결하는 `trail init` 은
+#   스크립트가 대신 돌리지 않는다 — 사용자 설정 파일(.claude 등)을 고치고, 내 Claude 메모·
+#   과거 대화를 읽어 팀 공유용 학습(.trail/learnings/)으로 저장할 수 있어서, 쓸지 말지는
+#   레포마다 사람이 정한다(아래 '다음 단계' 참고).
+#   - Node 22.3 이상(또는 20.16 이상) 필요 → 6단계 nvm LTS가 만족한다. npm 설치 뒤의
+#     postinstall 스크립트는 npm 버전에 따라 보류될 수 있어, 성공 여부는 trail 명령이
+#     있는지로만 판단한다.
+#   - 새 패키지는 trail 명령만 제공한다(옛 graft 명령은 없다).
+#   - 설치 순간에 '설치됨' 이벤트가 나갈 수 있어 DO_NOT_TRACK=1 을 붙여 설치하고, 이어서
+#     trail telemetry disable 로 사용 통계를 끈다(이 기기에 저장돼 이후에도 유지).
+#     하루 한 번 새 버전이 있는지 npm에 묻는 확인은 남는다.
+#   ※ 이 단계는 맥(Apple Silicon, Node 24)에서만 직접 확인했다. 패키지에는 OS 제한이
+#     없지만 우분투·데비안에서의 설치·실행은 아직 직접 확인되지 않았다 — 실패해도
+#     경고만 남기고 건너뛴다.
+# ------------------------------------------------------------
+log "6.7. Trail-code(trail) 설치 + 사용 통계 끄기 (AI 에이전트용 코드베이스 지도)"
+if have trail; then
+  ok "trail 이미 설치됨"
+elif have npm; then
+  DO_NOT_TRACK=1 npm install -g @trailhq/trail-code >/dev/null 2>&1 \
+    && ok "trail 설치 완료" \
+    || warn "Trail-code 설치 실패 → 건너뜀 (수동: DO_NOT_TRACK=1 npm install -g @trailhq/trail-code)"
+else
+  warn "npm 없음 → Trail-code 설치 건너뜀 (6단계 확인 후 재실행)"
+fi
+if have trail; then
+  DO_NOT_TRACK=1 trail telemetry disable >/dev/null 2>&1 \
+    && ok "trail 사용 통계 꺼짐 (확인: trail telemetry status)" \
+    || warn "trail 사용 통계 끄기 실패 → 건너뜀 (수동: trail telemetry disable)"
+fi
+
+# ------------------------------------------------------------
 # 7. oh-my-zsh + powerlevel10k + 플러그인
 #   맥에는 zsh가 기본으로 깔려 있지만 우분투/데비안에는 없을 수 있다 —
 #   zsh가 없으면 oh-my-zsh 설치 스크립트가 곧바로 실패하므로 여기서 먼저 확인한다.
@@ -3533,6 +3571,9 @@ echo "  jq      : $(ver jq '(수동 설치: sudo apt install jq)' --version)"
 echo "  direnv  : $(ver direnv '(수동 설치: sudo apt install direnv)' --version)"
 echo "  java    : $(ver java '(수동 설치: sudo apt install openjdk-17-jdk)' -version)"
 echo "  lefthook: $(ver lefthook '(수동 설치: 3단계 참고)' version)"
+echo "  trail   : $(ver trail '(수동 설치: DO_NOT_TRACK=1 npm install -g @trailhq/trail-code)' --version)"
+# trail 사용 통계: 6.7단계에서 껐는지 확인한다(trail 이 없으면 줄을 건너뛴다).
+have trail && echo "  trail 통계: $(trail telemetry status 2>/dev/null </dev/null | head -1 | sed 's/^telemetry: //')"
 echo "  fvm     : $(ver fvm '(수동 설치: curl -fsSL https://fvm.app/install.sh | bash)' --version)"
 echo "  flutter : $(ver flutter "(fvm install $TEAM_FLUTTER_VERSION && fvm global $TEAM_FLUTTER_VERSION)" --version)"
 echo "  dart    : $(ver dart "(fvm global $TEAM_FLUTTER_VERSION 후 새 터미널에서 확인)" --version)"
@@ -3679,3 +3720,10 @@ echo "  9. GitHub 인증(gh)이 '❌'이면 cocode-skills·cob(co-bricks) 둘 �
 echo "     ↳ 팀 'API Token' 볼트 > 'GitHub API Token' > 'credential' 필드에서 읽어 자동 로그인합니다"
 echo "     ↳ 그래도 안 되면 수동으로: gh auth login 후 스크립트 재실행"
 echo "       (cob만 다시 깔면 되는 상황이면 './linux-setup.sh --dart-only' 가 더 빠릅니다)"
+echo " 10. Trail-code(trail)를 레포에서 쓰려면(선택) — AGENTS.md가 trail 안내를 담은 프로젝트 폴더에서: trail init --dry-run"
+echo "     ↳ 먼저 --dry-run 으로 어떤 파일이 생기고 바뀌는지 확인한 뒤, 괜찮을 때만 trail init 을 실행하세요 (필수가 아닙니다)"
+echo "     ↳ trail init 으로 생기는 .claude/settings.json·.trail/ 을 커밋할지는 레포 성격에 따라 팀이 정합니다 — 이 스크립트는 권하지 않습니다"
+echo "     ↳ trail init 은 내 Claude 메모·과거 대화를 읽어 .trail/learnings/ 에 저장할 수 있습니다 — 커밋하기 전에 그 폴더의 내용을 꼭 확인하세요"
+echo "     ↳ 내 PC 전체 설정(~/.claude 등)을 건드리고 싶지 않다면 trail init --no-global (그래도 그 레포 안의 .claude/settings.local.json 에는 훅이 들어갑니다)"
+echo "     ↳ 새로 만든 작업 폴더(git worktree)에는 지도가 자동으로 생기지 않으니 trail build 를 한 번 실행하세요 (이후에는 질의할 때 바뀐 부분만 자동 갱신)"
+echo "     ↳ 사용 통계는 꺼 두었습니다(하루 한 번 새 버전 확인은 남습니다). 상태 확인: trail telemetry status"

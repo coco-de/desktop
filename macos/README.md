@@ -248,7 +248,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 </tr>
 <tr>
 <td align="center" width="100"><sub><b>maestro</b><br>(모바일 UI 자동화)</sub></td>
-<td align="center" width="100"></td>
+<td align="center" width="100"><img src="assets/icons/trail.png" width="36" height="36" alt="Trail-code"><br><sub><b>trail</b><br>(코드 지도)</sub></td>
 <td align="center" width="100"></td>
 <td align="center" width="100"></td>
 <td align="center" width="100"></td>
@@ -312,7 +312,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 <td align="center" width="100"><img src="assets/icons/playwright.png" width="36" height="36" alt="Playwright MCP"><br><sub><b>Playwright MCP</b></sub></td>
 </tr></table>
 
-<sub>※ OpenCode·Atlassian의 SVG는 [Simple Icons](https://simpleicons.org), Mobbin·ZenHub·Playwright의 PNG는 공식 사이트 파비콘입니다. Slack · Dia · Orca · Lumide · Stats · codex(OpenAI) · agy(Antigravity)도 실제 브랜드 아이콘(파비콘)을 사용합니다. ego lite는 앱 번들(`ego lite.app`)에 들어 있는 공식 앱 아이콘을 사용합니다. awscli, pyenv, colima, direnv, jq, maestro, oh-my-zsh, powerlevel10k, MesloLGS NF, Pretendard는 공식 브랜드 아이콘이 없어 텍스트로만 표기했습니다. DCM · coverage · melos · mason_cli · flutter_gen · jaspr_cli · serverpod_cli · marionette_mcp · mcp_server_dart · cob(co-bricks)는 Dart 아이콘, op는 1Password 아이콘, ccstatusline · awesome-statusline은 Claude 아이콘을 공용으로 사용합니다.</sub>
+<sub>※ OpenCode·Atlassian의 SVG는 [Simple Icons](https://simpleicons.org), Mobbin·ZenHub·Playwright의 PNG는 공식 사이트 파비콘입니다. Slack · Dia · Orca · Lumide · Stats · codex(OpenAI) · agy(Antigravity) · trail(Trail-code, 제작사 Trail의 로고)도 실제 브랜드 아이콘(파비콘)을 사용합니다. ego lite는 앱 번들(`ego lite.app`)에 들어 있는 공식 앱 아이콘을 사용합니다. awscli, pyenv, colima, direnv, jq, maestro, oh-my-zsh, powerlevel10k, MesloLGS NF, Pretendard는 공식 브랜드 아이콘이 없어 텍스트로만 표기했습니다. DCM · coverage · melos · mason_cli · flutter_gen · jaspr_cli · serverpod_cli · marionette_mcp · mcp_server_dart · cob(co-bricks)는 Dart 아이콘, op는 1Password 아이콘, ccstatusline · awesome-statusline은 Claude 아이콘을 공용으로 사용합니다.</sub>
 
 <br>
 
@@ -334,7 +334,7 @@ chmod +x mac-setup.sh && ./mac-setup.sh
 | 🧹 디스크 자동 정리 | **9.5단계**에서 macOS 예약 작업(launchd) 3개를 등록 — Flutter·Dart 테스트 임시 폴더(15분마다), self-hosted 러너 캐시·작업 폴더(하루마다, 러너가 없는 맥은 할 일 없음), Colima 빌드 캐시·주인 없는 익명 볼륨·fstrim(하루마다). 실행 중이거나 최근에 쓴 것은 건드리지 않습니다 ([무엇을 언제 지우나](#disk-cleanup)) |
 | 🧩 cocode-skills 팀 플러그인 | 사설 레포 `coco-de/skills`의 `install.sh`로 cc-* 플러그인 번들(marionette·dart·figma·dev-cycle·coui 등) 자동 동기화 (⚠️ GitHub 인증 필요 — 보통 위 단계에서 1Password로 자동 처리되며, 안 됐다면 `gh auth login` 수동 실행 후 재실행) |
 | 📱 Android SDK | cmdline-tools, platform-tools, build-tools, platforms, NDK, 에뮬레이터 시스템 이미지, AVD까지 전부 자동 설치·구성 (Android Studio 첫 실행 마법사 불필요) |
-| 🛠 CLI 도구 | go, pyenv, nvm, git, gh, jq, cocoapods, fastlane, awscli, colima, docker, docker-compose, zsh-syntax-highlighting, direnv, openjdk@17, lefthook(Git 훅 관리자 — 레포별로 최초 1회 `lefthook install` 필요), Claude Code, **OpenCode**, ccstatusline(Claude Code 상태줄) → 실패 시 awesome-statusline(size: small)으로 자동 대체, codex, agy(Antigravity CLI), slack(Slack CLI), maestro(모바일 UI 자동화 CLI), op(1Password CLI), mas(App Store CLI — **Xcode.app이 없을 때만** 설치, Xcode 자동 설치용) |
+| 🛠 CLI 도구 | go, pyenv, nvm, git, gh, jq, cocoapods, fastlane, awscli, colima, docker, docker-compose, zsh-syntax-highlighting, direnv, openjdk@17, lefthook(Git 훅 관리자 — 레포별로 최초 1회 `lefthook install` 필요), Claude Code, **OpenCode**, **trail**(Trail-code — AI 에이전트용 코드베이스 지도 CLI, 6.7단계 · 사용 통계는 끈 상태로 설치 · 레포 연결 `trail init`은 선택), ccstatusline(Claude Code 상태줄) → 실패 시 awesome-statusline(size: small)으로 자동 대체, codex, agy(Antigravity CLI), slack(Slack CLI), maestro(모바일 UI 자동화 CLI), op(1Password CLI), mas(App Store CLI — **Xcode.app이 없을 때만** 설치, Xcode 자동 설치용) |
 | ✉️ Git 설정 | 커밋에 사용할 회사 이메일을 실행 중에 입력받아 전역 설정(`git config --global user.email`) — 이미 설정돼 있으면 묻지 않고 건너뜀 |
 | 🌐 브라우저 번역 언어 | Chrome·Dia의 번역 대상 언어를 한국어로, "번역 안 함" 목록을 영어로 자동 설정(`dia://settings/languages` = `chrome://settings/languages`를 매번 손으로 누를 필요 없음) — 브라우저가 실행 중이면 건너뛰고 경고만 표시 |
 | 🐦 Flutter | fvm(버전 관리자)으로 팀 표준 Flutter **3.47.6**을 설치해 글로벌(기본) 버전으로 고정, DCM(Dart 코드 품질 검사 도구 — CI 인증 키 `DCM_EMAIL`·`DCM_CI_KEY`는 1Password에서 자동 주입) |
@@ -459,6 +459,7 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 | <img src="assets/icons/lefthook.svg" width="20" height="20"> | lefthook | 커밋·푸시하기 직전에 코드 정리·검사·테스트를 자동으로 돌려주는 **Git 훅 관리자**([evilmartians/lefthook](https://github.com/evilmartians/lefthook)). 실수로 형식이 어긋나거나 깨진 코드가 올라가는 걸 미리 막아 줍니다. 이 스크립트는 도구만 설치하며, 실제로 켜는 건 레포마다 한 번씩입니다 — `lefthook.yml`이 있는 프로젝트 폴더에서 `lefthook install`을 실행하세요(설정 파일이 없는 레포에서는 할 일 없음) |
 | <img src="assets/icons/claude.svg" width="20" height="20"> | Claude Code | 터미널에서 대화하듯 코드를 작성·수정하는 Claude CLI (공식 설치 스크립트 `claude.ai/install.sh`로 설치, `~/.local/bin`) |
 | <img src="assets/icons/opencode.svg" width="20" height="20"> | OpenCode | 여러 AI 모델을 연결해 쓰는 코딩 CLI (`npm install -g opencode-ai`, 6.6단계) · 최초 실행 후 `/connect`로 모델 계정을 연결합니다 |
+| <img src="assets/icons/trail.png" width="20" height="20"> | trail (Trail-code) | 코드베이스 '지도'를 만들어 AI 에이전트가 파일을 덜 뒤지고 바로 찾게 해 주는 CLI입니다(옛 이름 graft · [trailhq/Trail-Code](https://github.com/trailhq/Trail-Code)). 6.7단계에서 `DO_NOT_TRACK=1 npm install -g @trailhq/trail-code`로 설치한 뒤 `trail telemetry disable`로 **사용 통계를 꺼 둡니다**(하루 한 번 새 버전을 npm에 묻는 확인은 남습니다). 명령은 `trail`입니다 — 옛 `graft` 명령은 없습니다. 이 스크립트는 설치까지만 하며, 레포에 연결하는 `trail init`은 **선택 사항**입니다([설치 후 14번](#after-install) 참고) |
 | <img src="assets/icons/claude.svg" width="20" height="20"> | ccstatusline | Claude Code 하단 상태줄을 모델·세션 비용·컨텍스트 사용량·git 상태까지 보여주는 두 줄짜리 정보 표시줄로 바꿔 주는 대화형 TUI 도구입니다([sirmalloc/ccstatusline](https://github.com/sirmalloc/ccstatusline)). 별도 설치가 필요 없고 `npx -y ccstatusline@latest`로 그때그때 실행하며(Node.js 필요), 뜨는 화면에서 위젯을 고르고 저장하면 `~/.claude/settings.json`에 자동 등록됩니다. 대화형 도구라 이 스크립트에서는 자동 등록되지 않는 경우가 대부분이며, 그때는 아래 awesome-statusline이 자동으로 대신 설치됩니다 |
 | <img src="assets/icons/claude.svg" width="20" height="20"> | awesome-statusline | ccstatusline이 대화형이라 자동 등록에 실패했을 때 대신 설치되는 상태줄 도구입니다([AwesomeJun/CC-statusline](https://github.com/AwesomeJun/CC-statusline)). 크기를 인자로 주면(`curl -fsSL https://raw.githubusercontent.com/AwesomeJun/CC-statusline/main/install.sh \| bash -s -- small`) 완전 비대화형으로 설치되어 `~/.claude/settings.json`에 바로 등록됩니다. 이 스크립트는 크기 `small`로 자동 설치합니다 — 다른 크기(xs/s/m/l/xl)를 원하면 위 명령의 마지막 인자만 바꿔 다시 실행하면 됩니다 |
 | <img src="assets/icons/codex.png" width="20" height="20"> | codex | OpenAI의 터미널 AI 코딩 에이전트. `brew install --cask codex`로 설치하며, 처음 실행할 때 ChatGPT 계정으로 로그인합니다 |
@@ -619,6 +620,8 @@ codex   : ...
 agy(antigravity): ...
 slack   : ...
 lefthook: ...
+trail   : ...
+trail 통계: ...
 상태줄(statusline): ...
 git email: ...
 GitHub 인증(gh): ...
@@ -654,6 +657,8 @@ Orca 전체 디스크 접근: ...
 
 > `lefthook`은 커밋·푸시 직전에 검사를 자동으로 돌려주는 Git 훅 관리자입니다. 여기 버전이 찍히면 도구는 준비된 것이고, **실제로 켜는 건 레포마다 한 번씩**입니다 — `lefthook.yml`이 있는 프로젝트 폴더에서 `lefthook install`을 실행하세요(설정 파일이 없는 레포에서는 할 일 없음).
 
+> `trail`은 코드베이스 지도를 만들어 AI 에이전트를 돕는 CLI(Trail-code)입니다. 여기 버전이 찍히면 도구는 준비된 것이고, `trail 통계:` 줄에 `off`가 보이면 사용 통계가 꺼진 상태입니다. `❌`이면 안내된 수동 설치 명령(`DO_NOT_TRACK=1 npm install -g @trailhq/trail-code`)을 실행한 뒤 `trail telemetry disable`을 한 번 실행하세요(Node.js 22.3 이상이 필요하며 6단계의 nvm LTS가 만족합니다). 레포에 연결하는 `trail init`은 **선택 사항**이라 설치만으로는 아무 레포도 바뀌지 않습니다.
+
 > `GitHub 인증(gh)`이 `❌`이면 바로 아래 `cob(co-bricks)`·`cocode-skills` 둘 다 설치되지 않습니다 — 둘 다 coco-de의 비공개 레포라 GitHub 로그인이 필요하기 때문입니다. 보통은 팀 공용 1Password 항목("API Token" 볼트 > "GitHub API Token" > credential 필드)으로 자동 로그인되며, 항목이 없거나 실패했다면 `gh auth login`을 직접 실행한 뒤 스크립트를 다시 실행하세요.
 >
 > `op(1Password CLI)`는 **설치 여부와 설정 여부를 따로** 보여줍니다. `⚠ 설치됨 (설정 미완료 — 토큰을 읽지 못했습니다)`라면 CLI는 깔렸지만 금고에서 토큰을 읽지 못한 상태입니다. 원인은 두 가지이고, 스크립트가 화면에 확인 순서(① 앱 CLI 통합 체크 → ② 금고 접근 권한)를 함께 출력해 줍니다 — 아래 **ZenHub·Jira·Slang GPT·DCM·Slack·TypeSafe·OpenAI 토큰 · 1Password CLI 설정**을 참고해 주세요.
@@ -687,6 +692,12 @@ Orca 전체 디스크 접근: ...
 11. **Git 훅(lefthook)은 레포마다 한 번씩 켜기** — `lefthook.yml`이 있는 프로젝트 폴더에서 `lefthook install`을 실행하면, 그 레포에서 커밋·푸시할 때 포맷/린트/테스트가 자동으로 돌아갑니다 (설정 파일이 없는 레포에서는 할 일 없음)
 12. **Stats(시스템 모니터)를 최초 1회 실행** — `open -a Stats`. 설치만으로는 메뉴막대에 나타나지 않고, 한 번 실행해야 CPU·메모리·디스크·네트워크 사용량이 메뉴막대에 표시됩니다. 실행 후 Stats 설정에서 **"로그인 시 시작"** 을 켜 두면 다음부터는 자동으로 떠 있습니다
 13. **ego lite(에이전트용 브라우저)를 최초 1회 실행해 첫 설정 마치기** — `open -a "ego lite"`. Chrome 데이터를 가져올지 한 번 묻고, 끝나면 `ego-browser` 명령과 에이전트용 스킬이 자동으로 등록됩니다. 이미 켜 둔 에이전트는 **완전히 종료했다가 다시 실행**하고, 권한 확인 없는 모드로 실행하세요(Claude Code는 `claude` 그대로 · Codex는 `codex-ego` · OpenCode는 `opencode-ego` — 새 터미널에서 적용). 그다음 에이전트에서 `/ego-browser`(Codex는 `/ego` 입력 후 선택 — 데스크톱 앱 기준, 터미널은 `ego-browser` 스킬을 불러온 뒤 작업 입력)로 스킬을 불러오면 됩니다 ([에이전트별 사용법](#ego-lite-agents))
+14. **(선택) Trail-code(`trail`)를 레포에서 쓰기** — AGENTS.md가 trail 안내를 담은 프로젝트 폴더에서 **먼저 `trail init --dry-run`**으로 어떤 파일이 생기고 바뀌는지 확인하세요. 괜찮을 때만 `trail init`을 실행합니다(필수가 아닙니다).
+    - 내 PC 전체 설정(`~/.claude` 등)을 건드리고 싶지 않다면 `trail init --no-global`을 쓰세요. 그래도 그 레포 안의 `.claude/settings.local.json`에는 훅이 들어갑니다.
+    - `trail init`이 만드는 `.claude/settings.json`·`.trail/`을 커밋할지는 레포 성격에 따라 팀이 정합니다. 이 문서는 어느 쪽도 권하지 않습니다.
+    - `trail init`은 내 Claude 메모·과거 대화를 읽어 `.trail/learnings/`에 저장할 수 있습니다. **커밋하기 전에 그 폴더의 내용을 꼭 확인하세요.**
+    - 새로 만든 작업 폴더(git worktree)에는 지도가 자동으로 생기지 않으니 `trail build`를 한 번 실행하세요. 이후에는 질의할 때 바뀐 부분만 자동으로 갱신됩니다.
+    - 사용 통계는 꺼 둔 상태입니다(`trail telemetry status`로 확인).
 
 > ✉️ **Git 이메일 (실행 중 입력)**: 스크립트 실행 도중 Git 설정 단계(3.2)에서 커밋에 사용할 회사 이메일을 물어봅니다. 입력하면 `git config --global user.email`에 저장되고, 이미 설정된 맥이라면 묻지 않고 건너뜁니다. `s` + Enter로 건너뛸 수도 있으며, 그 경우 나중에 터미널에서 `git config --global user.email <이메일>`을 직접 실행하면 됩니다.
 

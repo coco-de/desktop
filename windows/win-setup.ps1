@@ -613,6 +613,8 @@ if ([string]::IsNullOrWhiteSpace($CpuArch)) {
 #   6.   Node.js LTS (nvm-windows)
 #   6.5. Claude Code 상태줄
 #   6.6. OpenCode CLI + 두 도구의 기본 MCP 10개 직접 등록 (기존 설정 병합)
+#   6.7. Trail-code(trail) — AI 에이전트용 코드베이스 지도 CLI 설치 + 사용 통계 끄기
+#        (npm, 6단계 Node 이후 · 레포 연결 `trail init` 은 사람이 레포별로 선택해 실행)
 #   7.   PowerShell 프로필 + PSReadLine (맥의 oh-my-zsh 자리)
 #   7.3. Oh My Posh 프롬프트 테마 (맥의 powerlevel10k 자리)
 #   7.5. MesloLGS NF 폰트  (+ 7.5-a Windows Terminal 폰트 자동 적용)
@@ -4354,6 +4356,50 @@ if (Test-Path -LiteralPath ($OpenCodeConfigPath + 'c')) {
     Write-Info "기존 opencode.jsonc의 같은 이름 설정이 우선 적용됩니다 — opencode mcp list 로 확인하세요"
 }
 Write-Info "새 PowerShell 창에서 두 도구를 재시작하세요. Claude Code: /mcp · OpenCode: opencode mcp auth figma · opencode mcp auth mobbin"
+# ============================================================
+# 6.7. Trail-code(trail) — AI 에이전트용 코드베이스 지도 CLI (옛 이름 graft)
+#   레포의 코드를 읽어 '어디에 뭐가 있고 누가 누구를 부르는지' 지도를 만들어 두고,
+#   Claude Code·Codex·OpenCode 같은 에이전트가 파일을 덜 뒤지고 바로 찾게 해 줍니다
+#   (https://github.com/trailhq/Trail-Code · npm 패키지 @trailhq/trail-code).
+#   이 단계는 'CLI 설치 + 사용 통계 끄기'까지만 합니다. 레포에 연결하는 `trail init` 은
+#   스크립트가 대신 돌리지 않습니다 — 사용자 설정 파일(.claude 등)을 고치고, 내 Claude 메모·
+#   과거 대화를 읽어 팀 공유용 학습(.trail/learnings/)으로 저장할 수 있어서, 쓸지 말지는
+#   레포마다 사람이 정합니다(아래 '다음 단계' 참고).
+#   - Node 22.3 이상(또는 20.16 이상) 필요 → 6단계 nvm-windows LTS가 만족합니다. npm 설치 뒤의
+#     postinstall 스크립트는 npm 버전에 따라 보류될 수 있어, 성공 여부는 trail 명령이
+#     있는지로만 판단합니다.
+#   - 새 패키지는 trail 명령만 제공합니다(옛 graft 명령은 없습니다).
+#   - 설치 순간에 '설치됨' 이벤트가 나갈 수 있어 이 단계 동안만 DO_NOT_TRACK=1 을 붙여 설치하고
+#     (끝나면 원래 값으로 되돌립니다), 이어서 trail telemetry disable 로 사용 통계를 끕니다
+#     (이 기기에 저장돼 이후에도 유지). 하루 한 번 새 버전이 있는지 npm에 묻는 확인은 남습니다.
+#   - PowerShell 은 '@' 로 시작하는 낱말을 특별하게 읽을 수 있어 패키지 이름을 따옴표로 감쌉니다.
+#   ※ 이 단계는 맥(Apple Silicon, Node 24)에서만 직접 확인했습니다. 패키지에는 OS 제한이
+#     없지만 윈도우(PowerShell 7 · nvm-windows)에서의 설치·실행은 아직 직접 확인되지 않았습니다 —
+#     실패해도 경고만 남기고 건너뜁니다.
+# ============================================================
+Write-Step "6.7. Trail-code(trail) 설치 + 사용 통계 끄기 (AI 에이전트용 코드베이스 지도)"
+$trailPrevDnt = $env:DO_NOT_TRACK
+$env:DO_NOT_TRACK = '1'
+try {
+    if (Test-Cmd 'trail') {
+        Write-Ok "trail 이미 설치됨"
+    } elseif (Test-Cmd 'npm') {
+        & npm install -g '@trailhq/trail-code'
+        if ($LASTEXITCODE -ne 0) { Write-Warn "Trail-code 설치 실패 → 건너뜀 (수동: npm install -g '@trailhq/trail-code')" }
+        Add-UserPath (Join-Path $env:APPDATA 'npm')
+    } else {
+        Write-Warn "npm 없음 → Trail-code 설치 건너뜀 (6단계 확인 후 재실행)"
+    }
+    if (Test-Cmd 'trail') {
+        & trail telemetry disable *> $null
+        if ($LASTEXITCODE -eq 0) { Write-Ok "trail 사용 통계 꺼짐 (확인: trail telemetry status)" }
+        else { Write-Warn "trail 사용 통계 끄기 실패 → 건너뜀 (수동: trail telemetry disable)" }
+    }
+} catch {
+    Write-Warn "Trail-code 설치 단계에서 문제가 생겨 건너뜁니다 (수동: npm install -g '@trailhq/trail-code' 후 trail telemetry disable)"
+} finally {
+    $env:DO_NOT_TRACK = $trailPrevDnt
+}
 
 # ============================================================
 # 7. PowerShell 프로필 · PSReadLine
@@ -5197,6 +5243,8 @@ Write-Host ''
 Write-Host '── AI 코딩 도구 · MCP ────────────────────────' -ForegroundColor DarkCyan
 Write-Host ("  claude  : " + $(if (Test-Cmd 'claude') { $v = (& claude --version 2>$null | Select-Object -First 1); if ($v) { $v } else { "✓ 설치됨" } } else { "❌ (수동 설치: irm https://claude.ai/install.ps1 | iex)" }))
 Write-Host ("  opencode: " + $(if (Test-Cmd 'opencode') { & opencode --version 2>$null } else { "❌ (수동 설치: npm install -g opencode-ai)" }))
+Write-Host ("  trail   : " + $(if (Test-Cmd 'trail') { $v = (& trail --version 2>$null | Select-Object -First 1); if ($v) { $v } else { "✓ 설치됨" } } else { "❌ (수동 설치: npm install -g '@trailhq/trail-code' 후 trail telemetry disable)" }))
+if (Test-Cmd 'trail') { $v = (& trail telemetry status 2>$null | Select-Object -First 1); if ($v) { Write-Host ("  trail 통계: " + ($v -replace '^telemetry: ', '')) } }
 Write-Host ("  codex   : " + $(if (Test-Cmd 'codex') { $v = (& codex --version 2>$null | Select-Object -First 1); if ($v) { $v } else { "✓ 설치됨" } } else { "❌ (수동 설치: irm https://chatgpt.com/codex/install.ps1 | iex)" }))
 Write-Host ("  agy(antigravity): " + $(if (Test-Cmd 'agy') { "✓ 설치됨 (최초 실행 시 agy 로 Google 로그인)" } else { "❌ (수동 설치: irm https://antigravity.google/cli/install.ps1 | iex)" }))
 Write-Host ("  slack   : " + $(if (Test-Cmd 'slack') { $v = (& slack version 2>$null | Select-Object -First 1); if ($v) { $v } else { "✓ 설치됨" } } else { "❌ (수동 설치: PowerShell 7에서 irm https://downloads.slack-edge.com/slack-cli/install-windows.ps1 | iex)" }))
@@ -5285,6 +5333,13 @@ Write-Host ' 10. 프롬프트 아이콘이 □ 로 보이면 터미널 폰트가
 Write-Host "     ↳ Windows Terminal 설정 > 기본값 > 모양 > 글꼴에서 '$CocodeFontFace' 선택 (이 스크립트가 자동 적용을 시도하지만, 터미널이 실행 중이면 덮어써질 수 있습니다)"
 Write-Host ' 11. TrafficMonitor(작업표시줄 시스템 모니터)는 최초 1회 직접 실행해야 화면에 나타납니다 — 시작 메뉴에서 TrafficMonitor 실행'
 Write-Host '     ↳ 실행한 뒤 트레이 아이콘을 마우스 오른쪽 클릭 > 설정에서 "부팅 시 자동 시작"을 켜 두면 다음부터는 자동으로 떠 있습니다'
+Write-Host ' 12. Trail-code(trail)를 레포에서 쓰려면(선택) — AGENTS.md가 trail 안내를 담은 프로젝트 폴더에서: trail init --dry-run'
+Write-Host '     ↳ 먼저 --dry-run 으로 어떤 파일이 생기고 바뀌는지 확인한 뒤, 괜찮을 때만 trail init 을 실행하세요 (필수가 아닙니다)'
+Write-Host '     ↳ trail init 으로 생기는 .claude/settings.json·.trail/ 을 커밋할지는 레포 성격에 따라 팀이 정합니다 — 이 스크립트는 권하지 않습니다'
+Write-Host '     ↳ trail init 은 내 Claude 메모·과거 대화를 읽어 .trail/learnings/ 에 저장할 수 있습니다 — 커밋하기 전에 그 폴더의 내용을 꼭 확인하세요'
+Write-Host '     ↳ 내 PC 전체 설정(사용자 폴더의 .claude 등)을 건드리고 싶지 않다면 trail init --no-global (그래도 그 레포 안의 .claude/settings.local.json 에는 훅이 들어갑니다)'
+Write-Host '     ↳ 새로 만든 작업 폴더(git worktree)에는 지도가 자동으로 생기지 않으니 trail build 를 한 번 실행하세요 (이후에는 질의할 때 바뀐 부분만 자동 갱신)'
+Write-Host '     ↳ 사용 통계는 꺼 두었습니다(하루 한 번 새 버전 확인은 남습니다). 상태 확인: trail telemetry status'
 Write-Host ''
 Write-Host '   레포를 둘 곳: 경로가 길면 Gradle·Flutter 빌드가 깨질 수 있습니다 — C:\src 처럼 짧은 폴더를 권장합니다' -ForegroundColor DarkGray
 

@@ -211,6 +211,14 @@ chmod +x linux-setup.sh
 <td align="center" width="100"><img src="assets/icons/1password.svg" width="36" height="36" alt="1Password CLI"><br><sub><b>op</b><br>(1Password CLI)</sub></td>
 <td align="center" width="100"><img src="assets/icons/claude.svg" width="36" height="36" alt="ccstatusline"><br><sub><b>ccstatusline</b><br>(상태줄)</sub></td>
 </tr>
+<tr>
+<td align="center" width="100"><img src="assets/icons/trail.png" width="36" height="36" alt="Trail-code"><br><sub><b>trail</b><br>(코드 지도)</sub></td>
+<td align="center" width="100"></td>
+<td align="center" width="100"></td>
+<td align="center" width="100"></td>
+<td align="center" width="100"></td>
+<td align="center" width="100"></td>
+</tr>
 </table>
 
 **🔌 AI 도구 · 기본 MCP 추가 항목**
@@ -279,7 +287,7 @@ chmod +x linux-setup.sh
 </tr>
 </table>
 
-<sub>※ 아이콘 출처 — 대부분 [Simple Icons](https://simpleicons.org). Simple Icons에 없어 실제 브랜드 아이콘을 사용한 것: Orca·Lumide·Slack·codex·Antigravity. 공식 아이콘이 없어 이름만 표기한 것: jq · awscli · direnv · btop · KVM · Pretendard · DCM · powerlevel10k · MesloLGS NF. Dart 생태계 CLI(fvm·melos·mason_cli·jaspr_cli·serverpod_cli·flutter_gen·coverage·cob·marionette_mcp·mcp_server_dart)는 Dart 아이콘을 공용으로 사용합니다.</sub>
+<sub>※ 아이콘 출처 — 대부분 [Simple Icons](https://simpleicons.org). Simple Icons에 없어 실제 브랜드 아이콘을 사용한 것: Orca·Lumide·Slack·codex·Antigravity·trail(Trail-code, 제작사 Trail의 로고). 공식 아이콘이 없어 이름만 표기한 것: jq · awscli · direnv · btop · KVM · Pretendard · DCM · powerlevel10k · MesloLGS NF. Dart 생태계 CLI(fvm·melos·mason_cli·jaspr_cli·serverpod_cli·flutter_gen·coverage·cob·marionette_mcp·mcp_server_dart)는 Dart 아이콘을 공용으로 사용합니다.</sub>
 
 <br>
 <a id="whats-installed"></a>
@@ -311,6 +319,7 @@ chmod +x linux-setup.sh
 | **6.1** | codex 재설치 시도 — 2.6단계는 Node.js보다 앞이라 그때 건너뛰었기 때문 |
 | **6.5** | Claude Code 상태줄 (ccstatusline) |
 | **6.6** | OpenCode CLI(`npm install -g opencode-ai`) + 두 도구에 `cob` · `dart` · `figma` · `marionette` · `atlassian` · `mobbin` · `slack` · `zenhub` · `chrome-devtools` · `playwright` 직접 등록 ([인증·실행 조건](#default-mcp)) |
+| **6.7** | Trail-code(`trail`, AI 에이전트용 코드베이스 지도 CLI) — `DO_NOT_TRACK=1 npm install -g @trailhq/trail-code` 후 `trail telemetry disable`로 사용 통계 끄기 |
 | **7** | oh-my-zsh + powerlevel10k |
 | **7.5** | 터미널 폰트 자동 적용 (MesloLGS NF) |
 | **8** | `~/.zshrc`·`~/.p10k.zsh` 반영 + 기본 셸을 zsh로 변경 |
@@ -358,6 +367,7 @@ chmod +x linux-setup.sh
 | | **KVM** | 안드로이드 에뮬레이터 하드웨어 가속 (맥의 HVF, 윈도우의 WHPX에 해당) |
 | <img src="assets/icons/claude.svg" width="20"> | **Claude Code** | AI 코딩 CLI (공식 설치 스크립트) |
 | <img src="assets/icons/opencode.svg" width="20"> | **OpenCode** | 여러 AI 모델을 연결해 쓰는 코딩 CLI (`npm install -g opencode-ai`, 6.6단계) · 최초 실행 후 `/connect`로 모델 계정을 연결합니다 |
+| <img src="assets/icons/trail.png" width="20"> | **trail** (Trail-code) | 코드베이스 '지도'를 만들어 AI 에이전트가 파일을 덜 뒤지고 바로 찾게 해 주는 CLI (옛 이름 graft · [trailhq/Trail-Code](https://github.com/trailhq/Trail-Code) · `DO_NOT_TRACK=1 npm install -g @trailhq/trail-code`, 6.7단계 · ⚠ Node 설치 후에 깔립니다). **사용 통계는 꺼 둔 상태**로 설치하며(하루 한 번 새 버전을 npm에 묻는 확인은 남습니다), 명령은 `trail`입니다 — 옛 `graft` 명령은 없습니다. 레포에 연결하는 `trail init`은 **선택 사항**입니다 ([후속 작업 7번](#after-install)) |
 | <img src="assets/icons/codex.png" width="20"> | **codex** | OpenAI 코딩 CLI (`npm install -g @openai/codex` · ⚠ Node 설치 후에 깔립니다) |
 | <img src="assets/icons/antigravity.png" width="20"> | **agy** | Google Antigravity CLI |
 | <img src="assets/icons/slack.png" width="20"> | **slack** | Slack 앱·워크플로 개발 CLI |
@@ -423,6 +433,7 @@ chmod +x linux-setup.sh
 | `openjdk@17` (brew 고정 경로) | **`/usr/lib/jvm/java-17-openjdk-<arch>`** | 아키텍처(amd64·arm64)마다 경로가 달라 `.zshrc`가 실제 있는 것을 찾아 씁니다 |
 | Orca (brew cask) | **AppImage** | 리눅스판은 AppImage로 배포됩니다. `.desktop` 항목도 함께 만들어 앱 목록에 나옵니다 |
 | Full Disk Access 권한 (9단계) | **docker·kvm 그룹 가입 + udev 규칙** | macOS 권한 모델이 리눅스에 없습니다. 대신 리눅스에서 실제로 필요한 권한을 잡습니다 |
+| `trail`(Trail-code) 설치·동작 확인 완료 (6.7단계) | 같은 npm 패키지를 같은 방식으로 설치하지만 **리눅스 PC에서의 동작은 아직 직접 확인되지 않았습니다** | 패키지에 OS 제한이 없고 네이티브 컴포넌트도 없는 것으로 보이지만, 시험은 맥에서만 했습니다. 설치가 안 돼도 경고만 남기고 건너뛰니, 문제가 있으면 알려 주세요 |
 
 ### ❌ 빠진 것 (리눅스에서 불가능)
 
@@ -505,6 +516,8 @@ Claude Code에서는 `/mcp`에서 `figma`·`mobbin`을 각각 인증합니다. �
   ✓ node         v22.11.0 / npm 10.9.0
   ✓ python       3.13.1 (pyenv)
   opencode: ...
+  trail   : ...
+  trail 통계: ...
   mcp:claude:figma: ✓ 등록됨 (연결·인증은 새 세션에서 확인)
   mcp:opencode:figma: ✓ 등록됨 (연결·인증은 새 세션에서 확인)
   ✓ adb          35.0.2
@@ -524,6 +537,15 @@ Claude Code에서는 `/mcp`에서 `figma`·`mobbin`을 각각 인증합니다. �
 | **4** | 레포마다 최초 1회 `lefthook install` | 커밋 훅은 레포별로 등록해야 동작합니다 |
 | **5** | 1Password 연동이 안 됐다면 → 켠 뒤 `./linux-setup.sh --env-only` | 팀 공용 토큰(ZenHub·Jira 등) 주입이 건너뛰어졌을 수 있습니다 |
 | **6** | 두 도구 재시작 + Figma·Mobbin OAuth 로그인 ([기본 MCP 표](#default-mcp)) | 원격 MCP는 최초 인증이 필요합니다. OpenCode 모델 계정도 `/connect`로 연결합니다 |
+| **7** | (선택) 레포에서 `trail` 쓰기 — 프로젝트 폴더에서 먼저 `trail init --dry-run` | AGENTS.md가 trail 안내를 담은 레포에서만 쓰며 **필수가 아닙니다.** 설치만으로는 어떤 레포도 바뀌지 않습니다 |
+
+> **Trail-code(`trail`) 사용 메모** — 먼저 `trail init --dry-run`으로 어떤 파일이 생기고 바뀌는지 확인한 뒤, 괜찮을 때만 `trail init`을 실행하세요.
+>
+> - 내 PC 전체 설정(`~/.claude` 등)을 건드리고 싶지 않다면 `trail init --no-global`을 쓰세요. 그래도 그 레포 안의 `.claude/settings.local.json`에는 훅이 들어갑니다.
+> - `trail init`이 만드는 `.claude/settings.json`·`.trail/`을 커밋할지는 레포 성격에 따라 팀이 정합니다. 이 문서는 어느 쪽도 권하지 않습니다.
+> - `trail init`은 내 Claude 메모·과거 대화를 읽어 `.trail/learnings/`에 저장할 수 있습니다. **커밋하기 전에 그 폴더의 내용을 꼭 확인하세요.**
+> - 새로 만든 작업 폴더(git worktree)에는 지도가 자동으로 생기지 않으니 `trail build`를 한 번 실행하세요. 이후에는 질의할 때 바뀐 부분만 자동으로 갱신됩니다.
+> - 사용 통계는 꺼 둔 상태입니다(`trail telemetry status`로 확인). 리눅스에서의 동작은 아직 직접 확인되지 않았습니다.
 
 <details>
 <summary>1Password CLI(op) 연동하는 법</summary>
