@@ -346,6 +346,8 @@ fi
 #        Awesome CC Statusline(small)로 자동 대체 설치, node 설치 직후에 실행 ·
 #        ~/.claude/settings.json 자동 등록)
 #   6.6. OpenCode CLI + 두 도구의 기본 MCP 10개 직접 등록 (기존 설정 병합)
+#   6.7. Trail-code(trail) — AI 에이전트용 코드베이스 지도 CLI 설치 + 사용 통계 끄기
+#        (npm, 6단계 Node 이후 · 레포 연결 `trail init` 은 사람이 레포별로 선택해 실행)
 #   7.   oh-my-zsh + powerlevel10k
 #   7.5. Terminal.app 프로필 폰트 자동 적용 (MesloLGS NF, Terminal.app 실행 중일 때만)
 #   8.   ~/.zshrc / ~/.p10k.zsh 반영
@@ -1721,6 +1723,37 @@ echo "  · 브라우저 디버깅: Dia에서 dia://inspect/#remote-debugging →
 echo "    ↳ MCP가 Dia 연결 허용 창을 띄우면 허용하세요. Dia가 꺼져 있으면 실행 후 두 AI 도구에서 다시 연결하세요"
 
 # ------------------------------------------------------------
+# 6.7. Trail-code(trail) — AI 에이전트용 코드베이스 지도 CLI (옛 이름 graft)
+#   레포의 코드를 읽어 '어디에 뭐가 있고 누가 누구를 부르는지' 지도를 만들어 두고,
+#   Claude Code·Codex·OpenCode 같은 에이전트가 파일을 덜 뒤지고 바로 찾게 해 준다
+#   (https://github.com/trailhq/Trail-Code · npm 패키지 @trailhq/trail-code).
+#   이 단계는 'CLI 설치 + 사용 통계 끄기'까지만 한다. 레포에 연결하는 `trail init` 은
+#   스크립트가 대신 돌리지 않는다 — 사용자 설정 파일(.claude 등)을 고치고, 내 Claude 메모·
+#   과거 대화를 읽어 팀 공유용 학습(.trail/learnings/)으로 저장할 수 있어서, 쓸지 말지는
+#   레포마다 사람이 정한다(아래 '다음 단계' 참고).
+#   - Node 22.3 이상(또는 20.16 이상) 필요 → 6단계 nvm LTS가 만족한다. npm 설치 뒤의
+#     postinstall 스크립트는 npm 버전에 따라 보류될 수 있어, 성공 여부는 trail 명령이
+#     있는지로만 판단한다.
+#   - 새 패키지는 trail 명령만 제공한다(옛 graft 명령은 없다).
+#   - 설치 순간에 '설치됨' 이벤트가 나갈 수 있어 DO_NOT_TRACK=1 을 붙여 설치하고, 이어서
+#     trail telemetry disable 로 사용 통계를 끈다(이 기기에 저장돼 이후에도 유지).
+#     하루 한 번 새 버전이 있는지 npm에 묻는 확인은 남는다.
+# ------------------------------------------------------------
+log "6.7. Trail-code(trail) 설치 + 사용 통계 끄기 (AI 에이전트용 코드베이스 지도)"
+if have trail; then
+  echo "  ✓ trail 이미 설치됨"
+elif have npm; then
+  DO_NOT_TRACK=1 npm install -g @trailhq/trail-code || echo "  ⚠ Trail-code 설치 실패 → 건너뜀 (수동: DO_NOT_TRACK=1 npm install -g @trailhq/trail-code)"
+else
+  echo "  ⚠ npm 없음 → Trail-code 설치 건너뜀 (6단계 확인 후 재실행)"
+fi
+if have trail; then
+  DO_NOT_TRACK=1 trail telemetry disable >/dev/null 2>&1 \
+    && echo "  ✓ trail 사용 통계 꺼짐 (확인: trail telemetry status)" \
+    || echo "  ⚠ trail 사용 통계 끄기 실패 → 건너뜀 (수동: trail telemetry disable)"
+fi
+
+# ------------------------------------------------------------
 # 7. oh-my-zsh + powerlevel10k + 플러그인
 # ------------------------------------------------------------
 log "oh-my-zsh 설치"
@@ -2678,6 +2711,9 @@ echo "  codex   : $(codex --version 2>/dev/null || echo '❌ (수동 설치: bre
 echo "  agy(antigravity): $(have agy && echo '✓ 설치됨 (최초 실행 시 agy 로 Google 로그인)' || echo '❌ (수동 설치: curl -fsSL https://antigravity.google/cli/install.sh | bash)')"
 echo "  slack   : $(slack --version 2>/dev/null || echo '❌ (수동 설치: curl -fsSL https://downloads.slack-edge.com/slack-cli/install.sh | bash)')"
 echo "  lefthook: $(lefthook version 2>/dev/null || echo '❌ (수동 설치: brew install lefthook)')"
+echo "  trail   : $(trail --version 2>/dev/null || echo '❌ (수동 설치: DO_NOT_TRACK=1 npm install -g @trailhq/trail-code)')"
+# trail 사용 통계: 6.7단계에서 껐는지 확인한다(trail 이 없으면 줄을 건너뛴다).
+have trail && echo "  trail 통계: $(trail telemetry status 2>/dev/null | head -1 | sed 's/^telemetry: //' || echo '확인 불가')"
 # 상태줄(ccstatusline / Awesome CC Statusline): 둘 다 brew formula가 아니라
 #   npx/curl 실행형이라 have로 확인할 수 없다 — ~/.claude/settings.json의
 #   statusLine 키 등록 여부로 판정한다 (어느 쪽이 등록됐는지는 구분하지 않는다).
@@ -2850,5 +2886,12 @@ echo "     ↳ 이미 켜 둔 에이전트는 완전히 종료했다가 다시 �
 echo "     ↳ 에이전트는 권한 확인 없는 모드로 실행해야 ego lite를 조작할 수 있습니다 — 권한·샌드박스를 끄는 모드이니 믿는 프로젝트에서만 쓰세요:"
 echo "       claude → 팀 .zshrc 의 claude 함수가 이미 --dangerously-skip-permissions · codex → codex-ego · opencode → opencode-ego (팀 .zshrc 를 쓰는 경우, 새 터미널에서 적용)"
 echo "     ↳ 스킬 불러오기(벤더 가이드, 데스크톱 앱 기준): /ego-browser 입력 후 선택 (Codex는 /ego 입력 후 목록에서 선택) — 터미널에서는 ego-browser 스킬을 불러온 뒤 작업을 입력하세요"
-echo " 12. 재부팅 후 서명 키체인을 자동 해제하려면(선택): ./mac-setup.sh --keychains-only --help"
+echo " 12. Trail-code(trail)를 레포에서 쓰려면(선택) — AGENTS.md가 trail 안내를 담은 프로젝트 폴더에서: trail init --dry-run"
+echo "     ↳ 먼저 --dry-run 으로 어떤 파일이 생기고 바뀌는지 확인한 뒤, 괜찮을 때만 trail init 을 실행하세요 (필수가 아닙니다)"
+echo "     ↳ trail init 으로 생기는 .claude/settings.json·.trail/ 을 커밋할지는 레포 성격에 따라 팀이 정합니다 — 이 스크립트는 권하지 않습니다"
+echo "     ↳ trail init 은 내 Claude 메모·과거 대화를 읽어 .trail/learnings/ 에 저장할 수 있습니다 — 커밋하기 전에 그 폴더의 내용을 꼭 확인하세요"
+echo "     ↳ 내 PC 전체 설정(~/.claude 등)을 건드리고 싶지 않다면 trail init --no-global (그래도 그 레포 안의 .claude/settings.local.json 에는 훅이 들어갑니다)"
+echo "     ↳ 새로 만든 작업 폴더(git worktree)에는 지도가 자동으로 생기지 않으니 trail build 를 한 번 실행하세요 (이후에는 질의할 때 바뀐 부분만 자동 갱신)"
+echo "     ↳ 사용 통계는 꺼 두었습니다(하루 한 번 새 버전 확인은 남습니다). 상태 확인: trail telemetry status"
+echo " 13. 재부팅 후 서명 키체인을 자동 해제하려면(선택): ./mac-setup.sh --keychains-only --help"
 echo "     ↳ 1Password 원본을 login 키체인에 암호화 보관합니다. 등록 후에는 --keychains-only verify로 반복 서명을 검증하세요"

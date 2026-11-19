@@ -220,6 +220,14 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned -Force
 <td align="center" width="100"><img src="assets/icons/1password.svg" width="36" height="36" alt="1Password CLI"><br><sub><b>op</b><br>(1Password CLI)</sub></td>
 <td align="center" width="100"><img src="assets/icons/claude.svg" width="36" height="36" alt="ccstatusline"><br><sub><b>ccstatusline</b><br>(상태줄)</sub></td>
 </tr>
+<tr>
+<td align="center" width="100"><img src="assets/icons/trail.png" width="36" height="36" alt="Trail-code"><br><sub><b>trail</b><br>(코드 지도)</sub></td>
+<td align="center" width="100"></td>
+<td align="center" width="100"></td>
+<td align="center" width="100"></td>
+<td align="center" width="100"></td>
+<td align="center" width="100"></td>
+</tr>
 </table>
 
 **🔌 AI 도구 · 기본 MCP 추가 항목**
@@ -280,7 +288,7 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned -Force
 
 <br>
 
-<sub>※ Slack · Orca · Lumide · codex(OpenAI) · agy(Antigravity)는 Simple Icons에 없어, 실제 브랜드 아이콘(파비콘)을 받아 사용했습니다. PowerShell 아이콘은 [PowerShell 공식 저장소](https://github.com/PowerShell/PowerShell)의 배포 자산이고, Oh My Posh는 [ohmyposh.dev](https://ohmyposh.dev)의 파비콘입니다. winget · Visual Studio Build Tools는 마이크로소프트 제품이라 마이크로소프트 로고로 표기했습니다. Scoop, awscli, pyenv-win, direnv, jq, PSReadLine, TrafficMonitor, MesloLGS NF, Pretendard는 공식 브랜드 아이콘이 없어 텍스트로만 표기했습니다. DCM · coverage · melos · mason_cli · flutter_gen · jaspr_cli · serverpod_cli · marionette_mcp · mcp_server_dart · cob(co-bricks)는 Dart 생태계 도구라 Dart 아이콘으로 대신 표기했습니다. op(1Password CLI)는 1Password의 커맨드라인 버전이라 1Password 아이콘을 함께 사용했습니다. ccstatusline은 Claude Code 상태줄 도구라 Claude 아이콘으로 대신 표기했습니다.</sub>
+<sub>※ Slack · Orca · Lumide · codex(OpenAI) · agy(Antigravity) · trail(Trail-code, 제작사 Trail의 로고)는 Simple Icons에 없어, 실제 브랜드 아이콘(파비콘)을 받아 사용했습니다. PowerShell 아이콘은 [PowerShell 공식 저장소](https://github.com/PowerShell/PowerShell)의 배포 자산이고, Oh My Posh는 [ohmyposh.dev](https://ohmyposh.dev)의 파비콘입니다. winget · Visual Studio Build Tools는 마이크로소프트 제품이라 마이크로소프트 로고로 표기했습니다. Scoop, awscli, pyenv-win, direnv, jq, PSReadLine, TrafficMonitor, MesloLGS NF, Pretendard는 공식 브랜드 아이콘이 없어 텍스트로만 표기했습니다. DCM · coverage · melos · mason_cli · flutter_gen · jaspr_cli · serverpod_cli · marionette_mcp · mcp_server_dart · cob(co-bricks)는 Dart 생태계 도구라 Dart 아이콘으로 대신 표기했습니다. op(1Password CLI)는 1Password의 커맨드라인 버전이라 1Password 아이콘을 함께 사용했습니다. ccstatusline은 Claude Code 상태줄 도구라 Claude 아이콘으로 대신 표기했습니다.</sub>
 
 <br>
 
@@ -300,7 +308,7 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned -Force
 | 🔑 GitHub 인증(gh) | coco-de 조직의 비공개 레포(`co-bricks`·`skills`) 접근용 로그인을 팀 공용 1Password 토큰으로 자동 처리(`gh auth login` + `gh auth setup-git`) — 이미 인증돼 있으면 건너뜀 |
 | 🧩 cocode-skills 팀 플러그인 | 사설 레포 `coco-de/skills` 설치 스크립트로 cc-\* 플러그인 번들 동기화 (⚠️ **현재 윈도우에서는 자동 설치가 되지 않습니다** — 아래 [알려진 제약](#known-gap) 참고) |
 | 📱 Android SDK | cmdline-tools, platform-tools, build-tools, platforms, NDK, 에뮬레이터 시스템 이미지, AVD까지 전부 자동 설치·구성 (Android Studio 첫 실행 마법사 불필요). NDK는 최신이 아니라 **설치된 Flutter가 요구하는 버전으로 고정** 설치 |
-| 🛠 CLI 도구 | git(Git for Windows — Flutter가 요구하는 심볼릭 링크·줄바꿈 옵션까지 지정), go, pyenv-win, nvm-windows, gh, jq, awscli, Docker Desktop, direnv, lefthook(레포별로 최초 1회 `lefthook install` 필요), JDK 17(Temurin), Visual Studio 2022 Build Tools(C++ 워크로드 — 윈도우 데스크톱 앱 빌드용), Claude Code, **OpenCode**, ccstatusline → 실패 시 Awesome CC Statusline(small), codex, agy(Antigravity CLI), slack(Slack CLI), op(1Password CLI) |
+| 🛠 CLI 도구 | git(Git for Windows — Flutter가 요구하는 심볼릭 링크·줄바꿈 옵션까지 지정), go, pyenv-win, nvm-windows, gh, jq, awscli, Docker Desktop, direnv, lefthook(레포별로 최초 1회 `lefthook install` 필요), JDK 17(Temurin), Visual Studio 2022 Build Tools(C++ 워크로드 — 윈도우 데스크톱 앱 빌드용), Claude Code, **OpenCode**, **trail**(Trail-code — AI 에이전트용 코드베이스 지도 CLI, 6.7단계 · 사용 통계는 끈 상태로 설치 · 레포 연결 `trail init`은 선택), ccstatusline → 실패 시 Awesome CC Statusline(small), codex, agy(Antigravity CLI), slack(Slack CLI), op(1Password CLI) |
 | ✉️ Git 설정 | 커밋에 사용할 회사 이메일을 실행 중에 입력받아 전역 설정(`git config --global user.email`) — 이미 설정돼 있으면 묻지 않고 건너뜀 |
 | 🐦 Flutter | fvm(버전 관리자 · 공식 zip을 `%LOCALAPPDATA%\fvm-bin`에 설치)으로 팀 표준 Flutter **3.47.6**을 설치해 기본 버전으로 고정, DCM(Dart 코드 품질 검사 도구) |
 | 🎯 Dart 글로벌 패키지 | coverage, melos, mason_cli, flutter_gen, jaspr_cli, serverpod_cli(pub.dev 최신 베타/RC 버전 자동 조회), flutterfire_cli, marionette_mcp, mcp_server_dart, cob(co-bricks) (⚠️ cob은 비공개 레포라 GitHub 인증 필요) · 나중에 이 목록만 다시 깔려면 `.\win-setup.ps1 -DartOnly` |
@@ -397,6 +405,7 @@ Android Studio 앱만 설치하면 SDK는 비어 있어서, 원래는 앱을 한
 | <img src="assets/icons/visualstudio.png" width="20" height="20"> | Visual Studio 2022 Build Tools | 윈도우 데스크톱 앱을 빌드할 때 필요한 C++ 도구 모음 (맥에서 Xcode가 필요한 것과 같은 역할). 무거운 Visual Studio 전체판은 필요 없습니다. winget `Microsoft.VisualStudio.2022.BuildTools` · ⚠ 수 GB 다운로드 |
 | <img src="assets/icons/claude.svg" width="20" height="20"> | Claude Code | 터미널에서 대화하듯 코드를 작성·수정하는 Claude CLI. 공식 스크립트(`claude.ai/install.ps1`)로 `%USERPROFILE%\.local\bin`에 설치 (실패 시 폴백: winget `Anthropic.ClaudeCode`) · ⚠ 네이티브 윈도우에서는 샌드박스 기능이 지원되지 않습니다 |
 | <img src="assets/icons/opencode.svg" width="20" height="20"> | OpenCode | 여러 AI 모델을 연결해 쓰는 코딩 CLI (`npm install -g opencode-ai`, 6.6단계) · 최초 실행 후 `/connect`로 모델 계정을 연결합니다 |
+| <img src="assets/icons/trail.png" width="20" height="20"> | trail (Trail-code) | 코드베이스 '지도'를 만들어 AI 에이전트가 파일을 덜 뒤지고 바로 찾게 해 주는 CLI입니다(옛 이름 graft · [trailhq/Trail-Code](https://github.com/trailhq/Trail-Code)). 6.7단계에서 `npm install -g '@trailhq/trail-code'`로 설치하고(이 단계 동안만 `DO_NOT_TRACK=1`을 붙입니다) `trail telemetry disable`로 **사용 통계를 꺼 둡니다**. 하루 한 번 새 버전을 npm에 묻는 확인은 남습니다. 명령은 `trail`입니다 — 옛 `graft` 명령은 없습니다. Node.js(nvm-windows, 관리자 권한 필요)가 설치돼 있어야 하며, 없으면 이 단계는 건너뜁니다. 레포에 연결하는 `trail init`은 **선택 사항**입니다([후속 작업 11번](#after-install)) |
 | <img src="assets/icons/claude.svg" width="20" height="20"> | ccstatusline / awesome-statusline | Claude Code 하단 상태줄을 모델·세션 비용·컨텍스트 사용량·git 상태까지 보여주는 정보 표시줄로 바꿔 줍니다. ccstatusline은 대화형이라 자동 등록에 대개 실패하며, 그때 Awesome CC Statusline(크기 `small`)이 자동으로 대신 설치됩니다 |
 | <img src="assets/icons/codex.png" width="20" height="20"> | codex | OpenAI의 터미널 AI 코딩 에이전트. 공식 스크립트(`chatgpt.com/codex/install.ps1`, 폴백: winget `OpenAI.Codex`) · 처음 실행할 때 ChatGPT 계정으로 로그인 |
 | <img src="assets/icons/antigravity.png" width="20" height="20"> | agy (Antigravity CLI) | Google의 터미널 AI 코딩 에이전트. 은퇴한 Gemini CLI의 공식 후속 도구. 공식 스크립트(`antigravity.google/cli/install.ps1`)로 `%LOCALAPPDATA%\agy\bin`에 설치 · 처음 실행할 때 Google 계정으로 로그인 |
@@ -471,6 +480,7 @@ JWT·API 호출 방법과 필드 표는 [맥의 Cocode 조직 API 키 설명](..
 | Xcode + CocoaPods | **Visual Studio Build Tools** | 데스크톱 앱 빌드에 필요한 C++ 도구. iOS 빌드는 윈도우에서 불가능합니다 |
 | openjdk@17 (brew) | **Temurin JDK 17** | winget 설치 프로그램이 `JAVA_HOME`을 자동으로 잡아 줍니다 |
 | Orca 전체 디스크 접근 권한(9단계) | **개발자 모드 + 긴 경로 허용** | 윈도우에는 macOS의 TCC 같은 중앙 권한 게이트가 없습니다. 대신 윈도우에서 실제로 사람을 막는 항목으로 그 자리를 채웠습니다 |
+| `trail`(Trail-code) 설치·동작 확인 완료 (6.7단계) | 같은 npm 패키지를 같은 방식으로 설치하지만 **윈도우 PC에서의 동작은 아직 직접 확인되지 않았습니다** | 패키지에 OS 제한이 없고 네이티브 컴포넌트도 없는 것으로 보이지만, 시험은 맥에서만 했습니다. 설치가 안 돼도 경고만 남기고 건너뛰니, 문제가 있으면 알려 주세요. 6단계 Node.js(nvm-windows)가 관리자 권한이 없어 건너뛰어졌다면 npm이 없어 이 단계도 함께 건너뜁니다 |
 
 ### 빠진 것 (윈도우에서 불가능하거나 무의미)
 
@@ -525,6 +535,8 @@ scoop   : ...
 ── AI 코딩 도구 · MCP ────────────────────────
   claude  : ...
   opencode: ...
+  trail   : ...
+  trail 통계: ...
   GitHub 인증(gh): ✓ 인증됨
   mcp:claude:zenhub: ✓ 등록됨 (연결·인증은 새 세션에서 확인)
   mcp:opencode:zenhub: ✓ 등록됨 (연결·인증은 새 세션에서 확인)
@@ -579,6 +591,12 @@ Claude Code에서는 `/mcp`에서 `figma`·`mobbin`을 각각 인증합니다. �
 8. **lefthook은 레포마다 한 번씩** 켜야 합니다 — `lefthook.yml`이 있는 프로젝트 폴더에서 `lefthook install`.
 9. **Tailscale · Slack · Figma · Claude Desktop**은 각각 처음 실행할 때 팀 계정으로 로그인해 주세요. **TrafficMonitor**는 최초 1회 직접 실행해야 작업표시줄에 나타납니다.
 10. **프롬프트 아이콘이 □로 보이면** 터미널 폰트가 아직 안 바뀐 것입니다 — Windows Terminal 설정 > 기본값 > 모양 > 글꼴에서 `MesloLGS NF`를 선택하세요.
+11. **(선택) Trail-code(`trail`)를 레포에서 쓰기** — AGENTS.md가 trail 안내를 담은 프로젝트 폴더에서 **먼저 `trail init --dry-run`**으로 어떤 파일이 생기고 바뀌는지 확인하세요. 괜찮을 때만 `trail init`을 실행합니다(필수가 아닙니다).
+    - 내 PC 전체 설정(사용자 폴더의 `.claude` 등)을 건드리고 싶지 않다면 `trail init --no-global`을 쓰세요. 그래도 그 레포 안의 `.claude/settings.local.json`에는 훅이 들어갑니다.
+    - `trail init`이 만드는 `.claude/settings.json`·`.trail/`을 커밋할지는 레포 성격에 따라 팀이 정합니다. 이 문서는 어느 쪽도 권하지 않습니다.
+    - `trail init`은 내 Claude 메모·과거 대화를 읽어 `.trail/learnings/`에 저장할 수 있습니다. **커밋하기 전에 그 폴더의 내용을 꼭 확인하세요.**
+    - 새로 만든 작업 폴더(git worktree)에는 지도가 자동으로 생기지 않으니 `trail build`를 한 번 실행하세요. 이후에는 질의할 때 바뀐 부분만 자동으로 갱신됩니다.
+    - 사용 통계는 꺼 둔 상태입니다(`trail telemetry status`로 확인).
 
 > 📁 **레포는 짧은 경로에 두세요.** `C:\src\프로젝트명` 처럼요. 경로가 길면 긴 경로 허용을 켰더라도 Gradle·Flutter 빌드가 깨질 수 있습니다.
 
