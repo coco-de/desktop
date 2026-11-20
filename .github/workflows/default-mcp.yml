@@ -15,11 +15,12 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-      - name: Bash 문법 검사
+      - name: Bash·Python 문법 검사
         run: |
           bash -n macos/mac-setup.sh
           bash -n linux/linux-setup.sh
           for f in macos/disk-cleanup/*.sh; do sh -n "$f"; done
+          python3 -m py_compile macos/disk-cleanup/dedupe-runner-cache.py
       - name: MCP 설정 병합·Dia 연결 인자·디스크 자동 정리 회귀 검사
         run: |
           python3 -m unittest discover -s tests -v
@@ -33,11 +34,12 @@ jobs:
     # 곳이 있어(날짜와 시각 사이의 T 를 다른 시각으로 읽는 find 가 그 예다) 리눅스 검사만으로는 그 차이를
     # 잡지 못한다. 위 잡과 같은 회귀 검사를 맥에서 한 번 더 돌린다.
     runs-on: macos-latest
-    # 신규 경량 검사: 로컬(맥) 실측 약 15초 + 러너 준비 여유. 첫 CI 실측 후 최대 소요 × 2로 재산정합니다.
+    # 신규 경량 검사: 로컬(맥) 실측 약 20초(사본 합치기 검사 포함) + 러너 준비 여유. 첫 CI 실측 후 최대 소요 × 2로 재산정합니다.
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - name: 디스크 자동 정리 회귀 검사 (macOS)
         run: |
           for f in macos/disk-cleanup/*.sh; do sh -n "$f"; done
+          python3 -m py_compile macos/disk-cleanup/dedupe-runner-cache.py
           python3 -m unittest discover -s tests -p 'test_disk_cleanup.py' -v
